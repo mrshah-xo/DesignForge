@@ -1,0 +1,89 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// NOTE: JSON-ish fields are stored as String (SQLite + Prisma primitive list restriction).
+
+model Project {
+  id          String   @id @default(cuid())
+  name        String
+  description String   @default("")
+  // Logo stored as base64 data URL (e.g. "data:image/png;base64,...")
+  logoData    String
+  logoMime    String   @default("image/png")
+  // uploaded -> analyzed -> audience_saved -> research_review -> design_ready
+  status      String   @default("uploaded")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  analysis    LogoAnalysis?
+  audience    AudienceProfile?
+  research    ResearchReport?
+  design      DesignSpec?
+}
+
+model LogoAnalysis {
+  id            String   @id @default(cuid())
+  projectId     String   @unique
+  project       Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  // JSON: [{ hex, name, weight }] — pixel-extracted + VLM named colors, sorted by weight desc
+  palette       String
+  // JSON: string[] e.g. ["flat","minimal","geometric","gradient"]
+  styleTags     String
+  mood          String
+  temperature   String // warm | cool | neutral
+  industry      String
+  audienceGuess String
+  // JSON: string[]
+  trustSignals  String
+  description   String
+  createdAt     DateTime @default(now())
+}
+
+model AudienceProfile {
+  id            String   @id @default(cuid())
+  projectId     String   @unique
+  project       Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  category      String // fintech | ecommerce | health | saas | education | social | gaming | realestate | food | other
+  categoryLabel String
+  audienceDesc  String
+  platform      String // web | mobile | both
+  monetization  String // free | subscription | one_time | per_use | marketplace
+  trustNeed     String // low | medium | high | critical
+  notes         String   @default("")
+  createdAt     DateTime @default(now())
+}
+
+model ResearchReport {
+  id         String    @id @default(cuid())
+  projectId  String    @unique
+  project    Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  // needs_review | approved  (automatic research + user review before design generation)
+  status     String    @default("needs_review")
+  // JSON: ResearchSections (audiencePsychology, trustFactors, successfulPatterns, competitorLogos, colorTheory, commonMistakes)
+  sections   String
+  // JSON: [{ name, url, note }]
+  sources    String
+  reviewedAt DateTime?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+}
+
+model DesignSpec {
+  id           String   @id @default(cuid())
+  projectId    String   @unique
+  project      Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  // JSON: DesignTokens (brand, colors, paletteScale, typography, radius, shadows, buttons, trustPatterns)
+  tokens       String
+  // DESIGN.md content (markdown string)
+  markdown     String
+  matchScore   Int
+  // JSON: { verdict, issues: [{severity,title,detail}], suggestions: [{title,detail}] }
+  logoFeedback String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
