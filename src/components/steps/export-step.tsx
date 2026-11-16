@@ -1,0 +1,260 @@
+'use client'
+
+import { useState } from 'react'
+import { toast } from 'sonner'
+import { motion } from 'framer-motion'
+import {
+  Copy,
+  Download,
+  FileJson,
+  FileText,
+  Image as ImageIcon,
+  Loader2,
+  Package,
+  PackageCheck,
+  Plus,
+} from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
+import { api, copyToClipboard, downloadText } from '@/lib/client/api'
+import { TRUST_LEVELS } from '@/lib/types'
+import type { ProjectDetail } from '@/lib/types'
+
+interface ExportStepProps {
+  project: ProjectDetail
+  onStartNew: () => void
+}
+
+type BusyKind = null | 'zip' | 'md' | 'tokens' | 'metadata' | 'copy'
+type FileKind = 'md' | 'tokens' | 'metadata'
+
+const PACKAGE_CONTENTS = [
+  {
+    icon: FileText,
+    name: 'DESIGN.md',
+    detail: 'The full agent-ready brand spec: palette, typography, voice, trust patterns, do/don\u2019t rules.',
+  },
+  {
+    icon: FileJson,
+    name: 'tokens.json',
+    detail: 'Design tokens in structured JSON — colors, type scale, radius, shadows, patterns.',
+  },
+  {
+    icon: FileJson,
+    name: 'metadata.json',
+    detail: 'Project metadata: audience, research summary, match score, timestamps.',
+  },
+  {
+    icon: ImageIcon,
+    name: 'logo file',
+    detail: 'Your original logo, preserved in the package for drop-in use.',
+  },
+  {
+    icon: ImageIcon,
+    name: 'brand-sheet.svg',
+    detail: 'A one-glance brand sheet: palette swatches and type samples as a standalone SVG.',
+  },
+]
+
+const AGENT_TIPS = [
+  'Paste DESIGN.md into Cursor, v0, Lovable, or Claude Code — the agent gets your full brand context instantly.',
+  'Import tokens.json into your Tailwind config or design tool so every screen stays on-brand.',
+  'Keep the logo file in /brand and reference brand-sheet.svg for quick mockups.',
+  'Iterate anytime — regenerate the design system from step 6 without redoing research.',
+]
+
+function trustLabel(value: string): string {
+  return TRUST_LEVELS.find((t) => t.value === value)?.label ?? value
+}
+
+export function ExportStep({ project, onStartNew }: ExportStepProps) {
+  const [busy, setBusy] = useState<BusyKind>(null)
+
+  const design = project.design
+  const audience = project.audience
+  const palette = project.analysis?.palette ?? []
+  const score = design ? Math.round(design.matchScore) : null
+  const scoreTone =
+    score !== null && score >= 75
+      ? 'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-400'
+      : score !== null && score >= 50
+        ? 'border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-400'
+        : 'border-red-200 bg-red-50 text-red-700 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-400'
+
+  const run = async (kind: Exclude<BusyKind, null>, fn: () => Promise<void>) => {
+    setBusy(kind)
+    try {
+      await fn()
+    } catch (err) {
+      toast.error('Export failed', {
+        description: err instanceof Error ? err.message : 'Unknown error',
+      })
+    } finally {
+      setBusy(null)
+    }
+  }
+
+  const downloadPart = (kind: FileKind) =>
+    run(kind, async () => {
+      const data = await api.fetchExportJson(project.id)
+      if (kind === 'md') {
+        downloadText('DESIGN.md', data.design_md, 'text/markdown')
+      } else if (kind === 'tokens') {
+        downloadText('tokens.json', JSON.stringify(data.tokens, null, 2), 'application/json')
+      } else {
+        downloadText('metadata.json', JSON.stringify(data.metadata, null, 2), 'application/json')
+      }
+    })
+
+  return (
+    <div className="space-y-6">
+      {/* Summary */}
+      <motion.section
+        initial={{ opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.2 }}
+        className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-900"
+      >
+        <div className="flex items-center gap-2">
+          <span className="flex size-9 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400">
+            <PackageCheck className="size-4.5" />
+          </span>
+          <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">
+            Your brand package is ready
+          </h2>
+        </div>
+
+        <div className="mt-4 flex flex-wrap items-center gap-2">
+          {score !== null && (
+            <Badge variant="outline" className={scoreTone}>
+              Logo fit {score}/100
+            </Badge>
+          )}
+          {audience && (
+            <>
+              <Badge variant="outline" className="border-zinc-200 bg-zinc-50 text-zinc-600 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300">
+                {audience.categoryLabel}
+              </Badge>
+              <Badge variant="outline" className="border-zinc-200 bg-zinc-50 text-zinc-600 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300">
+                Trust need: {trustLabel(audience.trustNeed).split(' — ')[0]}
+              </Badge>
+            </>
+          )}
+        </div>
+
+        {palette.length > 0 && (
+          <div className="mt-4">
+            <p className="mb-1.5 text-xs font-medium uppercase tracking-wide text-zinc-400">Palette</p>
+            <div className="flex overflow-hidden rounded-xl border border-zinc-200 dark:border-zinc-800">
+              {palette.slice(0, 5).map((c) => (
+                <div
+                  key={`${c.hex}-${c.name}`}
+                  title={`${c.name} ${c.hex}`}
+                  className="h-9 flex-1"
+                  style={{ backgroundColor: c.hex }}
+                />
+              ))}
+            </div>
+          </div>
+        )}
+      </motion.section>
+
+      {/* Package contents */}
+      <section
+        aria-labelledby="contents-heading"
+        className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-900"
+      >
+        <h2 id="contents-heading" className="mb-4 flex items-center gap-2 text-sm font-semibold text-zinc-900 dark:text-zinc-50">
+          <Package className="size-4 text-zinc-400" />
+          Package contents
+        </h2>
+        <ul className="space-y-3">
+          {PACKAGE_CONTENTS.map(({ icon: Icon, name, detail }) => (
+            <li key={name} className="flex items-start gap-3">
+              <span className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-lg border border-zinc-200 bg-zinc-50 text-zinc-500 dark:border-zinc-700 dark:bg-zinc-800">
+                <Icon className="size-4" />
+              </span>
+              <div>
+                <p className="text-sm font-medium text-zinc-800 dark:text-zinc-200">{name}</p>
+                <p className="text-xs text-muted-foreground">{detail}</p>
+              </div>
+            </li>
+          ))}
+        </ul>
+      </section>
+
+      {/* Actions */}
+      <section className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+        <Button
+          onClick={() => void run('zip', () => api.downloadZip(project.id, project.name))}
+          disabled={busy !== null}
+          className="h-10 w-full bg-emerald-600 text-white hover:bg-emerald-700 sm:w-auto"
+        >
+          {busy === 'zip' ? <Loader2 className="size-4 animate-spin" /> : <Download className="size-4" />}
+          Download full package (.zip)
+        </Button>
+
+        <div className="mt-4 flex flex-wrap gap-2">
+          {(
+            [
+              ['md', 'DESIGN.md'],
+              ['tokens', 'tokens.json'],
+              ['metadata', 'metadata.json'],
+            ] as const
+          ).map(([kind, label]) => (
+            <Button key={kind} variant="outline" size="sm" disabled={busy !== null} onClick={() => void downloadPart(kind)}>
+              {busy === kind ? <Loader2 className="size-3.5 animate-spin" /> : <Download className="size-3.5" />}
+              {label}
+            </Button>
+          ))}
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={busy !== null}
+            onClick={() =>
+              void run('copy', async () => {
+                const data = await api.fetchExportJson(project.id)
+                await copyToClipboard(data.design_md)
+                toast.success('DESIGN.md copied to clipboard')
+              })
+            }
+          >
+            {busy === 'copy' ? <Loader2 className="size-3.5 animate-spin" /> : <Copy className="size-3.5" />}
+            Copy DESIGN.md
+          </Button>
+        </div>
+      </section>
+
+      {/* Agent tips */}
+      <section
+        aria-labelledby="agent-tips"
+        className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-900"
+      >
+        <h2 id="agent-tips" className="mb-4 text-sm font-semibold text-zinc-900 dark:text-zinc-50">
+          Use it with any AI agent
+        </h2>
+        <ol className="space-y-3">
+          {AGENT_TIPS.map((tip, i) => (
+            <li key={tip} className="flex items-start gap-3">
+              <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-emerald-600 text-xs font-semibold text-white">
+                {i + 1}
+              </span>
+              <p className="text-sm text-zinc-600 dark:text-zinc-300">{tip}</p>
+            </li>
+          ))}
+        </ol>
+      </section>
+
+      <div className="flex justify-center pb-2">
+        <Button
+          onClick={onStartNew}
+          variant="outline"
+          className="border-emerald-600 text-emerald-700 hover:bg-emerald-50 hover:text-emerald-800 dark:border-emerald-500 dark:text-emerald-400 dark:hover:bg-emerald-500/10"
+        >
+          <Plus className="size-4" />
+          Start a new project
+        </Button>
+      </div>
+    </div>
+  )
+}
