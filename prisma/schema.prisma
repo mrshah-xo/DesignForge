@@ -3,11 +3,11 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
-// NOTE: JSON-ish fields are stored as String (SQLite + Prisma primitive list restriction).
+// NOTE: JSON-ish fields are stored as String (works on any provider; parsed/normalized in src/lib/server/ai.ts).
 
 model Project {
   id          String   @id @default(cuid())
