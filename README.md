@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="assets/DF.png" alt="DesignForge" width="360" />
+<img src="assets/DFF.png" alt="DesignForge" width="200" />
 
 # DesignForge
 
