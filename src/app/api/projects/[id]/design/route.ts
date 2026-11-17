@@ -1,6 +1,12 @@
 // ============================================================
-// POST /api/projects/[id]/design — tokens + match report + DESIGN.md
+// POST /api/projects/[id]/design — start async design generation
+// GET  /api/projects/[id]/design?jobId= — poll job status
 // PUT  /api/projects/[id]/design — manual token/markdown edits
+//
+// Generation takes 45-90s (tokens LLM + DESIGN.md LLM), which is
+// longer than the preview gateway allows a single request to run.
+// POST therefore returns a job id immediately while the pipeline
+// runs in the background; the frontend polls GET until done.
 // ============================================================
 
 import { NextRequest, NextResponse } from 'next/server';
@@ -18,12 +24,14 @@ import {
   normalizeLogoFeedback,
   parseAnalysisRow,
   parseAudienceRow,
+  parseDesignRow,
   parseResearchRow,
   safeJsonParse,
 } from '@/lib/server/export';
+import { createJob, finishJob, findRunningJob, getJob, publicJob } from '@/lib/server/jobs';
 
 export const runtime = 'nodejs';
-export const maxDuration = 300;
+export const dynamic = 'force-dynamic';
 
 function isPlainObject(v: unknown): v is Record<string, unknown> {
   return typeof v === 'object' && v !== null && !Array.isArray(v);
@@ -53,32 +61,20 @@ function cleanMarkdown(text: string): string {
   return lines.join('\n').trim();
 }
 
-// ---------- POST: run the design pipeline ----------
+// ---------- Background pipeline ----------
 
-export async function POST(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+/** Full design pipeline: tokens + fit report + DESIGN.md, persisted to DB. */
+async function runDesignPipeline(id: string, jobId: string): Promise<void> {
   try {
-    const { id } = await params;
     const project = await db.project.findUnique({
       where: { id },
       include: { analysis: true, audience: true, research: true },
     });
-    if (!project) {
-      return NextResponse.json({ ok: false, error: 'Project not found' }, { status: 404 });
-    }
-    const analysis: AnalysisData | null = parseAnalysisRow(project.analysis);
-    const audience: AudienceData | null = parseAudienceRow(project.audience);
-    const research: ResearchData | null = parseResearchRow(project.research);
-    if (!analysis || !audience) {
-      return NextResponse.json(
-        { ok: false, error: 'Complete analysis and audience steps first' },
-        { status: 409 },
-      );
-    }
-    if (!research || research.status !== 'approved') {
-      return NextResponse.json(
-        { ok: false, error: 'Research must be reviewed and approved first' },
-        { status: 409 },
-      );
+    const analysis: AnalysisData | null = project ? parseAnalysisRow(project.analysis) : null;
+    const audience: AudienceData | null = project ? parseAudienceRow(project.audience) : null;
+    const research: ResearchData | null = project ? parseResearchRow(project.research) : null;
+    if (!project || !analysis || !audience || !research || research.status !== 'approved') {
+      throw new Error('Project prerequisites changed — complete research approval first');
     }
 
     // 1. Tokens + match analysis from the LLM.
@@ -129,12 +125,94 @@ export async function POST(_req: NextRequest, { params }: { params: Promise<{ id
       db.project.update({ where: { id }, data: { status: 'design_ready' } }),
     ]);
 
-    const design: DesignData = { tokens: normalized, markdown, matchScore, logoFeedback };
-    return NextResponse.json({ ok: true, data: { design } });
+    finishJob(jobId, 'done');
+  } catch (err) {
+    console.error(`POST /api/projects/[id]/design pipeline failed for ${id}:`, err);
+    finishJob(jobId, 'error', err instanceof Error ? err.message : 'Design generation failed');
+  }
+}
+
+// ---------- POST: start generation (returns immediately) ----------
+
+export async function POST(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  try {
+    const { id } = await params;
+    const project = await db.project.findUnique({
+      where: { id },
+      include: { analysis: true, audience: true, research: true },
+    });
+    if (!project) {
+      return NextResponse.json({ ok: false, error: 'Project not found' }, { status: 404 });
+    }
+    const analysis = parseAnalysisRow(project.analysis);
+    const audience = parseAudienceRow(project.audience);
+    const research = parseResearchRow(project.research);
+    if (!analysis || !audience) {
+      return NextResponse.json(
+        { ok: false, error: 'Complete analysis and audience steps first' },
+        { status: 409 },
+      );
+    }
+    if (!research || research.status !== 'approved') {
+      return NextResponse.json(
+        { ok: false, error: 'Research must be reviewed and approved first' },
+        { status: 409 },
+      );
+    }
+
+    // Reuse an in-flight generation instead of stacking duplicates.
+    const running = findRunningJob(id, 'design');
+    if (running) {
+      return NextResponse.json({ ok: true, data: { job: publicJob(running) } });
+    }
+
+    const job = createJob('design', id);
+    void runDesignPipeline(id, job.id);
+    return NextResponse.json({ ok: true, data: { job: publicJob(job) } });
   } catch (err) {
     console.error('POST /api/projects/[id]/design failed:', err);
     return NextResponse.json(
-      { ok: false, error: err instanceof Error ? err.message : 'Design generation failed' },
+      { ok: false, error: err instanceof Error ? err.message : 'Could not start design generation' },
+      { status: 500 },
+    );
+  }
+}
+
+// ---------- GET: poll job status ----------
+
+export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  try {
+    const { id } = await params;
+    const jobId = req.nextUrl.searchParams.get('jobId');
+    if (!jobId) {
+      return NextResponse.json({ ok: false, error: 'jobId query parameter is required' }, { status: 400 });
+    }
+    const job = getJob(jobId);
+    if (!job || job.projectId !== id) {
+      return NextResponse.json({ ok: false, error: 'Job not found' }, { status: 404 });
+    }
+
+    if (job.status === 'running') {
+      return NextResponse.json({ ok: true, data: { job: publicJob(job) } });
+    }
+    if (job.status === 'error') {
+      return NextResponse.json({ ok: true, data: { job: publicJob(job) } });
+    }
+
+    // Done — return the fresh design from the DB.
+    const project = await db.project.findUnique({ where: { id }, include: { design: true } });
+    const design = parseDesignRow(project?.design ?? null);
+    if (!design) {
+      return NextResponse.json(
+        { ok: false, error: 'Generation finished but no design was saved' },
+        { status: 500 },
+      );
+    }
+    return NextResponse.json({ ok: true, data: { job: publicJob(job), design } });
+  } catch (err) {
+    console.error('GET /api/projects/[id]/design failed:', err);
+    return NextResponse.json(
+      { ok: false, error: err instanceof Error ? err.message : 'Could not check generation status' },
       { status: 500 },
     );
   }

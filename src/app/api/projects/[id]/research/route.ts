@@ -1,6 +1,12 @@
 // ============================================================
-// POST /api/projects/[id]/research — web search + LLM research
+// POST /api/projects/[id]/research — start async research job
+// GET  /api/projects/[id]/research?jobId= — poll job status
 // PUT  /api/projects/[id]/research — user review (edit/approve)
+//
+// Real web search + LLM synthesis can take 20-90s, longer than
+// the preview gateway allows a single request to run. POST
+// returns a job id immediately while the pipeline runs in the
+// background; the frontend polls GET until done.
 // ============================================================
 
 import { NextRequest, NextResponse } from 'next/server';
@@ -13,32 +19,28 @@ import {
   normalizeSources,
   parseAnalysisRow,
   parseAudienceRow,
+  parseResearchRow,
 } from '@/lib/server/export';
+import { createJob, finishJob, findRunningJob, getJob, publicJob } from '@/lib/server/jobs';
 
 export const runtime = 'nodejs';
-export const maxDuration = 300;
+export const dynamic = 'force-dynamic';
 
 const MAX_SEARCH_RESULTS = 15;
 
-// ---------- POST: run the research pipeline ----------
+// ---------- Background pipeline ----------
 
-export async function POST(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+/** Research pipeline: 3 parallel web searches + LLM synthesis, persisted to DB. */
+async function runResearchPipeline(id: string, jobId: string): Promise<void> {
   try {
-    const { id } = await params;
     const project = await db.project.findUnique({
       where: { id },
       include: { analysis: true, audience: true },
     });
-    if (!project) {
-      return NextResponse.json({ ok: false, error: 'Project not found' }, { status: 404 });
-    }
-    const analysis: AnalysisData | null = parseAnalysisRow(project.analysis);
-    const audience: AudienceData | null = parseAudienceRow(project.audience);
-    if (!analysis || !audience) {
-      return NextResponse.json(
-        { ok: false, error: 'Complete analysis and audience steps first' },
-        { status: 409 },
-      );
+    const analysis: AnalysisData | null = project ? parseAnalysisRow(project.analysis) : null;
+    const audience: AudienceData | null = project ? parseAudienceRow(project.audience) : null;
+    if (!project || !analysis || !audience) {
+      throw new Error('Project prerequisites changed — complete analysis and audience steps first');
     }
 
     // 1. Real internet research: 3 parallel queries, dedupe, cap 15.
@@ -94,17 +96,84 @@ export async function POST(_req: NextRequest, { params }: { params: Promise<{ id
       db.project.update({ where: { id }, data: { status: 'research_review' } }),
     ]);
 
-    const research: ResearchData = {
-      status: 'needs_review',
-      sections,
-      sources,
-      reviewedAt: null,
-    };
-    return NextResponse.json({ ok: true, data: { research } });
+    finishJob(jobId, 'done');
+  } catch (err) {
+    console.error(`POST /api/projects/[id]/research pipeline failed for ${id}:`, err);
+    finishJob(jobId, 'error', err instanceof Error ? err.message : 'Research generation failed');
+  }
+}
+
+// ---------- POST: start research (returns immediately) ----------
+
+export async function POST(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  try {
+    const { id } = await params;
+    const project = await db.project.findUnique({
+      where: { id },
+      include: { analysis: true, audience: true },
+    });
+    if (!project) {
+      return NextResponse.json({ ok: false, error: 'Project not found' }, { status: 404 });
+    }
+    const analysis = parseAnalysisRow(project.analysis);
+    const audience = parseAudienceRow(project.audience);
+    if (!analysis || !audience) {
+      return NextResponse.json(
+        { ok: false, error: 'Complete analysis and audience steps first' },
+        { status: 409 },
+      );
+    }
+
+    // Reuse an in-flight run instead of stacking duplicates.
+    const running = findRunningJob(id, 'research');
+    if (running) {
+      return NextResponse.json({ ok: true, data: { job: publicJob(running) } });
+    }
+
+    const job = createJob('research', id);
+    void runResearchPipeline(id, job.id);
+    return NextResponse.json({ ok: true, data: { job: publicJob(job) } });
   } catch (err) {
     console.error('POST /api/projects/[id]/research failed:', err);
     return NextResponse.json(
-      { ok: false, error: err instanceof Error ? err.message : 'Research generation failed' },
+      { ok: false, error: err instanceof Error ? err.message : 'Could not start research' },
+      { status: 500 },
+    );
+  }
+}
+
+// ---------- GET: poll job status ----------
+
+export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  try {
+    const { id } = await params;
+    const jobId = req.nextUrl.searchParams.get('jobId');
+    if (!jobId) {
+      return NextResponse.json({ ok: false, error: 'jobId query parameter is required' }, { status: 400 });
+    }
+    const job = getJob(jobId);
+    if (!job || job.projectId !== id) {
+      return NextResponse.json({ ok: false, error: 'Job not found' }, { status: 404 });
+    }
+
+    if (job.status !== 'done') {
+      return NextResponse.json({ ok: true, data: { job: publicJob(job) } });
+    }
+
+    // Done — return the fresh research from the DB.
+    const project = await db.project.findUnique({ where: { id }, include: { research: true } });
+    const research = parseResearchRow(project?.research ?? null);
+    if (!research) {
+      return NextResponse.json(
+        { ok: false, error: 'Generation finished but no research was saved' },
+        { status: 500 },
+      );
+    }
+    return NextResponse.json({ ok: true, data: { job: publicJob(job), research } });
+  } catch (err) {
+    console.error('GET /api/projects/[id]/research failed:', err);
+    return NextResponse.json(
+      { ok: false, error: err instanceof Error ? err.message : 'Could not check research status' },
       { status: 500 },
     );
   }
