@@ -19,9 +19,7 @@ export const metadata: Metadata = {
   title: "DesignForge — Logo to DESIGN.md",
   description:
     "Turn your logo into an agent-ready design system: AI logo analysis, audience psychology research, color palettes, live component preview.",
-  icons: {
-    icon: "/logo.svg",
-  },
+  // Favicon/tab icon comes from src/app/icon.png (file convention).
 };
 
 export default function RootLayout({

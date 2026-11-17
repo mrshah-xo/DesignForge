@@ -1,7 +1,8 @@
 'use client'
 
 import { useSyncExternalStore } from 'react'
-import { Wand2, Clock, ChevronDown, Plus, Loader2 } from 'lucide-react'
+import Image from 'next/image'
+import { Clock, ChevronDown, Plus, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import {
@@ -41,23 +42,26 @@ export function Header({ projects, loadingProjects, onOpenProject, onNewProject 
     <header className="sticky top-0 z-40 border-b border-zinc-200 bg-background/80 backdrop-blur dark:border-zinc-800">
       <div className="mx-auto flex h-16 w-full max-w-7xl items-center justify-between gap-3 px-4">
         <div className="flex min-w-0 items-center gap-2.5">
-          <div
+          <span
             aria-hidden="true"
-            className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500 to-emerald-600 text-white shadow-sm"
+            className="flex h-11 shrink-0 items-center rounded-xl bg-white px-2.5 shadow-sm ring-1 ring-zinc-200 dark:ring-zinc-700"
           >
-            <Wand2 className="size-4.5" />
-          </div>
-          <div className="flex min-w-0 items-center gap-2">
-            <span className="truncate text-base font-bold tracking-tight text-zinc-900 dark:text-zinc-50">
-              DesignForge
-            </span>
-            <Badge
-              variant="outline"
-              className="hidden shrink-0 border-zinc-200 bg-zinc-50 text-zinc-500 sm:inline-flex dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-400"
-            >
-              Logo → DESIGN.md
-            </Badge>
-          </div>
+            <Image
+              src="/dfl-logo.png"
+              alt=""
+              width={980}
+              height={475}
+              priority
+              className="h-8 w-auto"
+            />
+          </span>
+          <span className="sr-only">DesignForge</span>
+          <Badge
+            variant="outline"
+            className="hidden shrink-0 border-zinc-200 bg-zinc-50 text-zinc-500 sm:inline-flex dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-400"
+          >
+            Logo → DESIGN.md
+          </Badge>
         </div>
 
         <nav aria-label="Project actions" className="flex items-center gap-2">
