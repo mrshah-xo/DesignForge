@@ -233,8 +233,18 @@ export async function visionJson<T>(prompt: string, base64Png: string, attempts 
   );
 }
 
-/** Plain-text LLM call (used for DESIGN.md markdown), with retries. */
-export async function llmText(system: string, user: string, attempts = 2): Promise<string> {
+/**
+ * Plain-text LLM call (used for DESIGN.md markdown), with retries.
+ * maxTokens defaults high (16k) because the corpus-trained DESIGN.md runs
+ * 300-450 lines; model-side defaults truncate around 4k tokens and cut
+ * the document before its final sections.
+ */
+export async function llmText(
+  system: string,
+  user: string,
+  attempts = 2,
+  maxTokens = 16000,
+): Promise<string> {
   const zai = await getZAI();
   let lastError: unknown = null;
   for (let attempt = 0; attempt < attempts; attempt++) {
@@ -245,6 +255,7 @@ export async function llmText(system: string, user: string, attempts = 2): Promi
           { role: 'user', content: user },
         ],
         thinking: { type: 'disabled' },
+        max_tokens: maxTokens,
       });
       const text: string = res?.choices?.[0]?.message?.content ?? '';
       if (!text.trim()) throw new Error('Model returned an empty response.');
