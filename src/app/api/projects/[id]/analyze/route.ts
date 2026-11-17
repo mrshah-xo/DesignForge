@@ -1,6 +1,11 @@
 // ============================================================
-// POST /api/projects/[id]/analyze — VLM logo analysis + pixel
-// palette merge. Deletes any derived DesignSpec.
+// POST /api/projects/[id]/analyze — start async VLM analysis job
+// GET  /api/projects/[id]/analyze?jobId= — poll job status
+//
+// Vision analysis (VLM + pixel palette merge) can take 15-60s+.
+// POST returns a job id immediately while the pipeline runs in
+// the background; the frontend polls GET until done. Deletes any
+// derived DesignSpec on completion.
 // ============================================================
 
 import { NextRequest, NextResponse } from 'next/server';
@@ -15,9 +20,10 @@ import {
   normalizeLogo,
   rgbDistance,
 } from '@/lib/server/logo-image';
+import { createJob, finishJob, findRunningJob, getJob, publicJob } from '@/lib/server/jobs';
 
 export const runtime = 'nodejs';
-export const maxDuration = 300;
+export const dynamic = 'force-dynamic';
 
 const HEX_RE = /^#[0-9A-Fa-f]{6}$/;
 
@@ -43,18 +49,20 @@ function normalizeVlmPalette(raw: unknown): PaletteColor[] {
   return out.slice(0, 10);
 }
 
-export async function POST(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+// ---------- Background pipeline ----------
+
+/** Analysis pipeline: VLM + deterministic pixel palette merge, persisted to DB. */
+async function runAnalysisPipeline(id: string, jobId: string): Promise<void> {
   try {
-    const { id } = await params;
-    const project = await db.project.findUnique({ where: { id }, include: { design: true } });
+    const project = await db.project.findUnique({ where: { id } });
     if (!project) {
-      return NextResponse.json({ ok: false, error: 'Project not found' }, { status: 404 });
+      throw new Error('Project not found');
     }
 
     // 1. Normalize the logo into a clean PNG for the VLM.
     const { base64 } = await normalizeLogo(project.logoData);
 
-    // 2. VLM analysis (non-fatal: pixel palette + fallbacks keep the request alive).
+    // 2. VLM analysis (non-fatal: pixel palette + fallbacks keep the pipeline alive).
     let vlm: Record<string, unknown> = {};
     try {
       vlm = await visionJson<Record<string, unknown>>(
@@ -131,11 +139,87 @@ export async function POST(_req: NextRequest, { params }: { params: Promise<{ id
       db.project.update({ where: { id }, data: { status: 'analyzed' } }),
     ]);
 
-    return NextResponse.json({ ok: true, data: { analysis } });
+    finishJob(jobId, 'done');
+  } catch (err) {
+    console.error(`POST /api/projects/[id]/analyze pipeline failed for ${id}:`, err);
+    finishJob(jobId, 'error', err instanceof Error ? err.message : 'Logo analysis failed');
+  }
+}
+
+// ---------- POST: start analysis (returns immediately) ----------
+
+export async function POST(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  try {
+    const { id } = await params;
+    const exists = await db.project.findUnique({ where: { id }, select: { id: true } });
+    if (!exists) {
+      return NextResponse.json({ ok: false, error: 'Project not found' }, { status: 404 });
+    }
+
+    // Reuse an in-flight run instead of stacking duplicates.
+    const running = findRunningJob(id, 'analyze');
+    if (running) {
+      return NextResponse.json({ ok: true, data: { job: publicJob(running) } });
+    }
+
+    const job = createJob('analyze', id);
+    void runAnalysisPipeline(id, job.id);
+    return NextResponse.json({ ok: true, data: { job: publicJob(job) } });
   } catch (err) {
     console.error('POST /api/projects/[id]/analyze failed:', err);
     return NextResponse.json(
-      { ok: false, error: err instanceof Error ? err.message : 'Logo analysis failed' },
+      { ok: false, error: err instanceof Error ? err.message : 'Could not start logo analysis' },
+      { status: 500 },
+    );
+  }
+}
+
+// ---------- GET: poll job status ----------
+
+export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  try {
+    const { id } = await params;
+    const jobId = req.nextUrl.searchParams.get('jobId');
+    if (!jobId) {
+      return NextResponse.json({ ok: false, error: 'jobId query parameter is required' }, { status: 400 });
+    }
+    const job = getJob(jobId);
+    if (!job || job.projectId !== id) {
+      return NextResponse.json({ ok: false, error: 'Job not found' }, { status: 404 });
+    }
+
+    if (job.status !== 'done') {
+      return NextResponse.json({ ok: true, data: { job: publicJob(job) } });
+    }
+
+    // Done — return the fresh analysis from the DB.
+    const project = await db.project.findUnique({ where: { id }, include: { analysis: true } });
+    if (!project || !project.analysis) {
+      return NextResponse.json(
+        { ok: false, error: 'Generation finished but no analysis was saved' },
+        { status: 500 },
+      );
+    }
+    return NextResponse.json({
+      ok: true,
+      data: {
+        job: publicJob(job),
+        analysis: {
+          palette: JSON.parse(project.analysis.palette) as PaletteColor[],
+          styleTags: JSON.parse(project.analysis.styleTags) as string[],
+          mood: project.analysis.mood,
+          temperature: project.analysis.temperature,
+          industry: project.analysis.industry,
+          audienceGuess: project.analysis.audienceGuess,
+          trustSignals: JSON.parse(project.analysis.trustSignals) as string[],
+          description: project.analysis.description,
+        },
+      },
+    });
+  } catch (err) {
+    console.error('GET /api/projects/[id]/analyze failed:', err);
+    return NextResponse.json(
+      { ok: false, error: err instanceof Error ? err.message : 'Could not check analysis status' },
       { status: 500 },
     );
   }

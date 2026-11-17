@@ -296,3 +296,15 @@ export interface ApiEnvelope<T> {
   data?: T;
   error?: string;
 }
+
+// Async generation job (started via POST, polled via GET?jobId=...)
+export type JobKind = 'analyze' | 'research' | 'design';
+export type JobStatus = 'running' | 'done' | 'error';
+
+export interface JobInfo {
+  id: string;
+  kind: JobKind;
+  projectId: string;
+  status: JobStatus;
+  error: string | null;
+}

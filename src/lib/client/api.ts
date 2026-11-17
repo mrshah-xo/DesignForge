@@ -10,6 +10,7 @@ import type {
   AudienceData,
   DesignData,
   DesignTokens,
+  JobInfo,
   ProjectDetail,
   ProjectSummary,
   ResearchData,
@@ -92,6 +93,40 @@ export async function copyToClipboard(text: string): Promise<void> {
   ta.remove()
 }
 
+// ---------- Async job helper ----------
+
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
+
+const JOB_TIMEOUT_MS = 6 * 60 * 1000 // generous ceiling; pipelines take 20-90s
+const POLL_INTERVAL_MS = 1500
+
+/**
+ * Run a long AI pipeline as an async job: POST starts it and returns a job
+ * id immediately (no request stays open long enough for the preview gateway
+ * to cut it), then a short GET is polled until done/error.
+ */
+async function runJob<T>(
+  startUrl: string,
+  pollUrl: (jobId: string) => string,
+  extract: (data: { job: JobInfo } & Record<string, unknown>) => T,
+  startedLabel: string,
+): Promise<T> {
+  const start = await request<{ job: JobInfo }>(startUrl, { method: 'POST' })
+  const jobId = start.job?.id
+  if (!jobId) throw new Error(`${startedLabel}: no job id returned`)
+
+  const deadline = Date.now() + JOB_TIMEOUT_MS
+  while (Date.now() < deadline) {
+    await sleep(POLL_INTERVAL_MS)
+    const data = await request<{ job: JobInfo } & Record<string, unknown>>(pollUrl(jobId))
+    const status = data.job?.status
+    if (status === 'done') return extract(data)
+    if (status === 'error') throw new Error(data.job?.error || 'Generation failed')
+    // still running — keep polling
+  }
+  throw new Error(`${startedLabel} timed out — please try again.`)
+}
+
 // ---------- API functions ----------
 export const api = {
   createProject(form: FormData): Promise<ProjectSummary> {
@@ -107,12 +142,14 @@ export const api = {
     return request<ProjectDetail>(`/api/projects/${encodeURIComponent(id)}`)
   },
 
-  async analyzeProject(id: string): Promise<AnalysisData> {
-    const data = await request<{ analysis: AnalysisData }>(
-      `/api/projects/${encodeURIComponent(id)}/analyze`,
-      { method: 'POST' }
+  analyzeProject(id: string): Promise<AnalysisData> {
+    const base = `/api/projects/${encodeURIComponent(id)}/analyze`
+    return runJob<AnalysisData>(
+      base,
+      (jobId) => `${base}?jobId=${encodeURIComponent(jobId)}`,
+      (data) => data.analysis as AnalysisData,
+      'Logo analysis',
     )
-    return data.analysis
   },
 
   async saveAudience(id: string, audience: AudienceData): Promise<AudienceData> {
@@ -127,12 +164,14 @@ export const api = {
     return data.audience
   },
 
-  async runResearch(id: string): Promise<ResearchData> {
-    const data = await request<{ research: ResearchData }>(
-      `/api/projects/${encodeURIComponent(id)}/research`,
-      { method: 'POST' }
+  runResearch(id: string): Promise<ResearchData> {
+    const base = `/api/projects/${encodeURIComponent(id)}/research`
+    return runJob<ResearchData>(
+      base,
+      (jobId) => `${base}?jobId=${encodeURIComponent(jobId)}`,
+      (data) => data.research as ResearchData,
+      'Research',
     )
-    return data.research
   },
 
   async saveResearch(
@@ -150,12 +189,14 @@ export const api = {
     return data.research
   },
 
-  async generateDesign(id: string): Promise<DesignData> {
-    const data = await request<{ design: DesignData }>(
-      `/api/projects/${encodeURIComponent(id)}/design`,
-      { method: 'POST' }
+  generateDesign(id: string): Promise<DesignData> {
+    const base = `/api/projects/${encodeURIComponent(id)}/design`
+    return runJob<DesignData>(
+      base,
+      (jobId) => `${base}?jobId=${encodeURIComponent(jobId)}`,
+      (data) => data.design as DesignData,
+      'Design generation',
     )
-    return data.design
   },
 
   async saveDesign(
