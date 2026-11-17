@@ -15,7 +15,7 @@ const RADIUS = 54
 const CIRCUMFERENCE = 2 * Math.PI * RADIUS
 
 function scoreColor(score: number): { stroke: string; text: string; label: string } {
-  if (score >= 75) return { stroke: '#059669', text: 'text-emerald-600 dark:text-emerald-400', label: 'Strong fit' }
+  if (score >= 75) return { stroke: '#10B981', text: 'text-emerald-600 dark:text-emerald-400', label: 'Strong fit' }
   if (score >= 50) return { stroke: '#d97706', text: 'text-amber-600 dark:text-amber-400', label: 'Workable fit' }
   return { stroke: '#dc2626', text: 'text-red-600 dark:text-red-400', label: 'Needs attention' }
 }
@@ -23,7 +23,7 @@ function scoreColor(score: number): { stroke: string; text: string; label: strin
 const SEVERITY_STYLES: Record<string, string> = {
   high: 'border-red-200 bg-red-50 text-red-700 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-400',
   medium: 'border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-400',
-  low: 'border-zinc-200 bg-zinc-50 text-zinc-600 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300',
+  low: 'border-border bg-muted text-muted-foreground',
 }
 
 export function MatchStep({ design, onContinue }: MatchStepProps) {
@@ -36,7 +36,7 @@ export function MatchStep({ design, onContinue }: MatchStepProps) {
   return (
     <div className="space-y-6">
       {/* Score gauge */}
-      <section className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+      <section className="rounded-lg border border-border bg-card p-6 shadow-sm">
         <div className="flex flex-col items-center gap-4 sm:flex-row sm:items-center sm:gap-8">
           <div className="relative size-44 shrink-0" role="img" aria-label={`Logo fit score ${score} out of 100`}>
             <svg viewBox="0 0 128 128" className="size-full -rotate-90">
@@ -46,7 +46,7 @@ export function MatchStep({ design, onContinue }: MatchStepProps) {
                 r={RADIUS}
                 fill="none"
                 strokeWidth="12"
-                className="stroke-zinc-100 dark:stroke-zinc-800"
+                className="stroke-gray-100 dark:stroke-gray-800"
               />
               <motion.circle
                 cx="64"
@@ -68,8 +68,8 @@ export function MatchStep({ design, onContinue }: MatchStepProps) {
             </div>
           </div>
           <div className="min-w-0">
-            <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">Logo fit report</h2>
-            <p className="mt-2 text-sm leading-relaxed text-zinc-600 dark:text-zinc-300">
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-50">Logo fit report</h2>
+            <p className="mt-2 text-sm leading-relaxed text-gray-600 dark:text-gray-300">
               {feedback?.verdict ?? 'No verdict available.'}
             </p>
           </div>
@@ -79,7 +79,7 @@ export function MatchStep({ design, onContinue }: MatchStepProps) {
       {/* Issues */}
       {issues.length > 0 && (
         <section aria-labelledby="issues-heading">
-          <h2 id="issues-heading" className="mb-3 text-lg font-semibold text-zinc-900 dark:text-zinc-50">
+          <h2 id="issues-heading" className="mb-3 text-lg font-semibold text-gray-900 dark:text-gray-50">
             Issues to know about
           </h2>
           <ul className="space-y-3">
@@ -89,12 +89,12 @@ export function MatchStep({ design, onContinue }: MatchStepProps) {
                 initial={{ opacity: 0, y: 6 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.2, delay: 0.04 * i }}
-                className="flex items-start gap-3 rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900"
+                className="flex items-start gap-3 rounded-lg border border-border bg-card p-4 shadow-sm"
               >
                 <AlertTriangle className="mt-0.5 size-4 shrink-0 text-amber-500" />
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-2">
-                    <span className="text-sm font-medium text-zinc-900 dark:text-zinc-50">{issue.title}</span>
+                    <span className="text-sm font-medium text-gray-900 dark:text-gray-50">{issue.title}</span>
                     <Badge
                       variant="outline"
                       className={SEVERITY_STYLES[issue.severity] ?? SEVERITY_STYLES.low}
@@ -113,7 +113,7 @@ export function MatchStep({ design, onContinue }: MatchStepProps) {
       {/* Suggestions */}
       {suggestions.length > 0 && (
         <section aria-labelledby="suggestions-heading">
-          <h2 id="suggestions-heading" className="mb-3 text-lg font-semibold text-zinc-900 dark:text-zinc-50">
+          <h2 id="suggestions-heading" className="mb-3 text-lg font-semibold text-gray-900 dark:text-gray-50">
             Suggestions
           </h2>
           <div className="grid gap-4 sm:grid-cols-2">
@@ -123,13 +123,13 @@ export function MatchStep({ design, onContinue }: MatchStepProps) {
                 initial={{ opacity: 0, y: 6 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.2, delay: 0.04 * i }}
-                className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900"
+                className="rounded-lg border border-border bg-card p-4 shadow-sm"
               >
                 <div className="flex items-center gap-2">
-                  <span className="flex size-7 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400">
+                  <span className="flex size-7 items-center justify-center rounded-lg bg-ember-50 text-ember-600 dark:bg-ember-500/10 dark:text-ember-400">
                     <Lightbulb className="size-3.5" />
                   </span>
-                  <span className="text-sm font-medium text-zinc-900 dark:text-zinc-50">{s.title}</span>
+                  <span className="text-sm font-medium text-gray-900 dark:text-gray-50">{s.title}</span>
                 </div>
                 <p className="mt-2 text-sm text-muted-foreground">{s.detail}</p>
               </motion.div>
@@ -138,13 +138,13 @@ export function MatchStep({ design, onContinue }: MatchStepProps) {
         </section>
       )}
 
-      <p className="rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-xs text-muted-foreground dark:border-zinc-800 dark:bg-zinc-800/60">
+      <p className="rounded-lg border border-border bg-muted/60 px-4 py-3 text-xs text-muted-foreground">
         Suggestions are advisory — the generated palette already adapts your logo&apos;s DNA to this
         audience.
       </p>
 
       <div className="flex justify-end">
-        <Button onClick={onContinue} className="bg-emerald-600 text-white hover:bg-emerald-700">
+        <Button onClick={onContinue} className="bg-primary text-primary-foreground hover:bg-ember-600">
           Continue → Design system
           <ArrowRight className="size-4" />
         </Button>

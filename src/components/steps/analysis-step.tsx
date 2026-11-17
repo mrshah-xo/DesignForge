@@ -21,9 +21,9 @@ interface AnalysisStepProps {
 function WeightBar({ weight, max }: { weight: number; max: number }) {
   const pct = max > 0 ? Math.max(4, Math.round((weight / max) * 100)) : 0
   return (
-    <div className="h-1.5 w-full overflow-hidden rounded-full bg-zinc-100 dark:bg-zinc-800">
+    <div className="h-1.5 w-full overflow-hidden rounded-full bg-gray-100 dark:bg-gray-800">
       <motion.div
-        className="h-full rounded-full bg-zinc-900 dark:bg-zinc-300"
+        className="h-full rounded-full bg-gray-900 dark:bg-gray-300"
         initial={{ width: 0 }}
         animate={{ width: `${pct}%` }}
         transition={{ duration: 0.5, ease: 'easeOut' }}
@@ -42,12 +42,12 @@ function InfoCard({
   value: string
 }) {
   return (
-    <div className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
-      <div className="flex items-center gap-1.5 text-xs font-medium uppercase tracking-wide text-zinc-400">
+    <div className="rounded-lg border border-border bg-card p-4 shadow-sm">
+      <div className="flex items-center gap-1.5 text-xs font-medium uppercase tracking-wide text-gray-400">
         {icon}
         {label}
       </div>
-      <p className="mt-1.5 text-sm font-medium text-zinc-800 dark:text-zinc-200">{value || '—'}</p>
+      <p className="mt-1.5 text-sm font-medium text-gray-800 dark:text-gray-200">{value || '—'}</p>
     </div>
   )
 }
@@ -57,24 +57,24 @@ export function AnalysisStep({ project, analyzing, onRunAnalysis, onContinue }: 
   if (!project.analysis) {
     if (analyzing) {
       return (
-        <div className="rounded-2xl border border-zinc-200 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+        <div className="rounded-lg border border-border bg-card shadow-sm">
           <DesignGenerating messages={ANALYSIS_MESSAGES} subtext="Our vision model is reading your logo — this can take up to 40 seconds." />
         </div>
       )
     }
     return (
-      <section className="rounded-2xl border border-zinc-200 bg-white p-8 text-center shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
-        <div className="mx-auto flex size-12 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400">
+      <section className="rounded-lg border border-border bg-card p-8 text-center shadow-sm">
+        <div className="mx-auto flex size-12 items-center justify-center rounded-lg bg-ember-50 text-ember-600 dark:bg-ember-500/10 dark:text-ember-400">
           <ScanSearch className="size-5" />
         </div>
-        <h2 className="mt-4 text-lg font-semibold text-zinc-900 dark:text-zinc-50">Run AI analysis</h2>
+        <h2 className="mt-4 text-lg font-semibold text-gray-900 dark:text-gray-50">Run AI analysis</h2>
         <p className="mx-auto mt-1 max-w-md text-sm text-muted-foreground">
           Our vision model will extract your logo&apos;s palette, style, mood, industry signals and
           trust cues. This takes up to 40 seconds.
         </p>
         <Button
           onClick={() => void onRunAnalysis()}
-          className="mt-6 bg-emerald-600 text-white hover:bg-emerald-700"
+          className="mt-6 bg-primary text-primary-foreground hover:bg-ember-600"
         >
           <ScanSearch className="size-4" />
           Run AI analysis
@@ -92,7 +92,7 @@ export function AnalysisStep({ project, analyzing, onRunAnalysis, onContinue }: 
       {/* Palette */}
       <section aria-labelledby="palette-heading">
         <div className="mb-3 flex items-baseline justify-between">
-          <h2 id="palette-heading" className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">
+          <h2 id="palette-heading" className="text-lg font-semibold text-gray-900 dark:text-gray-50">
             Color signature
           </h2>
           <span className="text-xs text-muted-foreground">Click a hex to copy</span>
@@ -111,22 +111,22 @@ export function AnalysisStep({ project, analyzing, onRunAnalysis, onContinue }: 
                   .then(() => toast.success(`Copied ${color.hex}`, { description: color.name }))
                   .catch(() => toast.error('Could not copy to clipboard'))
               }}
-              className="overflow-hidden rounded-2xl border border-zinc-200 bg-white text-left shadow-sm transition-shadow hover:shadow-md dark:border-zinc-800 dark:bg-zinc-900"
+              className="overflow-hidden rounded-lg border border-border bg-card text-left shadow-sm transition-shadow hover:shadow-md"
               aria-label={`Copy ${color.hex} (${color.name})`}
             >
               <div className="h-16 w-full" style={{ backgroundColor: color.hex }} />
               <div className="space-y-1.5 p-3">
                 <div className="flex items-center justify-between gap-2">
-                  <span className="truncate text-xs font-medium text-zinc-800 dark:text-zinc-200">
+                  <span className="truncate text-xs font-medium text-gray-800 dark:text-gray-200">
                     {color.name}
                   </span>
-                  <code className="shrink-0 rounded bg-zinc-100 px-1.5 py-0.5 font-mono text-[10px] text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300">
+                  <code className="shrink-0 rounded bg-gray-100 px-1.5 py-0.5 font-mono text-[10px] text-gray-600 dark:bg-gray-800 dark:text-gray-300">
                     {color.hex}
                   </code>
                 </div>
                 <div className="flex items-center gap-2">
                   <WeightBar weight={color.weight} max={maxWeight} />
-                  <span className="w-9 shrink-0 text-right text-[10px] text-zinc-400">
+                  <span className="w-9 shrink-0 text-right text-[10px] text-gray-400">
                     {Math.round(color.weight)}%
                   </span>
                 </div>
@@ -139,7 +139,7 @@ export function AnalysisStep({ project, analyzing, onRunAnalysis, onContinue }: 
       {/* Style tags */}
       {analysis.styleTags.length > 0 && (
         <section aria-labelledby="style-heading">
-          <h2 id="style-heading" className="mb-3 text-lg font-semibold text-zinc-900 dark:text-zinc-50">
+          <h2 id="style-heading" className="mb-3 text-lg font-semibold text-gray-900 dark:text-gray-50">
             Style tags
           </h2>
           <div className="flex flex-wrap gap-2">
@@ -147,7 +147,7 @@ export function AnalysisStep({ project, analyzing, onRunAnalysis, onContinue }: 
               <Badge
                 key={tag}
                 variant="outline"
-                className="border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-400"
+                className="border-ember-200 bg-ember-50 text-ember-700 dark:border-ember-500/30 dark:bg-ember-500/10 dark:text-ember-400"
               >
                 {tag}
               </Badge>
@@ -159,22 +159,22 @@ export function AnalysisStep({ project, analyzing, onRunAnalysis, onContinue }: 
       {/* Mood / temperature / industry / audience guess */}
       <section className="grid gap-4 sm:grid-cols-2">
         <InfoCard
-          icon={<Smile className="size-3.5 text-emerald-600 dark:text-emerald-400" />}
+          icon={<Smile className="size-3.5 text-ember-600 dark:text-ember-400" />}
           label="Mood"
           value={analysis.mood}
         />
         <InfoCard
-          icon={<Sun className="size-3.5 text-emerald-600 dark:text-emerald-400" />}
+          icon={<Sun className="size-3.5 text-ember-600 dark:text-ember-400" />}
           label="Temperature"
           value={analysis.temperature}
         />
         <InfoCard
-          icon={<ScanSearch className="size-3.5 text-emerald-600 dark:text-emerald-400" />}
+          icon={<ScanSearch className="size-3.5 text-ember-600 dark:text-ember-400" />}
           label="Industry guess"
           value={analysis.industry}
         />
         <InfoCard
-          icon={<ShieldCheck className="size-3.5 text-emerald-600 dark:text-emerald-400" />}
+          icon={<ShieldCheck className="size-3.5 text-ember-600 dark:text-ember-400" />}
           label="Audience guess"
           value={analysis.audienceGuess}
         />
@@ -183,16 +183,16 @@ export function AnalysisStep({ project, analyzing, onRunAnalysis, onContinue }: 
       {/* Trust signals */}
       {analysis.trustSignals.length > 0 && (
         <section aria-labelledby="trust-heading">
-          <h2 id="trust-heading" className="mb-3 text-lg font-semibold text-zinc-900 dark:text-zinc-50">
+          <h2 id="trust-heading" className="mb-3 text-lg font-semibold text-gray-900 dark:text-gray-50">
             Trust signals
           </h2>
           <ul className="space-y-2">
             {analysis.trustSignals.map((signal) => (
               <li
                 key={signal}
-                className="flex items-start gap-2.5 rounded-xl border border-zinc-200 bg-white p-3 text-sm text-zinc-700 shadow-sm dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-300"
+                className="flex items-start gap-2.5 rounded-lg border border-border bg-card p-3 text-sm text-gray-700 shadow-sm dark:text-gray-300"
               >
-                <ShieldCheck className="mt-0.5 size-4 shrink-0 text-emerald-600 dark:text-emerald-400" />
+                <ShieldCheck className="mt-0.5 size-4 shrink-0 text-ember-600 dark:text-ember-400" />
                 {signal}
               </li>
             ))}
@@ -202,10 +202,10 @@ export function AnalysisStep({ project, analyzing, onRunAnalysis, onContinue }: 
 
       {/* Description */}
       <section aria-labelledby="desc-heading">
-        <h2 id="desc-heading" className="mb-3 text-lg font-semibold text-zinc-900 dark:text-zinc-50">
+        <h2 id="desc-heading" className="mb-3 text-lg font-semibold text-gray-900 dark:text-gray-50">
           What we see
         </h2>
-        <p className="rounded-2xl border border-zinc-200 bg-white p-5 text-sm leading-relaxed text-zinc-700 shadow-sm dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-300">
+        <p className="rounded-lg border border-border bg-card p-5 text-sm leading-relaxed text-gray-700 shadow-sm dark:text-gray-300">
           {analysis.description}
         </p>
       </section>
@@ -213,7 +213,7 @@ export function AnalysisStep({ project, analyzing, onRunAnalysis, onContinue }: 
       <div className="flex justify-end">
         <Button
           onClick={onContinue}
-          className="bg-emerald-600 text-white hover:bg-emerald-700"
+          className="bg-primary text-primary-foreground hover:bg-ember-600"
         >
           Continue → Who will use it
           <ArrowRight className="size-4" />

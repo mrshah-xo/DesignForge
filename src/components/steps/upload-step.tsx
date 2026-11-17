@@ -31,7 +31,7 @@ export function UploadStep({ project, busy, onReplace }: UploadStepProps) {
   return (
     <div className="space-y-6">
       <section aria-labelledby="current-logo">
-        <h2 id="current-logo" className="mb-1 text-lg font-semibold text-zinc-900 dark:text-zinc-50">
+        <h2 id="current-logo" className="mb-1 text-lg font-semibold text-gray-900 dark:text-gray-50">
           Current logo
         </h2>
         <p className="mb-4 text-sm text-muted-foreground">
@@ -41,22 +41,22 @@ export function UploadStep({ project, busy, onReplace }: UploadStepProps) {
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.2 }}
-          className="flex flex-col gap-5 rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-900 sm:flex-row sm:items-center"
+          className="flex flex-col gap-5 rounded-lg border border-border bg-card p-6 shadow-sm sm:flex-row sm:items-center"
         >
           <img
             src={project.logoDataUrl}
             alt={`${project.name} logo`}
-            className="size-40 shrink-0 self-center rounded-2xl border border-zinc-100 bg-[repeating-conic-gradient(#fafafa_0%_25%,#f4f4f5_0%_50%)] bg-[length:16px_16px] object-contain p-2 dark:border-zinc-800 sm:self-start"
+            className="size-40 shrink-0 self-center rounded-lg border border-gray-100 bg-[repeating-conic-gradient(#fafafa_0%_25%,#f4f4f5_0%_50%)] bg-[length:16px_16px] object-contain p-2 dark:border-gray-800 sm:self-start"
           />
           <div className="min-w-0 flex-1 space-y-2">
             <div className="flex flex-wrap items-center gap-2">
-              <h3 className="text-base font-semibold text-zinc-900 dark:text-zinc-50">{project.name}</h3>
+              <h3 className="text-base font-semibold text-gray-900 dark:text-gray-50">{project.name}</h3>
               <StatusBadge status={project.status} />
             </div>
             {project.description && (
               <p className="text-sm text-muted-foreground">{project.description}</p>
             )}
-            <p className="text-xs text-zinc-400">
+            <p className="text-xs text-gray-400">
               Uploaded {new Date(project.createdAt).toLocaleString()}
             </p>
           </div>
@@ -64,15 +64,15 @@ export function UploadStep({ project, busy, onReplace }: UploadStepProps) {
       </section>
 
       <section aria-labelledby="replace-logo">
-        <h2 id="replace-logo" className="mb-1 text-lg font-semibold text-zinc-900 dark:text-zinc-50">
+        <h2 id="replace-logo" className="mb-1 text-lg font-semibold text-gray-900 dark:text-gray-50">
           Replace logo
         </h2>
         <p className="mb-4 text-sm text-muted-foreground">
           Upload a different logo to start a fresh run of the wizard.
         </p>
 
-        <div className="space-y-4 rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
-          <div className="flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-400">
+        <div className="space-y-4 rounded-lg border border-border bg-card p-6 shadow-sm">
+          <div className="flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-400">
             <AlertTriangle className="mt-0.5 size-3.5 shrink-0" />
             <p>
               Re-uploading re-runs AI analysis and invalidates any research, fit report and design
@@ -111,7 +111,7 @@ export function UploadStep({ project, busy, onReplace }: UploadStepProps) {
               void onReplace(file, name.trim(), description.trim())
             }}
             disabled={!canSubmit}
-            className="w-full bg-emerald-600 text-white hover:bg-emerald-700 sm:w-auto"
+            className="w-full bg-primary text-primary-foreground hover:bg-ember-600 sm:w-auto"
           >
             {busy ? (
               <>

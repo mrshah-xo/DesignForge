@@ -1,12 +1,20 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Geist_Mono, Inter, Space_Grotesk } from "next/font/google";
 import { ThemeProvider } from "next-themes";
 import "./globals.css";
 import { Toaster } from "@/components/ui/sonner";
 import { GOOGLE_FONTS_HREF } from "@/lib/types";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+// Design Forge typography: Space Grotesk headings (600+ only), Inter body.
+// The Google Fonts stylesheet below additionally serves the live-preview
+// font options (Manrope, Poppins, Sora, ...) used by generated previews.
+const inter = Inter({
+  variable: "--font-inter",
+  subsets: ["latin"],
+});
+
+const spaceGrotesk = Space_Grotesk({
+  variable: "--font-space-grotesk",
   subsets: ["latin"],
 });
 
@@ -16,12 +24,10 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "DesignForge — Logo to DESIGN.md",
+  title: "Design Forge",
   description:
     "Turn your logo into an agent-ready design system: AI logo analysis, audience psychology research, color palettes, live component preview.",
-  icons: {
-    icon: "/logo.svg",
-  },
+  // Favicon/tab icon comes from src/app/icon.png (file convention).
 };
 
 export default function RootLayout({
@@ -35,7 +41,7 @@ export default function RootLayout({
         <link rel="stylesheet" href={GOOGLE_FONTS_HREF} />
       </head>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-background text-foreground`}
+        className={`${inter.variable} ${spaceGrotesk.variable} ${geistMono.variable} antialiased bg-background text-foreground`}
       >
         <ThemeProvider
           attribute="class"

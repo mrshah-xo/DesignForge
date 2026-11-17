@@ -113,13 +113,13 @@ export function ExportStep({ project, onStartNew }: ExportStepProps) {
         initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.2 }}
-        className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-900"
+        className="rounded-lg border border-border bg-card p-6 shadow-sm"
       >
         <div className="flex items-center gap-2">
-          <span className="flex size-9 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400">
+          <span className="flex size-9 items-center justify-center rounded-lg bg-ember-50 text-ember-600 dark:bg-ember-500/10 dark:text-ember-400">
             <PackageCheck className="size-4.5" />
           </span>
-          <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-50">
             Your brand package is ready
           </h2>
         </div>
@@ -132,10 +132,10 @@ export function ExportStep({ project, onStartNew }: ExportStepProps) {
           )}
           {audience && (
             <>
-              <Badge variant="outline" className="border-zinc-200 bg-zinc-50 text-zinc-600 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300">
+              <Badge variant="outline" className="border-border bg-muted text-muted-foreground">
                 {audience.categoryLabel}
               </Badge>
-              <Badge variant="outline" className="border-zinc-200 bg-zinc-50 text-zinc-600 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300">
+              <Badge variant="outline" className="border-border bg-muted text-muted-foreground">
                 Trust need: {trustLabel(audience.trustNeed).split(' — ')[0]}
               </Badge>
             </>
@@ -144,8 +144,8 @@ export function ExportStep({ project, onStartNew }: ExportStepProps) {
 
         {palette.length > 0 && (
           <div className="mt-4">
-            <p className="mb-1.5 text-xs font-medium uppercase tracking-wide text-zinc-400">Palette</p>
-            <div className="flex overflow-hidden rounded-xl border border-zinc-200 dark:border-zinc-800">
+            <p className="mb-1.5 text-xs font-medium uppercase tracking-wide text-gray-400">Palette</p>
+            <div className="flex overflow-hidden rounded-lg border border-border">
               {palette.slice(0, 5).map((c) => (
                 <div
                   key={`${c.hex}-${c.name}`}
@@ -162,20 +162,20 @@ export function ExportStep({ project, onStartNew }: ExportStepProps) {
       {/* Package contents */}
       <section
         aria-labelledby="contents-heading"
-        className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-900"
+        className="rounded-lg border border-border bg-card p-6 shadow-sm"
       >
-        <h2 id="contents-heading" className="mb-4 flex items-center gap-2 text-sm font-semibold text-zinc-900 dark:text-zinc-50">
-          <Package className="size-4 text-zinc-400" />
+        <h2 id="contents-heading" className="mb-4 flex items-center gap-2 text-sm font-semibold text-gray-900 dark:text-gray-50">
+          <Package className="size-4 text-gray-400" />
           Package contents
         </h2>
         <ul className="space-y-3">
           {PACKAGE_CONTENTS.map(({ icon: Icon, name, detail }) => (
             <li key={name} className="flex items-start gap-3">
-              <span className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-lg border border-zinc-200 bg-zinc-50 text-zinc-500 dark:border-zinc-700 dark:bg-zinc-800">
+              <span className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-lg border border-border bg-muted text-gray-500">
                 <Icon className="size-4" />
               </span>
               <div>
-                <p className="text-sm font-medium text-zinc-800 dark:text-zinc-200">{name}</p>
+                <p className="text-sm font-medium text-gray-800 dark:text-gray-200">{name}</p>
                 <p className="text-xs text-muted-foreground">{detail}</p>
               </div>
             </li>
@@ -184,11 +184,11 @@ export function ExportStep({ project, onStartNew }: ExportStepProps) {
       </section>
 
       {/* Actions */}
-      <section className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+      <section className="rounded-lg border border-border bg-card p-6 shadow-sm">
         <Button
           onClick={() => void run('zip', () => api.downloadZip(project.id, project.name))}
           disabled={busy !== null}
-          className="h-10 w-full bg-emerald-600 text-white hover:bg-emerald-700 sm:w-auto"
+          className="h-10 w-full bg-primary text-primary-foreground hover:bg-ember-600 sm:w-auto"
         >
           {busy === 'zip' ? <Loader2 className="size-4 animate-spin" /> : <Download className="size-4" />}
           Download full package (.zip)
@@ -228,18 +228,18 @@ export function ExportStep({ project, onStartNew }: ExportStepProps) {
       {/* Agent tips */}
       <section
         aria-labelledby="agent-tips"
-        className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-900"
+        className="rounded-lg border border-border bg-card p-6 shadow-sm"
       >
-        <h2 id="agent-tips" className="mb-4 text-sm font-semibold text-zinc-900 dark:text-zinc-50">
+        <h2 id="agent-tips" className="mb-4 text-sm font-semibold text-gray-900 dark:text-gray-50">
           Use it with any AI agent
         </h2>
         <ol className="space-y-3">
           {AGENT_TIPS.map((tip, i) => (
             <li key={tip} className="flex items-start gap-3">
-              <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-emerald-600 text-xs font-semibold text-white">
+              <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-ember-600 text-xs font-semibold text-white">
                 {i + 1}
               </span>
-              <p className="text-sm text-zinc-600 dark:text-zinc-300">{tip}</p>
+              <p className="text-sm text-gray-600 dark:text-gray-300">{tip}</p>
             </li>
           ))}
         </ol>
@@ -249,7 +249,7 @@ export function ExportStep({ project, onStartNew }: ExportStepProps) {
         <Button
           onClick={onStartNew}
           variant="outline"
-          className="border-emerald-600 text-emerald-700 hover:bg-emerald-50 hover:text-emerald-800 dark:border-emerald-500 dark:text-emerald-400 dark:hover:bg-emerald-500/10"
+          className="border-ember-600 text-ember-700 hover:bg-ember-50 hover:text-ember-800 dark:border-ember-500 dark:text-ember-400 dark:hover:bg-ember-500/10"
         >
           <Plus className="size-4" />
           Start a new project

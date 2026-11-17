@@ -21,7 +21,7 @@ export function LogoThumb({ src, name, size = 24, className = '' }: LogoThumbPro
         alt={name ? `${name} logo` : 'Project logo'}
         width={size}
         height={size}
-        className={`shrink-0 rounded-md border border-zinc-200 bg-white object-contain dark:border-zinc-700 ${className}`}
+        className={`shrink-0 rounded-md border border-border bg-card object-contain dark:border-gray-700 ${className}`}
         style={{ width: size, height: size }}
       />
     )
@@ -29,7 +29,7 @@ export function LogoThumb({ src, name, size = 24, className = '' }: LogoThumbPro
   return (
     <div
       aria-hidden="true"
-      className={`flex shrink-0 items-center justify-center rounded-md border border-zinc-200 bg-zinc-50 text-zinc-400 dark:border-zinc-700 dark:bg-zinc-800 ${className}`}
+      className={`flex shrink-0 items-center justify-center rounded-md border border-border bg-muted text-muted-foreground ${className}`}
       style={{ width: size, height: size }}
     >
       <Wand2 style={{ width: size * 0.5, height: size * 0.5 }} />

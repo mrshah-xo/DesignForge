@@ -51,6 +51,11 @@ bun scripts/migrate-sqlite-to-pg.ts --sqlite db/custom.db
    | `DATABASE_URL` | the **pooled** Prisma Postgres URL (`pooled.db.prisma.io`) — best for serverless |
    | `DATABASE_URL_POOLED` | same pooled URL (reference) |
    | `POSTGRES_URL` / `PRISMA_DATABASE_URL` | direct URL (reference) |
+   | `ZAI_BASE_URL` | Z.AI gateway base URL (from `ai-gateway.json`) |
+   | `ZAI_API_KEY` | Z.AI API key (from `ai-gateway.json`) |
+   | `ZAI_CHAT_ID` / `ZAI_USER_ID` / `ZAI_TOKEN` | optional remaining fields from `ai-gateway.json` |
+
+   The AI features (logo analysis, research, design generation) need the `ZAI_*` variables on Vercel — there is no config file on the serverless filesystem. Locally they are read from `/etc/ai-gateway.json` automatically, so nothing to set.
 
 3. Apply the schema to the database once (from your machine or a CI step):
 

@@ -46,7 +46,7 @@ export function DesignGenerating({ messages, subtext = DEFAULT_SUBTEXT }: Design
             mask: 'radial-gradient(farthest-side, transparent calc(100% - 6px), #000 calc(100% - 5px))',
           }}
         />
-        <div className="absolute inset-3 rounded-full border border-zinc-200 dark:border-zinc-700" />
+        <div className="absolute inset-3 rounded-full border border-border" />
       </div>
 
       <div className="min-h-[3.5rem]">
@@ -57,7 +57,7 @@ export function DesignGenerating({ messages, subtext = DEFAULT_SUBTEXT }: Design
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -6 }}
             transition={{ duration: 0.25 }}
-            className="text-base font-medium text-zinc-900 dark:text-zinc-50"
+            className="text-base font-medium text-gray-900 dark:text-gray-50"
           >
             {message}
           </motion.p>
@@ -69,7 +69,7 @@ export function DesignGenerating({ messages, subtext = DEFAULT_SUBTEXT }: Design
         {[0, 1, 2].map((i) => (
           <motion.span
             key={i}
-            className="size-1.5 rounded-full bg-emerald-500"
+            className="size-1.5 rounded-full bg-ember-500"
             animate={{ y: [0, -4, 0], opacity: [0.5, 1, 0.5] }}
             transition={{ duration: 0.9, repeat: Infinity, delay: i * 0.15, ease: 'easeInOut' }}
           />

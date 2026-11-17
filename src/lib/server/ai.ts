@@ -51,6 +51,42 @@ export function resetZAI(): void {
 }
 
 /**
+ * Build the SDK client. On normal dev environments the credentials come from the
+ * provisioned /etc/ai-gateway.json (ZAI.create() file lookup). On deployments
+ * like Vercel there is no writable config location, so the same JSON shape
+ * is supplied through environment variables instead:
+ *
+ *   ZAI_BASE_URL   (required with ZAI_API_KEY)
+ *   ZAI_API_KEY    (required with ZAI_BASE_URL)
+ *   ZAI_CHAT_ID    (optional)
+ *   ZAI_USER_ID    (optional)
+ *   ZAI_TOKEN      (optional)
+ */
+function createZAI(): Promise<ZAI> {
+  const baseUrl = process.env.ZAI_BASE_URL;
+  const apiKey = process.env.ZAI_API_KEY;
+  if (baseUrl && apiKey) {
+    return Promise.resolve(
+      new ZAI({
+        baseUrl,
+        apiKey,
+        chatId: process.env.ZAI_CHAT_ID || undefined,
+        userId: process.env.ZAI_USER_ID || undefined,
+        token: process.env.ZAI_TOKEN || undefined,
+      })
+    );
+  }
+  return ZAI.create().catch((err) => {
+    const detail = err instanceof Error ? err.message : String(err);
+    throw new Error(
+      'Z.AI credentials unavailable — set ZAI_BASE_URL and ZAI_API_KEY environment variables ' +
+        '(required on Vercel/serverless; see README) or provide a valid ai-gateway.json in the ' +
+        `project, home directory, or /etc. Original error: ${detail}`
+    );
+  });
+}
+
+/**
  * Create (once) and return the shared ZAI SDK instance.
  * - Failed creations are never cached: the next call retries automatically.
  * - Instances older than ZAI_TTL_MS are recreated to pick up refreshed tokens.
@@ -58,7 +94,7 @@ export function resetZAI(): void {
 export async function getZAI(): Promise<ZAI> {
   if (!zaiPromise || Date.now() - zaiCreatedAt > ZAI_TTL_MS) {
     zaiCreatedAt = Date.now();
-    zaiPromise = ZAI.create().catch((err) => {
+    zaiPromise = createZAI().catch((err) => {
       // Do not cache failures — allow the next call to create a fresh instance.
       zaiPromise = null;
       throw err;
@@ -197,8 +233,18 @@ export async function visionJson<T>(prompt: string, base64Png: string, attempts 
   );
 }
 
-/** Plain-text LLM call (used for DESIGN.md markdown), with retries. */
-export async function llmText(system: string, user: string, attempts = 2): Promise<string> {
+/**
+ * Plain-text LLM call (used for DESIGN.md markdown), with retries.
+ * maxTokens defaults high (16k) because the corpus-trained DESIGN.md runs
+ * 300-450 lines; model-side defaults truncate around 4k tokens and cut
+ * the document before its final sections.
+ */
+export async function llmText(
+  system: string,
+  user: string,
+  attempts = 2,
+  maxTokens = 16000,
+): Promise<string> {
   const zai = await getZAI();
   let lastError: unknown = null;
   for (let attempt = 0; attempt < attempts; attempt++) {
@@ -209,6 +255,7 @@ export async function llmText(system: string, user: string, attempts = 2): Promi
           { role: 'user', content: user },
         ],
         thinking: { type: 'disabled' },
+        max_tokens: maxTokens,
       });
       const text: string = res?.choices?.[0]?.message?.content ?? '';
       if (!text.trim()) throw new Error('Model returned an empty response.');

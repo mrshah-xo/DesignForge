@@ -171,17 +171,17 @@ export function ResearchStep({
   if (!research) {
     if (researching) {
       return (
-        <div className="rounded-2xl border border-zinc-200 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+        <div className="rounded-lg border border-border bg-card shadow-sm">
           <DesignGenerating messages={RESEARCH_MESSAGES} />
         </div>
       )
     }
     return (
-      <section className="rounded-2xl border border-zinc-200 bg-white p-8 text-center shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
-        <div className="mx-auto flex size-12 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400">
+      <section className="rounded-lg border border-border bg-card p-8 text-center shadow-sm">
+        <div className="mx-auto flex size-12 items-center justify-center rounded-lg bg-ember-50 text-ember-600 dark:bg-ember-500/10 dark:text-ember-400">
           <BookOpenCheck className="size-5" />
         </div>
-        <h2 className="mt-4 text-lg font-semibold text-zinc-900 dark:text-zinc-50">
+        <h2 className="mt-4 text-lg font-semibold text-gray-900 dark:text-gray-50">
           Automatic audience research
         </h2>
         <p className="mx-auto mt-1 max-w-lg text-sm text-muted-foreground">
@@ -191,7 +191,7 @@ export function ResearchStep({
         </p>
         <Button
           onClick={() => void onRunResearch()}
-          className="mt-6 bg-emerald-600 text-white hover:bg-emerald-700"
+          className="mt-6 bg-primary text-primary-foreground hover:bg-ember-600"
         >
           <Sparkles className="size-4" />
           Run automatic research
@@ -203,7 +203,7 @@ export function ResearchStep({
   // ---------- Design generation in progress ----------
   if (generating) {
     return (
-      <div className="rounded-2xl border border-zinc-200 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+      <div className="rounded-lg border border-border bg-card shadow-sm">
         <DesignGenerating messages={DESIGN_MESSAGES} />
       </div>
     )
@@ -241,11 +241,11 @@ export function ResearchStep({
         initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.2 }}
-        className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm dark:border-zinc-800 dark:bg-zinc-900"
+        className="rounded-lg border border-border bg-card p-5 shadow-sm"
       >
         <div className="mb-3 flex items-start justify-between gap-3">
           <div>
-            <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">{label}</h3>
+            <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-50">{label}</h3>
             <p className="mt-0.5 text-xs text-muted-foreground">{blurb}</p>
           </div>
           <Button
@@ -296,7 +296,7 @@ export function ResearchStep({
                     {draft.brands.map((brand) => (
                       <div
                         key={brand._id}
-                        className="grid gap-2 rounded-xl border border-zinc-200 p-3 dark:border-zinc-800 sm:grid-cols-[1fr_1fr] lg:grid-cols-[1fr_1.4fr_1.6fr]"
+                        className="grid gap-2 rounded-lg border border-border p-3 sm:grid-cols-[1fr_1fr] lg:grid-cols-[1fr_1.4fr_1.6fr]"
                       >
                         <Input
                           aria-label="Brand name"
@@ -360,12 +360,12 @@ export function ResearchStep({
           </div>
         ) : (
           <div className="space-y-2">
-            <h4 className="text-sm font-medium text-zinc-800 dark:text-zinc-200">
+            <h4 className="text-sm font-medium text-gray-800 dark:text-gray-200">
               {key === 'competitorLogos'
                 ? draft.sections.competitorLogos.title
                 : draft.sections[key].title}
             </h4>
-            <p className="whitespace-pre-line text-sm leading-relaxed text-zinc-600 dark:text-zinc-300">
+            <p className="whitespace-pre-line text-sm leading-relaxed text-gray-600 dark:text-gray-300">
               {key === 'competitorLogos'
                 ? draft.sections.competitorLogos.body
                 : draft.sections[key].body}
@@ -376,11 +376,11 @@ export function ResearchStep({
                   {draft.brands.map((brand) => (
                     <li
                       key={brand._id}
-                      className="rounded-xl border border-zinc-200 bg-zinc-50 p-3 text-xs dark:border-zinc-800 dark:bg-zinc-800/60"
+                      className="rounded-lg border border-border bg-muted p-3 text-xs"
                     >
-                      <p className="font-semibold text-zinc-800 dark:text-zinc-200">{brand.name}</p>
-                      <p className="mt-0.5 text-zinc-500 dark:text-zinc-400">{brand.colors}</p>
-                      <p className="mt-1 text-zinc-600 dark:text-zinc-300">{brand.approach}</p>
+                      <p className="font-semibold text-gray-800 dark:text-gray-200">{brand.name}</p>
+                      <p className="mt-0.5 text-gray-500 dark:text-gray-400">{brand.colors}</p>
+                      <p className="mt-1 text-gray-600 dark:text-gray-300">{brand.approach}</p>
                     </li>
                   ))}
                 </ul>
@@ -391,9 +391,9 @@ export function ResearchStep({
                   {draft.sections[key].bullets.map((b, i) => (
                     <li
                       key={`${key}-bullet-${i}`}
-                      className="flex items-start gap-2 text-sm text-zinc-600 dark:text-zinc-300"
+                      className="flex items-start gap-2 text-sm text-gray-600 dark:text-gray-300"
                     >
-                      <span className="mt-[7px] size-1.5 shrink-0 rounded-full bg-emerald-500" aria-hidden="true" />
+                      <span className="mt-[7px] size-1.5 shrink-0 rounded-full bg-ember-500" aria-hidden="true" />
                       {b}
                     </li>
                   ))}
@@ -411,7 +411,7 @@ export function ResearchStep({
       {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2">
-          <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">Research report</h2>
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-50">Research report</h2>
           <StatusBadge status={research.status} />
           {approved && research.reviewedAt && (
             <span className="text-xs text-muted-foreground">
@@ -427,7 +427,7 @@ export function ResearchStep({
       </div>
 
       {approved && !designExists && (
-        <p className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-400">
+        <p className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-400">
           Research is approved — generate the design system to continue.
         </p>
       )}
@@ -435,17 +435,17 @@ export function ResearchStep({
       {/* Sources */}
       {draft.sources.length > 0 && (
         <section aria-labelledby="sources-heading">
-          <h2 id="sources-heading" className="mb-2 text-sm font-semibold text-zinc-900 dark:text-zinc-50">
+          <h2 id="sources-heading" className="mb-2 text-sm font-semibold text-gray-900 dark:text-gray-50">
             Sources ({draft.sources.length})
           </h2>
           <ul className="max-h-96 space-y-2 overflow-y-auto df-scroll pr-1">
             {draft.sources.map((source, i) => (
               <li
                 key={`${source.url}-${i}`}
-                className="flex items-start justify-between gap-3 rounded-xl border border-zinc-200 bg-white p-3 shadow-sm dark:border-zinc-800 dark:bg-zinc-900"
+                className="flex items-start justify-between gap-3 rounded-lg border border-border bg-card p-3 shadow-sm"
               >
                 <div className="min-w-0">
-                  <p className="truncate text-sm font-medium text-zinc-800 dark:text-zinc-200">
+                  <p className="truncate text-sm font-medium text-gray-800 dark:text-gray-200">
                     {source.name}
                   </p>
                   {source.note && (
@@ -457,7 +457,7 @@ export function ResearchStep({
                   target="_blank"
                   rel="noreferrer"
                   aria-label={`Open source: ${source.name}`}
-                  className="flex size-8 shrink-0 items-center justify-center rounded-lg text-zinc-400 transition-colors hover:bg-zinc-100 hover:text-emerald-700 dark:hover:bg-zinc-800 dark:hover:text-emerald-400"
+                  className="flex size-8 shrink-0 items-center justify-center rounded-lg text-gray-400 transition-colors hover:bg-gray-100 hover:text-ember-700 dark:hover:bg-gray-800 dark:hover:text-ember-400"
                 >
                   <ExternalLink className="size-4" />
                 </a>
@@ -486,7 +486,7 @@ export function ResearchStep({
           <Button
             onClick={() => void onGenerateDesign()}
             disabled={approving || generating || savingEdits}
-            className="bg-emerald-600 text-white hover:bg-emerald-700"
+            className="bg-primary text-primary-foreground hover:bg-ember-600"
           >
             {approving ? <Loader2 className="size-4 animate-spin" /> : <Sparkles className="size-4" />}
             Generate design
@@ -495,7 +495,7 @@ export function ResearchStep({
           <Button
             onClick={() => void onApproveAndGenerate(payload)}
             disabled={approving || generating || savingEdits}
-            className="bg-emerald-600 text-white hover:bg-emerald-700"
+            className="bg-primary text-primary-foreground hover:bg-ember-600"
           >
             {approving ? <Loader2 className="size-4 animate-spin" /> : <CheckCircle2 className="size-4" />}
             Approve research & generate design
@@ -503,7 +503,7 @@ export function ResearchStep({
         )}
       </div>
 
-      <p className="flex items-start gap-2 rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3 text-xs text-muted-foreground dark:border-zinc-800 dark:bg-zinc-800/60">
+      <p className="flex items-start gap-2 rounded-lg border border-border bg-muted/60 px-4 py-3 text-xs text-muted-foreground">
         <Lightbulb className="mt-0.5 size-3.5 shrink-0 text-amber-500" />
         Editing sections is encouraged — approving uses exactly what you see here. Nothing is
         generated until you approve.

@@ -117,7 +117,7 @@ export function DesignStep({
   // ---------- Regeneration in progress ----------
   if (generating) {
     return (
-      <div className="rounded-2xl border border-zinc-200 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+      <div className="rounded-lg border border-border bg-card shadow-sm">
         <DesignGenerating messages={DESIGN_MESSAGES} />
       </div>
     )
@@ -125,7 +125,7 @@ export function DesignStep({
 
   if (!tokens || !serverDesign) {
     return (
-      <p className="rounded-2xl border border-zinc-200 bg-white p-8 text-center text-sm text-muted-foreground shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+      <p className="rounded-lg border border-border bg-card p-8 text-center text-sm text-muted-foreground shadow-sm">
         No design system generated yet — approve the research in step 4 first.
       </p>
     )
@@ -193,8 +193,8 @@ export function DesignStep({
       <TabsContent value="editor" className="mt-2">
         <div className="max-h-[720px] space-y-5 overflow-y-auto df-scroll pr-1">
           {/* Brand */}
-          <section className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
-            <h3 className="mb-4 text-sm font-semibold text-zinc-900 dark:text-zinc-50">Brand</h3>
+          <section className="rounded-lg border border-border bg-card p-5 shadow-sm">
+            <h3 className="mb-4 text-sm font-semibold text-gray-900 dark:text-gray-50">Brand</h3>
             <div className="space-y-4">
               <div className="space-y-1.5">
                 <Label htmlFor="brand-name">Brand name</Label>
@@ -241,7 +241,7 @@ export function DesignStep({
                       <Badge
                         key={trait}
                         variant="outline"
-                        className="border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-400"
+                        className="border-ember-200 bg-ember-50 text-ember-700 dark:border-ember-500/30 dark:bg-ember-500/10 dark:text-ember-400"
                       >
                         {trait}
                       </Badge>
@@ -253,9 +253,9 @@ export function DesignStep({
           </section>
 
           {/* Colors */}
-          <section className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
-            <h3 className="mb-2 text-sm font-semibold text-zinc-900 dark:text-zinc-50">Colors</h3>
-            <div className="divide-y divide-zinc-100 dark:divide-zinc-800">
+          <section className="rounded-lg border border-border bg-card p-5 shadow-sm">
+            <h3 className="mb-2 text-sm font-semibold text-gray-900 dark:text-gray-50">Colors</h3>
+            <div className="divide-y divide-gray-100 dark:divide-gray-800">
               {COLOR_ROLES.map((role) => {
                 const draft = hexDrafts[role] ?? tokens.colors?.[role]?.hex ?? ''
                 return (
@@ -299,8 +299,8 @@ export function DesignStep({
           </section>
 
           {/* Typography */}
-          <section className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
-            <h3 className="mb-4 text-sm font-semibold text-zinc-900 dark:text-zinc-50">Typography</h3>
+          <section className="rounded-lg border border-border bg-card p-5 shadow-sm">
+            <h3 className="mb-4 text-sm font-semibold text-gray-900 dark:text-gray-50">Typography</h3>
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-1.5">
                 <Label htmlFor="font-heading">Heading family</Label>
@@ -374,8 +374,8 @@ export function DesignStep({
           </section>
 
           {/* Radius */}
-          <section className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
-            <h3 className="mb-4 text-sm font-semibold text-zinc-900 dark:text-zinc-50">Corner radius</h3>
+          <section className="rounded-lg border border-border bg-card p-5 shadow-sm">
+            <h3 className="mb-4 text-sm font-semibold text-gray-900 dark:text-gray-50">Corner radius</h3>
             <div className="space-y-4">
               {(['sm', 'md', 'lg'] as const).map((key) => {
                 const px = parsePx(tokens.radius?.[key], key === 'sm' ? 6 : key === 'md' ? 10 : 16)
@@ -385,7 +385,7 @@ export function DesignStep({
                       <Label className="text-xs uppercase tracking-wide text-muted-foreground">
                         Radius {key}
                       </Label>
-                      <span className="font-mono text-xs text-zinc-500">{px}px</span>
+                      <span className="font-mono text-xs text-gray-500">{px}px</span>
                     </div>
                     <Slider
                       min={0}
@@ -402,8 +402,8 @@ export function DesignStep({
           </section>
 
           {/* Shadows */}
-          <section className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
-            <h3 className="mb-4 text-sm font-semibold text-zinc-900 dark:text-zinc-50">Shadows</h3>
+          <section className="rounded-lg border border-border bg-card p-5 shadow-sm">
+            <h3 className="mb-4 text-sm font-semibold text-gray-900 dark:text-gray-50">Shadows</h3>
             <div className="space-y-1.5">
               <Label htmlFor="shadow-preset">Shadow preset (applies to all elevations)</Label>
               <Select value={currentShadowPreset} onValueChange={applyShadowPreset}>
@@ -422,8 +422,8 @@ export function DesignStep({
           </section>
 
           {/* Trust patterns */}
-          <section className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
-            <h3 className="mb-4 text-sm font-semibold text-zinc-900 dark:text-zinc-50">Trust patterns</h3>
+          <section className="rounded-lg border border-border bg-card p-5 shadow-sm">
+            <h3 className="mb-4 text-sm font-semibold text-gray-900 dark:text-gray-50">Trust patterns</h3>
             <div className="space-y-1.5">
               <Label htmlFor="trust-patterns">
                 Trust-building patterns <span className="font-normal text-muted-foreground">(one per line)</span>
@@ -446,7 +446,7 @@ export function DesignStep({
           <Button
             onClick={() => void onSaveTokens(tokens)}
             disabled={saving || generating}
-            className="bg-emerald-600 text-white hover:bg-emerald-700"
+            className="bg-primary text-primary-foreground hover:bg-ember-600"
           >
             {saving ? <Loader2 className="size-4 animate-spin" /> : <Save className="size-4" />}
             Save changes
@@ -473,7 +473,7 @@ export function DesignStep({
               <AlertDialogFooter>
                 <AlertDialogCancel>Cancel</AlertDialogCancel>
                 <AlertDialogAction
-                  className="bg-emerald-600 text-white hover:bg-emerald-700"
+                  className="bg-primary text-primary-foreground hover:bg-ember-600"
                   onClick={() => void onRegenerate()}
                 >
                   Regenerate
@@ -506,7 +506,7 @@ export function DesignStep({
             <TabsTrigger value="source">Source</TabsTrigger>
           </TabsList>
           <TabsContent value="rendered" className="mt-3">
-            <div className="df-md max-h-[720px] overflow-y-auto df-scroll rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+            <div className="df-md max-h-[720px] overflow-y-auto df-scroll rounded-lg border border-border bg-card p-6 shadow-sm">
               <ReactMarkdown>{markdown}</ReactMarkdown>
             </div>
           </TabsContent>
@@ -521,7 +521,7 @@ export function DesignStep({
               <Button
                 onClick={() => void onSaveMarkdown(markdown)}
                 disabled={saving || generating || markdown === serverDesign.markdown}
-                className="bg-emerald-600 text-white hover:bg-emerald-700"
+                className="bg-primary text-primary-foreground hover:bg-ember-600"
               >
                 {saving ? <Loader2 className="size-4 animate-spin" /> : <Save className="size-4" />}
                 Save markdown

@@ -186,7 +186,7 @@ export function LivePreview({ tokens }: LivePreviewProps) {
 
   return (
     <div
-      className="max-h-[720px] overflow-y-auto rounded-2xl border df-scroll"
+      className="max-h-[720px] overflow-y-auto rounded-lg border df-scroll"
       style={{ borderColor: border }}
       role="region"
       aria-label="Live component preview built from design tokens"

@@ -38,15 +38,15 @@ export function Stepper({ currentStep, stepState, onSelect }: StepperProps) {
               onClick={() => onSelect(step.id)}
               className={cn(
                 'flex shrink-0 items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition-colors',
-                st === 'locked' && 'cursor-not-allowed border-zinc-200 text-zinc-300 dark:border-zinc-800 dark:text-zinc-600',
+                st === 'locked' && 'cursor-not-allowed border-border text-gray-300 dark:text-gray-600',
                 st !== 'locked' && isCurrent(step.id) &&
-                  'border-emerald-600 bg-emerald-50 text-emerald-700 dark:border-emerald-500 dark:bg-emerald-500/10 dark:text-emerald-400',
+                  'border-ember-600 bg-ember-50 text-ember-700 dark:border-ember-500 dark:bg-ember-500/10 dark:text-ember-400',
                 st === 'done' && !isCurrent(step.id) &&
-                  'border-zinc-200 bg-white text-zinc-700 hover:border-emerald-300 hover:text-emerald-700 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:border-emerald-500/50',
+                  'border-border bg-card text-gray-700 hover:border-ember-300 hover:text-ember-700 dark:text-gray-300 dark:hover:border-ember-500/50',
               )}
             >
               {st === 'done' && !isCurrent(step.id) ? (
-                <span className="flex size-4 items-center justify-center rounded-full bg-emerald-600 text-white">
+                <span className="flex size-4 items-center justify-center rounded-full bg-ember-600 text-white">
                   <Check className="size-2.5" aria-hidden="true" />
                 </span>
               ) : (
@@ -71,23 +71,23 @@ export function Stepper({ currentStep, stepState, onSelect }: StepperProps) {
                 aria-current={current ? 'step' : undefined}
                 onClick={() => onSelect(step.id)}
                 className={cn(
-                  'group flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm transition-colors',
-                  st === 'locked' && 'cursor-not-allowed text-zinc-300 dark:text-zinc-600',
+                  'group flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm transition-colors',
+                  st === 'locked' && 'cursor-not-allowed text-gray-300 dark:text-gray-600',
                   st !== 'locked' && current &&
-                    'bg-emerald-50 font-semibold text-emerald-800 ring-1 ring-emerald-600/60 dark:bg-emerald-500/10 dark:text-emerald-300 dark:ring-emerald-500/60',
+                    'bg-ember-50 font-semibold text-ember-800 ring-1 ring-ember-600/60 dark:bg-ember-500/10 dark:text-ember-300 dark:ring-ember-500/60',
                   st === 'done' && !current &&
-                    'text-zinc-600 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-800/60',
+                    'text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800/60',
                   st !== 'locked' && !current && st !== 'done' &&
-                    'text-zinc-700 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-800/60',
+                    'text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800/60',
                 )}
               >
                 <span
                   className={cn(
                     'flex size-7 shrink-0 items-center justify-center rounded-full border',
-                    st === 'done' && 'border-emerald-600 bg-emerald-600 text-white',
-                    st === 'current' && 'border-emerald-600 bg-white text-emerald-700 dark:bg-zinc-900 dark:text-emerald-400',
-                    st === 'locked' && 'border-zinc-200 text-zinc-300 dark:border-zinc-800 dark:text-zinc-600',
-                    st !== 'locked' && st !== 'done' && st !== 'current' && 'border-zinc-300 text-zinc-500 dark:border-zinc-700',
+                    st === 'done' && 'border-ember-600 bg-ember-600 text-white',
+                    st === 'current' && 'border-ember-600 bg-card text-ember-700 dark:text-ember-400',
+                    st === 'locked' && 'border-border text-gray-300 dark:text-gray-600',
+                    st !== 'locked' && st !== 'done' && st !== 'current' && 'border-gray-300 text-gray-500 dark:border-gray-700',
                   )}
                 >
                   {st === 'done' ? (
