@@ -57,6 +57,12 @@ bun scripts/migrate-sqlite-to-pg.ts --sqlite db/custom.db
 
 4. Deploy. No other configuration is needed — the app reads only `DATABASE_URL` at runtime.
 
+### Troubleshooting deployments
+
+- **"Error validating datasource `db`: the URL must start with the protocol `file:`"** — the deployment was built from a commit before the PostgreSQL migration (its Prisma client was generated with `provider = "sqlite"`). Trigger a **redeploy** on the latest commit; the build runs `prisma generate` so the client always matches the committed schema.
+- **"Environment variable not found: DATABASE_URL"** — set the `DATABASE_URL` environment variable in Vercel project settings (use the pooled URL).
+- Use the **pooled** URL (`pooled.db.prisma.io`) for `DATABASE_URL` on Vercel/serverless; the direct URL is for long-running servers only.
+
 > Secrets never live in the repo: `.env` is git-ignored; use `.env.example` as the template.
 
 ## API overview
