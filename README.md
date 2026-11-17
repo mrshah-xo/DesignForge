@@ -1,4 +1,7 @@
-# DesignForge — Logo to DESIGN.md
+<div align="center">
+  <img src="assets/DF.png" alt="logo" width="500" />
+
+  # DesignForge<br>Logo to DESIGN.md
 
 Upload a logo → the system analyzes its colors and design language → you describe who will use the app → it runs automatic audience research (with a review gate) → checks logo/scene fit → builds a color-theory palette → delivers **DESIGN.md**, design tokens, a live component preview and a full export package.
 
