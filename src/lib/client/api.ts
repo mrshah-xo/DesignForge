@@ -18,6 +18,7 @@ import type {
   ResearchSource,
   ApiEnvelope,
 } from '@/lib/types'
+import type { ParsedBrief } from '@/lib/brief'
 
 // ---------- Export JSON payload ----------
 export interface ExportJson {
@@ -131,6 +132,16 @@ async function runJob<T>(
 export const api = {
   createProject(form: FormData): Promise<ProjectSummary> {
     return request<ProjectSummary>('/api/projects', { method: 'POST', body: form })
+  },
+
+  /** LLM extraction fallback for the "Want a prompt?" brief flow. */
+  async parseBrief(text: string): Promise<{ brief: ParsedBrief }> {
+    const data = await request<{ brief: ParsedBrief }>('/api/parse-brief', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text }),
+    })
+    return data
   },
 
   async listProjects(): Promise<ProjectSummary[]> {

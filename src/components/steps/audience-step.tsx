@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { toast } from 'sonner'
-import { ArrowRight, Loader2, Users } from 'lucide-react'
+import { ArrowRight, Loader2, Sparkles, Users } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -35,6 +35,8 @@ import {
 interface AudienceStepProps {
   project: ProjectDetail
   saving: boolean
+  /** Audience fields parsed from an agent brief on the landing page. */
+  prefill?: Partial<AudienceData> | null
   onSave: (audience: AudienceData) => Promise<void>
 }
 
@@ -43,16 +45,46 @@ const MONEY_MONETIZATION = ['subscription', 'per_use', 'marketplace']
 const categoryLabel = (value: CategoryValue): string =>
   CATEGORIES.find((c) => c.value === value)?.label ?? value
 
-export function AudienceStep({ project, saving, onSave }: AudienceStepProps) {
+export function AudienceStep({ project, saving, prefill, onSave }: AudienceStepProps) {
   const existing = project.audience
 
-  const [category, setCategory] = useState<CategoryValue | ''>(existing?.category ?? '')
-  const [audienceDesc, setAudienceDesc] = useState(existing?.audienceDesc ?? '')
-  const [platform, setPlatform] = useState(existing?.platform ?? PLATFORMS[0].value)
-  const [monetization, setMonetization] = useState(existing?.monetization ?? MONETIZATION[0].value)
-  const [trustNeed, setTrustNeed] = useState(existing?.trustNeed ?? TRUST_LEVELS[1].value)
-  const [notes, setNotes] = useState(existing?.notes ?? '')
+  // Prefill values come from the "Want a prompt?" brief on the landing page.
+  // They are validated against the option lists in case the agent guessed.
+  const prefillCategory =
+    prefill?.category && CATEGORIES.some((c) => c.value === prefill.category)
+      ? prefill.category
+      : ''
+  const prefillPlatform =
+    prefill?.platform && PLATFORMS.some((p) => p.value === prefill.platform)
+      ? prefill.platform
+      : PLATFORMS[0].value
+  const prefillMonetization =
+    prefill?.monetization && MONETIZATION.some((m) => m.value === prefill.monetization)
+      ? prefill.monetization
+      : MONETIZATION[0].value
+  const prefillTrust =
+    prefill?.trustNeed && TRUST_LEVELS.some((t) => t.value === prefill.trustNeed)
+      ? prefill.trustNeed
+      : TRUST_LEVELS[1].value
+
+  const [category, setCategory] = useState<CategoryValue | ''>(existing?.category ?? prefillCategory)
+  const [audienceDesc, setAudienceDesc] = useState(existing?.audienceDesc ?? prefill?.audienceDesc ?? '')
+  const [platform, setPlatform] = useState(existing?.platform ?? prefillPlatform)
+  const [monetization, setMonetization] = useState(existing?.monetization ?? prefillMonetization)
+  const [trustNeed, setTrustNeed] = useState(existing?.trustNeed ?? prefillTrust)
+  const [notes, setNotes] = useState(existing?.notes ?? prefill?.notes ?? '')
   const [confirmOpen, setConfirmOpen] = useState(false)
+
+  const prefillApplied =
+    !existing &&
+    Boolean(
+      prefillCategory ||
+        prefill?.audienceDesc ||
+        prefill?.notes ||
+        (prefill?.platform && PLATFORMS.some((p) => p.value === prefill.platform)) ||
+        (prefill?.monetization && MONETIZATION.some((m) => m.value === prefill.monetization)) ||
+        (prefill?.trustNeed && TRUST_LEVELS.some((t) => t.value === prefill.trustNeed)),
+    )
 
   // The form is prefilled once at mount from `project.audience`.
   // The shell remounts this step (keyed by project id) when a different
@@ -106,6 +138,12 @@ export function AudienceStep({ project, saving, onSave }: AudienceStepProps) {
         <p className="text-sm text-muted-foreground">
           Research quality depends on this — the more specific, the better.
         </p>
+        {prefillApplied && (
+          <div className="mt-3 flex items-center gap-2 rounded-lg border border-ember-200 bg-ember-50 px-3 py-2 text-xs font-medium text-ember-700 dark:border-ember-500/30 dark:bg-ember-500/10 dark:text-ember-400">
+            <Sparkles className="size-3.5 shrink-0" />
+            Prefilled from your AI assistant brief — review everything, then save.
+          </div>
+        )}
 
         <div className="mt-6 space-y-5">
           {/* Category */}

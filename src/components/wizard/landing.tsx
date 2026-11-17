@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { motion } from 'framer-motion'
-import { Sparkles, ScanSearch, BookOpenCheck, GitCompareArrows, PackageCheck, Loader2 } from 'lucide-react'
+import { Sparkles, ScanSearch, BookOpenCheck, GitCompareArrows, PackageCheck, Loader2, Wand2, CircleCheck } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -10,8 +10,11 @@ import { Textarea } from '@/components/ui/textarea'
 import { LogoDropzone } from '@/components/steps/logo-dropzone'
 import { DesignGenerating } from '@/components/wizard/design-generating'
 import { StepIcon } from '@/components/wizard/step-icon'
+import { BriefDialog } from '@/components/wizard/brief-dialog'
 import { ANALYSIS_MESSAGES } from '@/components/wizard/progress-messages'
 import { STEPS } from '@/lib/types'
+import type { AudienceData } from '@/lib/types'
+import { audiencePrefillFromBrief, type ParsedBrief } from '@/lib/brief'
 
 const FEATURE_CHIPS = [
   { icon: ScanSearch, label: 'VLM logo analysis' },
@@ -23,13 +26,17 @@ const FEATURE_CHIPS = [
 interface LandingProps {
   analyzing: boolean
   onStart: (file: File, name: string, description: string) => Promise<void>
+  /** Audience fields parsed from an agent brief, held by the shell for step 3. */
+  onAudiencePrefill: (audience: Partial<AudienceData>) => void
+  audiencePrefilled: boolean
 }
 
-export function Landing({ analyzing, onStart }: LandingProps) {
+export function Landing({ analyzing, onStart, onAudiencePrefill, audiencePrefilled }: LandingProps) {
   const [file, setFile] = useState<File | null>(null)
   const [name, setName] = useState('')
   const [description, setDescription] = useState('')
   const [submitting, setSubmitting] = useState(false)
+  const [briefOpen, setBriefOpen] = useState(false)
 
   const canSubmit = !!file && name.trim().length > 0
 
@@ -42,6 +49,13 @@ export function Landing({ analyzing, onStart }: LandingProps) {
     } finally {
       setSubmitting(false)
     }
+  }
+
+  const handleBriefApplied = (brief: ParsedBrief) => {
+    if (brief.name) setName(brief.name)
+    if (brief.description) setDescription(brief.description)
+    const audience = audiencePrefillFromBrief(brief)
+    if (audience) onAudiencePrefill(audience)
   }
 
   return (
@@ -123,6 +137,21 @@ export function Landing({ analyzing, onStart }: LandingProps) {
                     </>
                   )}
                 </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setBriefOpen(true)}
+                  className="w-full border-dashed"
+                >
+                  <Wand2 className="size-4" />
+                  Want a prompt? Let an AI assistant fill this
+                </Button>
+                {audiencePrefilled && (
+                  <p className="flex items-center justify-center gap-1.5 text-xs font-medium text-ember-600 dark:text-ember-400">
+                    <CircleCheck className="size-3.5" />
+                    Agent brief applied — the audience form will be prefilled in step 3.
+                  </p>
+                )}
               </div>
             </div>
           )}
@@ -141,6 +170,12 @@ export function Landing({ analyzing, onStart }: LandingProps) {
           ))}
         </div>
       </section>
+
+      <BriefDialog
+        open={briefOpen}
+        onOpenChange={setBriefOpen}
+        onApply={handleBriefApplied}
+      />
 
       {/* How it works */}
       <section className="mt-10" aria-labelledby="how-it-works">
