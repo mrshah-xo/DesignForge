@@ -147,7 +147,76 @@ export interface DesignTokens {
   shadows: { sm: string; md: string; lg: string };
   buttons: { primary: string; secondary: string; shape: string };
   trustPatterns: string[];
+  previewCopy: PreviewCopy;
 }
+
+/** Domain-aware microcopy used by the live component preview. */
+export interface PreviewCopy {
+  navLinks: string[];
+  navCta: string;
+  heroHeadline: string;
+  heroSubhead: string;
+  primaryCta: string;
+  secondaryCta: string;
+  featureCards: Array<{ icon: PreviewFeatureIcon; title: string; text: string }>;
+  pricing: { features: string[] };
+  testimonial: { quote: string; author: string; role: string };
+  alerts: {
+    success: { title: string; text: string };
+    warning: { title: string; text: string };
+    danger: { title: string; text: string };
+  };
+}
+
+export type PreviewFeatureIcon = 'sparkles' | 'shield' | 'zap' | 'check';
+
+/** Neutral (domain-agnostic) preview copy used whenever generated copy is missing/invalid. */
+export const DEFAULT_PREVIEW_COPY: PreviewCopy = {
+  navLinks: ['Products', 'Pricing', 'Customers', 'Blog'],
+  navCta: 'Get started',
+  heroHeadline: 'Everything you need in one place',
+  heroSubhead:
+    'A cleaner, faster way to get things done — designed around how you already work.',
+  primaryCta: 'Get started',
+  secondaryCta: 'Learn more',
+  featureCards: [
+    {
+      icon: 'sparkles',
+      title: 'Instant setup',
+      text: 'Get up and running in minutes — no complex configuration required.',
+    },
+    {
+      icon: 'shield',
+      title: 'Secure by default',
+      text: 'Your data stays protected with industry-standard encryption.',
+    },
+    {
+      icon: 'zap',
+      title: 'Fast and reliable',
+      text: 'A responsive experience that keeps up with whatever you throw at it.',
+    },
+  ],
+  pricing: {
+    features: [
+      'Everything in the free plan',
+      'Unlimited projects',
+      'Priority support',
+      'Advanced insights',
+      'Team collaboration',
+    ],
+  },
+  testimonial: {
+    quote:
+      'It just works. We got set up in an afternoon and the difference was obvious within the first week.',
+    author: 'Maya Chen',
+    role: 'Founder, Studio North',
+  },
+  alerts: {
+    success: { title: 'All set', text: 'Your changes were saved successfully.' },
+    warning: { title: 'Action needed', text: 'Please review your details to keep everything up to date.' },
+    danger: { title: 'Something went wrong', text: 'We hit an unexpected problem. Please try again.' },
+  },
+};
 
 export interface LogoIssue {
   severity: 'high' | 'medium' | 'low';

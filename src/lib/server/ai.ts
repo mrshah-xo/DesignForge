@@ -14,8 +14,10 @@ import type {
   ColorToken,
   DesignTokens,
   PaletteStep,
+  PreviewCopy,
+  PreviewFeatureIcon,
 } from '@/lib/types';
-import { FONT_OPTIONS } from '@/lib/types';
+import { DEFAULT_PREVIEW_COPY, FONT_OPTIONS } from '@/lib/types';
 import {
   bestTextColor,
   colorNameFromHex,
@@ -28,10 +30,40 @@ import {
 // ---------- SDK singleton ----------
 
 let zaiPromise: Promise<ZAI> | null = null;
+let zaiCreatedAt = 0;
 
-/** Create (once) and return the shared ZAI SDK instance. */
+/**
+ * Re-read credentials (e.g. refreshed token in /etc/.z-ai-config) after this
+ * much time, so a long-running dev server never gets stuck on stale config.
+ */
+const ZAI_TTL_MS = 10 * 60 * 1000;
+
+/** Detect credential/auth failures returned by the remote API. */
+export function isAuthError(err: unknown): boolean {
+  const msg = err instanceof Error ? err.message : String(err);
+  return msg.includes('401') || msg.includes('X-Token');
+}
+
+/** Drop the cached SDK instance so the next call re-reads the config file. */
+export function resetZAI(): void {
+  zaiPromise = null;
+  zaiCreatedAt = 0;
+}
+
+/**
+ * Create (once) and return the shared ZAI SDK instance.
+ * - Failed creations are never cached: the next call retries automatically.
+ * - Instances older than ZAI_TTL_MS are recreated to pick up refreshed tokens.
+ */
 export async function getZAI(): Promise<ZAI> {
-  zaiPromise ??= ZAI.create();
+  if (!zaiPromise || Date.now() - zaiCreatedAt > ZAI_TTL_MS) {
+    zaiCreatedAt = Date.now();
+    zaiPromise = ZAI.create().catch((err) => {
+      // Do not cache failures — allow the next call to create a fresh instance.
+      zaiPromise = null;
+      throw err;
+    });
+  }
   return zaiPromise;
 }
 
@@ -121,6 +153,8 @@ export async function llmJson<T>(system: string, user: string, attempts = 3): Pr
     } catch (err) {
       lastError = err;
       console.error(`llmJson attempt ${attempt + 1}/${attempts} failed:`, err instanceof Error ? err.message : err);
+      // Stale credentials? Drop the cached SDK so the next attempt re-reads config.
+      if (isAuthError(err)) resetZAI();
       if (attempt < attempts - 1) await new Promise((resolve) => setTimeout(resolve, backoffMs(attempt)));
     }
   }
@@ -153,6 +187,7 @@ export async function visionJson<T>(prompt: string, base64Png: string, attempts 
     } catch (err) {
       lastError = err;
       console.error(`visionJson attempt ${attempt + 1}/${attempts} failed:`, err instanceof Error ? err.message : err);
+      if (isAuthError(err)) resetZAI();
       if (attempt < attempts - 1) await new Promise((resolve) => setTimeout(resolve, backoffMs(attempt)));
     }
   }
@@ -181,6 +216,7 @@ export async function llmText(system: string, user: string, attempts = 2): Promi
     } catch (err) {
       lastError = err;
       console.error(`llmText attempt ${attempt + 1}/${attempts} failed:`, err instanceof Error ? err.message : err);
+      if (isAuthError(err)) resetZAI();
       if (attempt < attempts - 1) await new Promise((resolve) => setTimeout(resolve, backoffMs(attempt)));
     }
   }
@@ -188,11 +224,22 @@ export async function llmText(system: string, user: string, attempts = 2): Promi
   throw new Error(`LLM text generation failed after ${attempts} attempts: ${reason}`);
 }
 
-/** Real internet web search via the SDK function-calling bridge. */
+/** Real internet web search via the SDK function-calling bridge (with retry). */
 export async function webSearch(query: string, num = 5): Promise<SearchFunctionResultItem[]> {
-  const zai = await getZAI();
-  const results = await zai.functions.invoke('web_search', { query, num });
-  return Array.isArray(results) ? results : [];
+  let lastError: unknown = null;
+  for (let attempt = 0; attempt < 3; attempt++) {
+    try {
+      const zai = await getZAI();
+      const results = await zai.functions.invoke('web_search', { query, num });
+      return Array.isArray(results) ? results : [];
+    } catch (err) {
+      lastError = err;
+      console.error(`webSearch attempt ${attempt + 1}/3 failed:`, err instanceof Error ? err.message : err);
+      if (isAuthError(err)) resetZAI();
+      if (attempt < 2) await new Promise((resolve) => setTimeout(resolve, backoffMs(attempt)));
+    }
+  }
+  throw lastError instanceof Error ? lastError : new Error(String(lastError));
 }
 
 // ---------- DesignTokens normalization ----------
@@ -228,6 +275,80 @@ function stringList(v: unknown, cap: number): string[] {
     .filter((s): s is string => typeof s === 'string' && s.trim().length > 0)
     .map((s) => s.trim())
     .slice(0, cap);
+}
+
+// ---------- PreviewCopy normalization ----------
+
+const FEATURE_ICONS: readonly PreviewFeatureIcon[] = ['sparkles', 'shield', 'zap', 'check'];
+
+/** Trim + cap copy strings so a runaway LLM cannot break the preview layout. */
+function copyText(v: unknown, fallback: string, max: number): string {
+  const s = str(v);
+  return s ? (s.length > max ? s.slice(0, max).trimEnd() : s) : fallback;
+}
+
+function copyAlert(v: unknown, fallback: { title: string; text: string }): { title: string; text: string } {
+  const r = isPlainObject(v) ? v : {};
+  return {
+    title: copyText(r.title, fallback.title, 40),
+    text: copyText(r.text, fallback.text, 120),
+  };
+}
+
+/**
+ * Domain-aware preview copy with neutral fallbacks. Guarantees a complete
+ * PreviewCopy object; caps lengths so the preview layout never overflows.
+ */
+function normalizePreviewCopy(raw: unknown): PreviewCopy {
+  const root = isPlainObject(raw) ? raw : {};
+  const navLinks = stringList(root.navLinks, 6)
+    .map((s) => copyText(s, '', 16))
+    .filter((s) => s.length > 0)
+    .slice(0, 4);
+  const featureCards = (Array.isArray(root.featureCards) ? root.featureCards : [])
+    .slice(0, 3)
+    .map((c, i) => {
+      const r = isPlainObject(c) ? c : {};
+      const icon = FEATURE_ICONS.includes(r.icon as PreviewFeatureIcon)
+        ? (r.icon as PreviewFeatureIcon)
+        : FEATURE_ICONS[i % FEATURE_ICONS.length];
+      return {
+        icon,
+        title: copyText(r.title, DEFAULT_PREVIEW_COPY.featureCards[i % 3].title, 32),
+        text: copyText(r.text, DEFAULT_PREVIEW_COPY.featureCards[i % 3].text, 110),
+      };
+    });
+  const alertsRoot = isPlainObject(root.alerts) ? root.alerts : {};
+  // Accept both shapes: pricing: { features: [...] } and pricing: [...].
+  const pricingRoot = isPlainObject(root.pricing) ? root.pricing : {};
+  const pricingFeatures = stringList(
+    Array.isArray(root.pricing) ? root.pricing : pricingRoot.features,
+    6,
+  );
+  const testimonialRoot = isPlainObject(root.testimonial) ? root.testimonial : {};
+  return {
+    navLinks: navLinks.length >= 2 ? navLinks : DEFAULT_PREVIEW_COPY.navLinks,
+    navCta: copyText(root.navCta, DEFAULT_PREVIEW_COPY.navCta, 24),
+    heroHeadline: copyText(root.heroHeadline, DEFAULT_PREVIEW_COPY.heroHeadline, 70),
+    heroSubhead: copyText(root.heroSubhead, DEFAULT_PREVIEW_COPY.heroSubhead, 180),
+    primaryCta: copyText(root.primaryCta, DEFAULT_PREVIEW_COPY.primaryCta, 28),
+    secondaryCta: copyText(root.secondaryCta, DEFAULT_PREVIEW_COPY.secondaryCta, 28),
+    featureCards: featureCards.length ? featureCards : DEFAULT_PREVIEW_COPY.featureCards,
+    pricing: {
+      features:
+        pricingFeatures.length >= 3 ? pricingFeatures.slice(0, 5) : DEFAULT_PREVIEW_COPY.pricing.features,
+    },
+    testimonial: {
+      quote: copyText(testimonialRoot.quote, DEFAULT_PREVIEW_COPY.testimonial.quote, 220),
+      author: copyText(testimonialRoot.author, DEFAULT_PREVIEW_COPY.testimonial.author, 40),
+      role: copyText(testimonialRoot.role, DEFAULT_PREVIEW_COPY.testimonial.role, 60),
+    },
+    alerts: {
+      success: copyAlert(alertsRoot.success, DEFAULT_PREVIEW_COPY.alerts.success),
+      warning: copyAlert(alertsRoot.warning, DEFAULT_PREVIEW_COPY.alerts.warning),
+      danger: copyAlert(alertsRoot.danger, DEFAULT_PREVIEW_COPY.alerts.danger),
+    },
+  };
 }
 
 const ROLE_DEFAULT_USAGE: Record<ColorRole, string> = {
@@ -427,6 +548,7 @@ export const normalizeTokens = (raw: unknown, fallbackPrimary?: string, fallback
       shape: str(rawButtons.shape) ?? 'rounded',
     },
     trustPatterns: stringList(root.trustPatterns, 8),
+    previewCopy: normalizePreviewCopy(root.previewCopy),
   };
 
   return tokens;

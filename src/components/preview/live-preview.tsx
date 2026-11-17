@@ -11,7 +11,8 @@ import {
   XCircle,
   Zap,
 } from 'lucide-react'
-import type { ColorRole, DesignTokens } from '@/lib/types'
+import type { ColorRole, DesignTokens, PreviewFeatureIcon } from '@/lib/types'
+import { DEFAULT_PREVIEW_COPY } from '@/lib/types'
 
 // ---------- Color helpers (exported for the visual editor) ----------
 
@@ -126,6 +127,28 @@ export function LivePreview({ tokens }: LivePreviewProps) {
   const initial = brandName.charAt(0).toUpperCase()
   const trustPatterns = (tokens.trustPatterns ?? []).filter((t) => t.trim().length > 0)
 
+  // Domain-aware microcopy generated with the design (falls back to neutral copy).
+  const copy = tokens.previewCopy ?? DEFAULT_PREVIEW_COPY
+  const copy_ = {
+    navLinks: copy.navLinks.length >= 2 ? copy.navLinks : DEFAULT_PREVIEW_COPY.navLinks,
+    navCta: copy.navCta || DEFAULT_PREVIEW_COPY.navCta,
+    heroHeadline: copy.heroHeadline || DEFAULT_PREVIEW_COPY.heroHeadline,
+    heroSubhead: copy.heroSubhead || DEFAULT_PREVIEW_COPY.heroSubhead,
+    primaryCta: copy.primaryCta || DEFAULT_PREVIEW_COPY.primaryCta,
+    secondaryCta: copy.secondaryCta || DEFAULT_PREVIEW_COPY.secondaryCta,
+    featureCards: copy.featureCards.length ? copy.featureCards : DEFAULT_PREVIEW_COPY.featureCards,
+    pricingFeatures: copy.pricing.features.length >= 3 ? copy.pricing.features : DEFAULT_PREVIEW_COPY.pricing.features,
+    testimonial: copy.testimonial.author ? copy.testimonial : DEFAULT_PREVIEW_COPY.testimonial,
+    alerts: copy.alerts,
+  }
+
+  const FEATURE_ICONS: Record<PreviewFeatureIcon, typeof Sparkles> = {
+    sparkles: Sparkles,
+    shield: ShieldCheck,
+    zap: Zap,
+    check: CheckCircle2,
+  }
+
   const btnBase: CSSProperties = {
     display: 'inline-flex',
     alignItems: 'center',
@@ -159,7 +182,7 @@ export function LivePreview({ tokens }: LivePreviewProps) {
     boxSizing: 'border-box',
   }
 
-  const navLinks = ['Products', 'Pricing', 'Customers', 'Blog']
+  const navLinks = copy_.navLinks
 
   return (
     <div
@@ -225,7 +248,7 @@ export function LivePreview({ tokens }: LivePreviewProps) {
               ))}
             </div>
             <button type="button" style={{ ...btnBase, background: primary, color: primaryForeground }}>
-              Get started
+              {copy_.navCta}
             </button>
           </nav>
         </header>
@@ -243,7 +266,7 @@ export function LivePreview({ tokens }: LivePreviewProps) {
               maxWidth: 640,
             }}
           >
-            Payments that feel invisible
+            {copy_.heroHeadline}
           </h1>
           <p
             style={{
@@ -256,8 +279,7 @@ export function LivePreview({ tokens }: LivePreviewProps) {
               marginRight: 'auto',
             }}
           >
-            Get paid faster with fewer hoops. Your money lands where it should — on time, every
-            time, without the fine print.
+            {copy_.heroSubhead}
           </p>
           <div
             style={{
@@ -269,13 +291,13 @@ export function LivePreview({ tokens }: LivePreviewProps) {
             }}
           >
             <button type="button" style={{ ...btnBase, background: primary, color: primaryForeground, boxShadow: shadows.md }}>
-              Start free trial
+              {copy_.primaryCta}
             </button>
             <button
               type="button"
               style={{ ...btnBase, border: `1px solid ${border}`, color: foreground, background: 'transparent' }}
             >
-              See how it works
+              {copy_.secondaryCta}
             </button>
           </div>
           {trustPatterns.length > 0 && (
@@ -437,11 +459,9 @@ export function LivePreview({ tokens }: LivePreviewProps) {
         {/* (f) Feature cards */}
         <Section pad="24px" label="Features">
           <div style={{ display: 'grid', gap: 16, gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))' }}>
-            {[
-              { icon: Sparkles, title: 'Instant setup', text: 'Connect your account and start receiving payments in minutes.' },
-              { icon: ShieldCheck, title: 'Bank-grade security', text: 'Every transaction is encrypted and monitored around the clock.' },
-              { icon: Zap, title: 'Fast payouts', text: 'Money arrives the same day — no waiting periods, no surprises.' },
-            ].map(({ icon: Icon, title, text }) => (
+            {copy_.featureCards.map(({ icon, title, text }) => {
+              const Icon = FEATURE_ICONS[icon] ?? Sparkles
+              return (
               <div key={title} style={{ ...cardBase, padding: 20 }}>
                 <span
                   style={{
@@ -463,7 +483,8 @@ export function LivePreview({ tokens }: LivePreviewProps) {
                 </h3>
                 <p style={{ marginTop: 6, color: mutedForeground, fontSize: scale.small }}>{text}</p>
               </div>
-            ))}
+              )
+            })}
           </div>
         </Section>
 
@@ -502,13 +523,7 @@ export function LivePreview({ tokens }: LivePreviewProps) {
               <span style={{ color: mutedForeground, fontSize: scale.small }}>/ month</span>
             </p>
             <ul style={{ listStyle: 'none', margin: '16px 0', padding: 0, display: 'grid', gap: 10 }}>
-              {[
-                'Unlimited invoices',
-                'Same-day payouts',
-                'Multi-currency support',
-                'Client payment links',
-                'Priority support',
-              ].map((feature) => (
+              {copy_.pricingFeatures.map((feature) => (
                 <li key={feature} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: scale.small }}>
                   <Check size={15} style={{ color: success, flexShrink: 0 }} />
                   {feature}
@@ -532,8 +547,7 @@ export function LivePreview({ tokens }: LivePreviewProps) {
             }}
           >
             <p style={{ fontSize: scale.body, color: foreground, margin: 0 }}>
-              “Switching took an afternoon. Our clients noticed the checkout felt more trustworthy
-              — and payments started arriving faster the same week.”
+              “{copy_.testimonial.quote}”
             </p>
             <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 16 }}>
               <span
@@ -551,12 +565,12 @@ export function LivePreview({ tokens }: LivePreviewProps) {
                   fontSize: scale.small,
                 }}
               >
-                MC
+                {copy_.testimonial.author.charAt(0).toUpperCase()}
               </span>
               <span>
-                <span style={{ display: 'block', fontWeight: 600, fontSize: scale.small }}>Maya Chen</span>
+                <span style={{ display: 'block', fontWeight: 600, fontSize: scale.small }}>{copy_.testimonial.author}</span>
                 <span style={{ display: 'block', color: mutedForeground, fontSize: scale.caption }}>
-                  Founder, Studio North
+                  {copy_.testimonial.role}
                 </span>
               </span>
             </div>
@@ -603,9 +617,9 @@ export function LivePreview({ tokens }: LivePreviewProps) {
         <Section pad="24px" label="Alerts">
           <div style={{ display: 'grid', gap: 12 }}>
             {[
-              { tone: success, icon: CheckCircle2, title: 'Payment received', text: 'Invoice #204 has been paid — funds arrive today.' },
-              { tone: warning, icon: AlertTriangle, title: 'Card expiring soon', text: 'Your payment method ends next month. Update it to avoid interruption.' },
-              { tone: danger, icon: XCircle, title: 'Transfer failed', text: 'We could not process the payout. Please verify your account details.' },
+              { tone: success, icon: CheckCircle2, ...copy_.alerts.success },
+              { tone: warning, icon: AlertTriangle, ...copy_.alerts.warning },
+              { tone: danger, icon: XCircle, ...copy_.alerts.danger },
             ].map(({ tone, icon: Icon, title, text }) => (
               <div
                 key={title}

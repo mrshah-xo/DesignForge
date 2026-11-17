@@ -6,7 +6,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import type { AudienceData, AnalysisData, ResearchData } from '@/lib/types';
 import { db } from '@/lib/db';
-import { getZAI, llmJson } from '@/lib/server/ai';
+import { llmJson, webSearch } from '@/lib/server/ai';
 import { RESEARCH_SYSTEM, buildResearchPrompt } from '@/lib/server/prompts';
 import {
   normalizeResearchSections,
@@ -47,9 +47,8 @@ export async function POST(_req: NextRequest, { params }: { params: Promise<{ id
       `${audience.categoryLabel} UI design patterns trusted brands`,
       `color psychology trust ${audience.trustNeed} need digital products`,
     ];
-    const zai = await getZAI();
     const settled = await Promise.allSettled(
-      queries.map((query) => zai.functions.invoke('web_search', { query, num: 5 })),
+      queries.map((query) => webSearch(query, 5)),
     );
     const searchResults: Array<{ name: string; url: string; snippet: string }> = [];
     const seenUrls = new Set<string>();

@@ -151,6 +151,18 @@ export interface DesignTokens {
   shadows: { sm: string; md: string; lg: string };
   buttons: { primary: string; secondary: string; shape: string };
   trustPatterns: string[];  // 4-6 UI trust patterns pulled from the research
+  previewCopy: {
+    navLinks: string[];  // 3-4 short nav labels (<= 16 chars each) appropriate for this product
+    navCta: string;      // nav action, <= 24 chars
+    heroHeadline: string;  // 3-8 words, specific to THIS product and audience
+    heroSubhead: string;   // one sentence (<= 160 chars) speaking to the audience's core trust need
+    primaryCta: string;    // <= 28 chars, the action this audience wants to take
+    secondaryCta: string;  // <= 28 chars
+    featureCards: [{ icon: 'sparkles' | 'shield' | 'zap' | 'check', title: string, text: string }];  // exactly 3, domain-specific
+    pricing: { features: string[] };  // exactly 5 short plan bullets (<= 30 chars) for THIS product
+    testimonial: { quote: string, author: string, role: string };  // realistic customer voice for THIS audience
+    alerts: { success: { title: string, text: string }, warning: { title: string, text: string }, danger: { title: string, text: string } };
+  };
 }`;
 
 export function buildDesignPrompt(
@@ -179,7 +191,8 @@ Token rules:
 - Typography heading+body families MUST be chosen from this exact list: Inter, Manrope, Poppins, Space Grotesk, Sora, Outfit, IBM Plex Sans, Playfair Display, DM Serif Display, Lora, Merriweather, JetBrains Mono (prefer a heading/body pairing that matches the field, e.g. serif headings for luxury/law/finance gravitas, geometric sans for tech).
 - radius/shadows must match the logo styleTags (${analysis.styleTags.join(', ') || 'unknown'}): sharp geometric logo → smaller radius; friendly rounded logo → larger radius.
 - trustPatterns: 4-6 UI trust patterns pulled from the research (e.g. 'Show security badges near payment forms').
-- brand.personality: 3-6 adjectives; brand.voice: one sentence describing the product voice.`;
+- brand.personality: 3-6 adjectives; brand.voice: one sentence describing the product voice.
+- previewCopy: landing-page microcopy written FOR THIS EXACT product, domain and audience (a farming app must read like a farming app — e.g. 'Plan your season with confidence'; NEVER generic fintech/wallet copy). Ground it in the audience psychology research: the headline/subhead should address what this audience fears and wants, and CTAs should feel natural to them. featureCards texts showcase how the product builds the trust levers found in research.`;
 }
 
 // ---------- 4) DESIGN.md markdown ----------
@@ -226,7 +239,7 @@ Write DESIGN.md for the project with this EXACT outline and rules:
   6. Component specifications (Button primary/secondary/outline/ghost/disabled, Input, Card, Navbar, Footer, Badge, Alert, Modal, Pricing card, Testimonial — each with exact token-based styling: padding, radius, colors, font sizes, hover/focus states)
   7. Imagery & iconography (icon style + stroke width, illustration direction, photo treatment)
   8. Motion (durations 150-300ms, easing, what may animate)
-  9. Voice & microcopy (tone, CTA style with 3 examples, error message tone with 2 examples)
+  9. Voice & microcopy (tone, CTA style with 3 examples pulled from tokens.previewCopy — heroHeadline, primaryCta, secondaryCta — plus why they fit the audience, error message tone with 2 examples)
   10. Accessibility & contrast (WCAG AA minimums, focus ring spec, touch targets 44px)
   11. Logo usage notes (clear space, minimum sizes, approved backgrounds from palette, do/don't list — derived from the actual analysis + matchAnalysis suggestions)
   12. Do / Don't summary (table)
