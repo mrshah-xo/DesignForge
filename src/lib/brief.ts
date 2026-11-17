@@ -21,34 +21,44 @@ import {
 
 // ---------- The prompt template the user copies into their agent ----------
 
-export const BRIEF_PROMPT = `You are helping me fill in a design brief for DesignForge, a tool that turns a logo plus brand info into a complete design system.
+export const BRIEF_PROMPT = `You are filling a design brief for DesignForge, a tool that turns a logo plus brand info into a complete design system. I am pasting this into you, my coding agent, because you already know the product you are building for me.
 
-Interview me briefly, one question at a time, to find out:
-1. Project name
-2. What the product or company does (1-2 sentences)
-3. Category - pick exactly one: fintech, ecommerce, health, saas, education, social, gaming, realestate, food, other
-4. Who will use it - be specific (role, situation, what they worry about)
-5. Primary platform - web, mobile, or both
-6. Monetization - free, subscription, one_time, per_use, or marketplace
-7. Trust need - low, medium, high, or critical (critical = users pay / money changes hands)
-8. Extra notes for the design research (or "none")
+Answer ALL 8 fields yourself in ONE single message. Do NOT interview me. Do NOT ask questions. Do NOT split the answer across messages. If my message includes project details, use them; otherwise infer everything from the project you know and decide a sensible value for every field.
 
-Rules:
-- Ask one short question per message, then stop. Never dump all questions at once.
-- Skip anything I already answered. If I say "you decide", pick a sensible value for me.
-- Keep my own wording for the description and the audience.
+The fields:
+1. PROJECT_NAME - the project or product name
+2. DESCRIPTION - what the product does, 1-2 sentences, one line
+3. CATEGORY - exactly one allowed value: fintech, ecommerce, health, saas, education, social, gaming, realestate, food, other
+4. AUDIENCE - who will use it: role, situation, what they worry about, one line
+5. PLATFORM - exactly one allowed value: web, mobile, both
+6. MONETIZATION - exactly one allowed value: free, subscription, one_time, per_use, marketplace
+7. TRUST_NEED - exactly one allowed value: low, medium, high, critical (critical = users pay / money changes hands)
+8. NOTES - extra notes for the design research, one line, or "none"
 
-When you know every field, reply with EXACTLY this block and nothing else after it:
+OUTPUT PATTERN - your reply must be EXACTLY this block, nothing before it and nothing after it:
 
 <<<DESIGNFORGE_BRIEF>>>
-PROJECT_NAME: ...
-DESCRIPTION: ...
-CATEGORY: ...
-AUDIENCE: ...
-PLATFORM: ...
-MONETIZATION: ...
-TRUST_NEED: ...
-NOTES: ...
+PROJECT_NAME: <one line>
+DESCRIPTION: <one line>
+CATEGORY: <one allowed value>
+AUDIENCE: <one line>
+PLATFORM: <one allowed value>
+MONETIZATION: <one allowed value>
+TRUST_NEED: <one allowed value>
+NOTES: <one line or none>
+<<<END_DESIGNFORGE_BRIEF>>>
+
+Example of a correct one-shot reply:
+
+<<<DESIGNFORGE_BRIEF>>>
+PROJECT_NAME: LedgerMate
+DESCRIPTION: Invoicing and expense tracking built for solo freelancers.
+CATEGORY: fintech
+AUDIENCE: Solo freelance designers and developers who invoice clients monthly and worry about late payments.
+PLATFORM: web
+MONETIZATION: subscription
+TRUST_NEED: critical
+NOTES: Competitors are FreshBooks and Bonsai; the brand should feel calm and trustworthy.
 <<<END_DESIGNFORGE_BRIEF>>>`;
 
 // ---------- Parsed brief shape ----------

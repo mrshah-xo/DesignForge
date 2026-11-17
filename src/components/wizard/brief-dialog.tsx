@@ -94,13 +94,17 @@ export function BriefDialog({ open, onOpenChange, onApply }: BriefDialogProps) {
         apply(merged)
       }
     } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Please try again.'
       if (local.found.length > 0) {
         // Extraction failed, but we still recognized a field or two locally.
         apply(local)
-      } else {
-        toast.error('Could not read the brief', {
-          description: err instanceof Error ? err.message : 'Please try again.',
+      } else if (/credential|z-ai-config|ZAI_BASE_URL/i.test(msg)) {
+        toast.error('AI extraction is unavailable', {
+          description:
+            'Paste the full DESIGNFORGE_BRIEF block from your agent instead — it fills every field instantly, no AI needed on this side.',
         })
+      } else {
+        toast.error('Could not read the brief', { description: msg })
       }
     } finally {
       setExtracting(false)
@@ -116,9 +120,10 @@ export function BriefDialog({ open, onOpenChange, onApply }: BriefDialogProps) {
             Want a prompt?
           </DialogTitle>
           <DialogDescription>
-            Skip typing every time: copy this prompt into any AI assistant (ChatGPT, Claude,
-            Gemini, your IDE agent…), answer its short interview, then paste its reply back
-            here — every field fills in automatically.
+            Skip typing every time: copy this prompt into your coding agent (ChatGPT, Claude,
+            Gemini, your IDE agent…). It already knows your product, so it answers all 8 fields
+            in one message — paste that reply back here and every field fills in automatically,
+            then we jump straight to Research review.
           </DialogDescription>
         </DialogHeader>
 
@@ -131,8 +136,9 @@ export function BriefDialog({ open, onOpenChange, onApply }: BriefDialogProps) {
           {/* Step 1 — copy the prompt into the coding agent */}
           <TabsContent value="copy" className="mt-3 space-y-3">
             <p className="text-xs text-muted-foreground">
-              Paste this into your coding agent. It will ask you a few questions, then print a{' '}
-              <span className="font-mono text-[11px]">DESIGNFORGE_BRIEF</span> block.
+              Paste this into your coding agent. It replies with the filled{' '}
+              <span className="font-mono text-[11px]">DESIGNFORGE_BRIEF</span> block in one
+              message — no interview.
             </p>
             <Textarea
               readOnly
@@ -160,7 +166,7 @@ export function BriefDialog({ open, onOpenChange, onApply }: BriefDialogProps) {
           {/* Step 2 — paste the agent's reply back */}
           <TabsContent value="paste" className="mt-3 space-y-3">
             <Textarea
-              placeholder="Paste your agent's reply here — the DESIGNFORGE_BRIEF block, or even a free-form description of your product…"
+              placeholder="Paste your agent's one-shot reply here — the DESIGNFORGE_BRIEF block fills everything instantly, even free-form text works…"
               value={pasted}
               onChange={(e) => setPasted(e.target.value)}
               rows={9}
@@ -171,7 +177,7 @@ export function BriefDialog({ open, onOpenChange, onApply }: BriefDialogProps) {
               <Info className="mt-0.5 size-3.5 shrink-0" />
               <span>
                 Your logo file is still uploaded on this page — the brief fills every text
-                field, including the audience form in step 3.
+                field, and we jump straight to Research review (step 4).
               </span>
             </div>
             <Button
