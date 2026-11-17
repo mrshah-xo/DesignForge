@@ -96,12 +96,12 @@ export function AudienceStep({ project, saving, onSave }: AudienceStepProps) {
 
   return (
     <div className="space-y-6">
-      <section className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+      <section className="rounded-lg border border-border bg-card p-6 shadow-sm">
         <div className="mb-1 flex items-center gap-2">
-          <span className="flex size-8 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400">
+          <span className="flex size-8 items-center justify-center rounded-lg bg-ember-50 text-ember-600 dark:bg-ember-500/10 dark:text-ember-400">
             <Users className="size-4" />
           </span>
-          <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">Who will use it?</h2>
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-50">Who will use it?</h2>
         </div>
         <p className="text-sm text-muted-foreground">
           Research quality depends on this — the more specific, the better.
@@ -219,7 +219,7 @@ export function AudienceStep({ project, saving, onSave }: AudienceStepProps) {
             <Button
               onClick={submit}
               disabled={!canSave}
-              className="bg-emerald-600 text-white hover:bg-emerald-700"
+              className="bg-primary text-primary-foreground hover:bg-ember-600"
             >
               {saving ? (
                 <>
@@ -253,7 +253,7 @@ export function AudienceStep({ project, saving, onSave }: AudienceStepProps) {
               Cancel
             </Button>
             <Button
-              className="bg-emerald-600 text-white hover:bg-emerald-700"
+              className="bg-primary text-primary-foreground hover:bg-ember-600"
               onClick={() => {
                 setConfirmOpen(false)
                 void onSave(buildAudience())

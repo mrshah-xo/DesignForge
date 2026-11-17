@@ -36,7 +36,7 @@ interface StatusBadgeProps {
 
 /**
  * Status pill. Research statuses get semantic tones:
- * needs_review -> amber, approved -> emerald, everything else zinc.
+ * needs_review -> amber, approved -> success green, everything else neutral.
  */
 export function StatusBadge({ status, label, className }: StatusBadgeProps) {
   const text = label ?? prettyStatus(status)
@@ -45,7 +45,7 @@ export function StatusBadge({ status, label, className }: StatusBadgeProps) {
       ? 'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-400'
       : status === 'needs_review'
         ? 'border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-400'
-        : 'border-zinc-200 bg-zinc-50 text-zinc-600 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300'
+        : 'border-border bg-muted text-muted-foreground'
 
   return (
     <Badge variant="outline" className={cn('font-medium', tone, className)}>

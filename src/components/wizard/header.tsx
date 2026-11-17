@@ -39,12 +39,12 @@ export function Header({ projects, loadingProjects, onOpenProject, onNewProject 
   )
 
   return (
-    <header className="sticky top-0 z-40 border-b border-zinc-200 bg-background/80 backdrop-blur dark:border-zinc-800">
+    <header className="sticky top-0 z-40 border-b border-border bg-background/80 backdrop-blur">
       <div className="mx-auto flex h-16 w-full max-w-7xl items-center justify-between gap-3 px-4">
         <div className="flex min-w-0 items-center gap-2.5">
           <span
             aria-hidden="true"
-            className="flex h-11 shrink-0 items-center rounded-xl bg-white px-2.5 shadow-sm ring-1 ring-zinc-200 dark:ring-zinc-700"
+            className="flex h-11 shrink-0 items-center rounded-lg bg-white px-2.5 shadow-sm ring-1 ring-border"
           >
             <Image
               src="/dfl-logo.png"
@@ -58,7 +58,7 @@ export function Header({ projects, loadingProjects, onOpenProject, onNewProject 
           <span className="sr-only">DesignForge</span>
           <Badge
             variant="outline"
-            className="hidden shrink-0 border-zinc-200 bg-zinc-50 text-zinc-500 sm:inline-flex dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-400"
+            className="hidden shrink-0 border-ember-200 bg-ember-50 text-ember-700 sm:inline-flex dark:border-ember-500/30 dark:bg-ember-500/10 dark:text-ember-400"
           >
             Logo → DESIGN.md
           </Badge>
@@ -69,14 +69,14 @@ export function Header({ projects, loadingProjects, onOpenProject, onNewProject 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="outline" size="sm" className="gap-1.5">
-                <Clock className="size-4 text-zinc-400" />
+                <Clock className="size-4 text-gray-400" />
                 <span className="hidden sm:inline">Recent projects</span>
                 <span className="sm:hidden">Recent</span>
-                <ChevronDown className="size-3.5 text-zinc-400" />
+                <ChevronDown className="size-3.5 text-gray-400" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-72">
-              <DropdownMenuLabel className="text-xs text-zinc-500">
+              <DropdownMenuLabel className="text-xs text-gray-500">
                 Recent projects
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
@@ -106,7 +106,7 @@ export function Header({ projects, loadingProjects, onOpenProject, onNewProject 
                       </span>
                       <Badge
                         variant="secondary"
-                        className="shrink-0 border border-zinc-200 bg-zinc-50 text-[10px] text-zinc-500 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-400"
+                        className="shrink-0 border border-border bg-muted text-[10px] text-gray-500 dark:text-gray-400"
                       >
                         {prettyStatus(p.status)}
                       </Badge>
@@ -118,17 +118,17 @@ export function Header({ projects, loadingProjects, onOpenProject, onNewProject 
           </DropdownMenu>
           ) : (
             <Button variant="outline" size="sm" className="gap-1.5" aria-label="Recent projects">
-              <Clock className="size-4 text-zinc-400" />
+              <Clock className="size-4 text-gray-400" />
               <span className="hidden sm:inline">Recent projects</span>
               <span className="sm:hidden">Recent</span>
-              <ChevronDown className="size-3.5 text-zinc-400" />
+              <ChevronDown className="size-3.5 text-gray-400" />
             </Button>
           )}
 
           <Button
             size="sm"
             onClick={onNewProject}
-            className="bg-emerald-600 text-white hover:bg-emerald-700"
+            className="bg-primary text-primary-foreground hover:bg-ember-600"
           >
             <Plus className="size-4" />
             New project

@@ -410,7 +410,7 @@ export function WizardShell() {
         return project.design ? (
           <MatchStep design={project.design} onContinue={() => handleSelectStep(6)} />
         ) : (
-          <p className="rounded-2xl border border-zinc-200 bg-white p-8 text-center text-sm text-muted-foreground shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+          <p className="rounded-lg border border-border bg-card p-8 text-center text-sm text-muted-foreground shadow-sm">
             Generate the design system in step 4 to see the fit report.
           </p>
         )
@@ -434,7 +434,7 @@ export function WizardShell() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col bg-zinc-50 dark:bg-background">
+    <div className="flex min-h-screen flex-col bg-background">
       <Header
         projects={projects}
         loadingProjects={loadingProjects}
@@ -455,16 +455,16 @@ export function WizardShell() {
             <section className="min-w-0 flex-1" aria-label="Wizard content">
               <div className="mx-auto max-w-5xl">
                 {/* Project strip */}
-                <div className="mb-6 flex items-center gap-3 rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+                <div className="mb-6 flex items-center gap-3 rounded-lg border border-border bg-card p-4 shadow-sm">
                   <LogoThumb
                     src={project.logoDataUrl}
                     name={project.name}
                     size={40}
-                    className="rounded-xl"
+                    className="rounded-lg"
                   />
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-2">
-                      <p className="truncate text-sm font-semibold text-zinc-900 dark:text-zinc-50">
+                      <p className="truncate text-sm font-semibold text-gray-900 dark:text-gray-50">
                         {project.name}
                       </p>
                       <StatusBadge status={detailStatusLabel(project)} />
@@ -476,7 +476,7 @@ export function WizardShell() {
                   <button
                     type="button"
                     onClick={startNew}
-                    className="flex shrink-0 items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-medium text-zinc-500 transition-colors hover:bg-zinc-100 hover:text-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-200"
+                    className="flex shrink-0 items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-medium text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-800 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-gray-200"
                   >
                     <Plus className="size-3.5" />
                     New project
@@ -484,7 +484,7 @@ export function WizardShell() {
                 </div>
 
                 {loadingProject ? (
-                  <div className="flex items-center justify-center gap-2 rounded-2xl border border-zinc-200 bg-white p-12 text-sm text-muted-foreground shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+                  <div className="flex items-center justify-center gap-2 rounded-lg border border-border bg-card p-12 text-sm text-muted-foreground shadow-sm">
                     <Loader2 className="size-4 animate-spin" />
                     Loading project…
                   </div>
