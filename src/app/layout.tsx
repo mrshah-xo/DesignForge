@@ -16,7 +16,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "DesignForge — Logo to DESIGN.md",
+  title: "Design Forge",
   description:
     "Turn your logo into an agent-ready design system: AI logo analysis, audience psychology research, color palettes, live component preview.",
   // Favicon/tab icon comes from src/app/icon.png (file convention).

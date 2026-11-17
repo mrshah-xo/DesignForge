@@ -51,6 +51,42 @@ export function resetZAI(): void {
 }
 
 /**
+ * Build the SDK client. On normal sandboxes the credentials come from the
+ * provisioned /etc/.z-ai-config (ZAI.create() file lookup). On deployments
+ * like Vercel there is no writable config location, so the same JSON shape
+ * is supplied through environment variables instead:
+ *
+ *   ZAI_BASE_URL   (required with ZAI_API_KEY)
+ *   ZAI_API_KEY    (required with ZAI_BASE_URL)
+ *   ZAI_CHAT_ID    (optional)
+ *   ZAI_USER_ID    (optional)
+ *   ZAI_TOKEN      (optional)
+ */
+function createZAI(): Promise<ZAI> {
+  const baseUrl = process.env.ZAI_BASE_URL;
+  const apiKey = process.env.ZAI_API_KEY;
+  if (baseUrl && apiKey) {
+    return Promise.resolve(
+      new ZAI({
+        baseUrl,
+        apiKey,
+        chatId: process.env.ZAI_CHAT_ID || undefined,
+        userId: process.env.ZAI_USER_ID || undefined,
+        token: process.env.ZAI_TOKEN || undefined,
+      })
+    );
+  }
+  return ZAI.create().catch((err) => {
+    const detail = err instanceof Error ? err.message : String(err);
+    throw new Error(
+      'Z.AI credentials unavailable — set ZAI_BASE_URL and ZAI_API_KEY environment variables ' +
+        '(required on Vercel/serverless; see README) or provide a valid .z-ai-config in the ' +
+        `project, home directory, or /etc. Original error: ${detail}`
+    );
+  });
+}
+
+/**
  * Create (once) and return the shared ZAI SDK instance.
  * - Failed creations are never cached: the next call retries automatically.
  * - Instances older than ZAI_TTL_MS are recreated to pick up refreshed tokens.
@@ -58,7 +94,7 @@ export function resetZAI(): void {
 export async function getZAI(): Promise<ZAI> {
   if (!zaiPromise || Date.now() - zaiCreatedAt > ZAI_TTL_MS) {
     zaiCreatedAt = Date.now();
-    zaiPromise = ZAI.create().catch((err) => {
+    zaiPromise = createZAI().catch((err) => {
       // Do not cache failures — allow the next call to create a fresh instance.
       zaiPromise = null;
       throw err;

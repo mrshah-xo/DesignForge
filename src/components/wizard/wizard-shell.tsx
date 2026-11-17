@@ -6,6 +6,7 @@ import { toast } from 'sonner'
 import { Loader2, Plus } from 'lucide-react'
 
 import { api } from '@/lib/client/api'
+import { STEPS } from '@/lib/types'
 import type {
   AudienceData,
   DesignTokens,
@@ -68,6 +69,15 @@ export function WizardShell() {
   // (regenerated research / design), so editors re-initialize cleanly.
   const [researchNonce, setResearchNonce] = useState(0)
   const [designNonce, setDesignNonce] = useState(0)
+
+  // Browser tab title follows the current wizard section: "Design Forge" on
+  // the landing screen, then the active section label (e.g. "Research review")
+  // as the user navigates through the steps.
+  useEffect(() => {
+    document.title = project
+      ? STEPS.find((s) => s.id === currentStep)?.label ?? 'Design Forge'
+      : 'Design Forge'
+  }, [project, currentStep])
 
   // ---------------- Data loading ----------------
   const refreshProjects = useCallback(async () => {
