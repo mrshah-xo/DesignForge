@@ -62,7 +62,7 @@ export function BriefDialog({ open, onOpenChange, onApply }: BriefDialogProps) {
   const apply = (brief: ParsedBrief) => {
     const labels = brief.found.map((f) => FIELD_LABELS[f] ?? f).join(', ')
     toast.success('Brief applied', {
-      description: `Filled: ${labels}. Review the fields, then continue.`,
+      description: `Filled: ${labels}. Now drop your logo — we jump straight to Research review.`,
     })
     onApply(brief)
     onOpenChange(false)

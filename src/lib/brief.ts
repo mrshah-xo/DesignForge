@@ -291,7 +291,8 @@ function buildBrief(collected: Partial<Record<BriefField, string>>): ParsedBrief
 const BLOCK_RE = /<<<\s*DESIGNFORGE_BRIEF\s*>>>([\s\S]*?)<<<\s*END_DESIGNFORGE_BRIEF\s*>>>/i;
 
 /** `KEY: value` / `KEY = value` lines, tolerating bullets and markdown bold. */
-const FIELD_LINE_RE = /^\s*(?:[-*>•·‣]+\s*)?[*_\s]*([A-Za-z][A-Za-z _]{1,28}?)[*_\s]*[:=][*_\s]*(.+?)\s*$/;
+const FIELD_LINE_RE =
+  /^\s*(?:[-*>•·‣]+\s*)?(?:\d{1,2}[.)]\s*)?[*_\s]*([A-Za-z][A-Za-z _-]{1,28}?)[*_\s]*[:=][*_\s]*(.+?)\s*$/;
 
 /**
  * Parse an agent reply without any network call. Handles:

@@ -146,6 +146,17 @@ Locally, the AI features read Z.AI credentials from `/etc/.z-ai-config` automati
 
 Use the pooled URL for `DATABASE_URL` on Vercel. The direct URL is intended for long-running servers.
 
+### Database provider auto-sync
+
+`prisma/schema.prisma`'s datasource `provider` is synced to the protocol of the effective
+`DATABASE_URL` automatically (scripts/sync-prisma-provider.mjs, runs before `dev`, `build`
+and `db:push`): a SQLite `file:` URL selects `sqlite`, a `postgres://` / `postgresql://`
+URL selects `postgresql`. The sandbox preview therefore runs on `db/custom.db`, while
+Vercel builds automatically compile the client for Prisma Postgres — no manual schema edits.
+To point the local sandbox at the cloud database again, put the real
+`DATABASE_URL=postgres://…` in `.env.local` (gitignored, survives sandbox reboots) and
+restart; the provider flips back to `postgresql` on the next `bun run dev` or `bun run db:push`.
+
 ---
 
 ## API
