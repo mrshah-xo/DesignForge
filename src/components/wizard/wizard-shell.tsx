@@ -56,6 +56,9 @@ export function WizardShell() {
   const [projects, setProjects] = useState<ProjectSummary[]>([])
   const [project, setProject] = useState<ProjectDetail | null>(null)
   const [currentStep, setCurrentStep] = useState(1)
+  // Audience fields parsed from the landing-page agent brief ("Want a prompt?").
+  // Held here until step 3 mounts, then cleared once saved (or on new project).
+  const [pendingAudience, setPendingAudience] = useState<Partial<AudienceData> | null>(null)
 
   const [loadingProjects, setLoadingProjects] = useState(true)
   const [loadingProject, setLoadingProject] = useState(false)
@@ -180,6 +183,7 @@ export function WizardShell() {
         toast.error('Could not save audience', { description: errMsg(err) })
       } finally {
         setSavingAudience(false)
+        setPendingAudience(null)
       }
     },
     [project, refresh]
@@ -328,6 +332,7 @@ export function WizardShell() {
     setProject(null)
     setCurrentStep(1)
     setAnalyzing(false)
+    setPendingAudience(null)
     void refreshProjects()
     window.scrollTo({ top: 0 })
   }, [refreshProjects])
@@ -387,6 +392,7 @@ export function WizardShell() {
             key={`audience-${project.id}`}
             project={project}
             saving={savingAudience}
+            prefill={pendingAudience}
             onSave={saveAudience}
           />
         )
@@ -444,7 +450,12 @@ export function WizardShell() {
 
       <main className="flex-1">
         {project === null ? (
-          <Landing analyzing={analyzing} onStart={handleStart} />
+          <Landing
+            analyzing={analyzing}
+            onStart={handleStart}
+            onAudiencePrefill={setPendingAudience}
+            audiencePrefilled={pendingAudience !== null}
+          />
         ) : (
           <div className="mx-auto flex w-full max-w-7xl flex-col gap-6 px-4 py-6 lg:flex-row lg:gap-8">
             {/* Stepper: horizontal pills on mobile, sticky rail on lg+ */}
