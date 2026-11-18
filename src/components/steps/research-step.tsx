@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { motion } from 'framer-motion'
 import {
   BookOpenCheck,
@@ -11,6 +11,7 @@ import {
   Pencil,
   Save,
   Sparkles,
+  Wand2,
   X,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -19,7 +20,10 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { DesignGenerating } from '@/components/wizard/design-generating'
 import { DESIGN_MESSAGES, RESEARCH_MESSAGES } from '@/components/wizard/progress-messages'
+import { ResearchPromptDialog } from '@/components/wizard/research-prompt-dialog'
 import { StatusBadge } from '@/components/wizard/status-badge'
+import { mergeParsedResearch } from '@/lib/research'
+import type { ParsedResearch, ResearchPromptContext } from '@/lib/research'
 import type {
   CompetitorBrand,
   ProjectDetail,
@@ -133,6 +137,22 @@ function newBrandId(): string {
   return `brand-${Math.random().toString(36).slice(2, 10)}`
 }
 
+/** Assemble the server payload sections from a draft (pure — safe anywhere). */
+function buildSectionsFromDraft(d: ResearchDraft): ResearchSections {
+  return {
+    audiencePsychology: d.sections.audiencePsychology,
+    trustFactors: d.sections.trustFactors,
+    successfulPatterns: d.sections.successfulPatterns,
+    competitorLogos: {
+      title: d.sections.competitorLogos.title,
+      body: d.sections.competitorLogos.body,
+      brands: d.brands.map((b) => ({ name: b.name, colors: b.colors, approach: b.approach })),
+    },
+    colorTheory: d.sections.colorTheory,
+    commonMistakes: d.sections.commonMistakes,
+  }
+}
+
 export function ResearchStep({
   project,
   researching,
@@ -153,19 +173,42 @@ export function ResearchStep({
   // from background detail refreshes.
   const [draft, setDraft] = useState<ResearchDraft>(() => normalizeDraft(research))
   const [editing, setEditing] = useState<Partial<Record<SectionKey, boolean>>>({})
+  const [promptOpen, setPromptOpen] = useState(false)
 
-  const buildSections = (): ResearchSections => ({
-    audiencePsychology: draft.sections.audiencePsychology,
-    trustFactors: draft.sections.trustFactors,
-    successfulPatterns: draft.sections.successfulPatterns,
-    competitorLogos: {
-      title: draft.sections.competitorLogos.title,
-      body: draft.sections.competitorLogos.body,
-      brands: draft.brands.map((b) => ({ name: b.name, colors: b.colors, approach: b.approach })),
-    },
-    colorTheory: draft.sections.colorTheory,
-    commonMistakes: draft.sections.commonMistakes,
-  })
+  const buildSections = () => buildSectionsFromDraft(draft)
+
+  // Context for the "Want a research prompt?" dialog. Memoized before the
+  // early returns below (no-research / generating states render other UI).
+  const promptContext = useMemo<ResearchPromptContext>(() => {
+    const audience = project.audience
+    return {
+      name: project.name,
+      description: project.description,
+      category: audience?.categoryLabel || audience?.category || null,
+      audienceDesc: audience?.audienceDesc ?? null,
+      platform: audience?.platform ?? null,
+      monetization: audience?.monetization ?? null,
+      trustNeed: audience?.trustNeed ?? null,
+      notes: audience?.notes ?? null,
+      sections: research ? buildSectionsFromDraft(draft) : null,
+    }
+  }, [project, research, draft])
+
+  /** Apply the agent's parsed fixes to the draft, then persist them. */
+  const applyParsed = (parsed: ParsedResearch) => {
+    const merged = mergeParsedResearch(parsed, { sections: buildSections(), sources: draft.sources })
+    setDraft({
+      sections: merged.sections,
+      brands: merged.sections.competitorLogos.brands.map((b) => ({
+        _id: newBrandId(),
+        name: b.name,
+        colors: b.colors,
+        approach: b.approach,
+      })),
+      sources: merged.sources,
+    })
+    void onSaveEdits({ sections: merged.sections, sources: merged.sources })
+  }
 
   // ---------- No research yet ----------
   if (!research) {
@@ -189,13 +232,30 @@ export function ResearchStep({
           competitor logos, color theory — then you review before anything is generated. Real web
           search runs under the hood, so this takes 20–90 seconds.
         </p>
+        <div>
+          <Button
+            onClick={() => void onRunResearch()}
+            className="mt-6 bg-primary text-primary-foreground hover:bg-ember-600"
+          >
+            <Sparkles className="size-4" />
+            Run automatic research
+          </Button>
+        </div>
         <Button
-          onClick={() => void onRunResearch()}
-          className="mt-6 bg-primary text-primary-foreground hover:bg-ember-600"
+          variant="ghost"
+          size="sm"
+          onClick={() => setPromptOpen(true)}
+          className="mt-2 gap-1.5 text-xs text-muted-foreground"
         >
-          <Sparkles className="size-4" />
-          Run automatic research
+          <Wand2 className="size-3.5" />
+          Or have your agent write it — &quot;Want a prompt?&quot;
         </Button>
+        <ResearchPromptDialog
+          open={promptOpen}
+          onOpenChange={setPromptOpen}
+          context={promptContext}
+          onApply={applyParsed}
+        />
       </section>
     )
   }
@@ -419,11 +479,17 @@ export function ResearchStep({
             </span>
           )}
         </div>
-        {approved && designExists && (
-          <Button variant="outline" size="sm" onClick={onOpenDesign}>
-            Open design system
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" onClick={() => setPromptOpen(true)} className="gap-1.5">
+            <Wand2 className="size-3.5" />
+            Want a prompt?
           </Button>
-        )}
+          {approved && designExists && (
+            <Button variant="outline" size="sm" onClick={onOpenDesign}>
+              Open design system
+            </Button>
+          )}
+        </div>
       </div>
 
       {approved && !designExists && (
@@ -508,6 +574,13 @@ export function ResearchStep({
         Editing sections is encouraged — approving uses exactly what you see here. Nothing is
         generated until you approve.
       </p>
+
+      <ResearchPromptDialog
+        open={promptOpen}
+        onOpenChange={setPromptOpen}
+        context={promptContext}
+        onApply={applyParsed}
+      />
     </div>
   )
 }

@@ -269,7 +269,9 @@ function buildBrief(collected: Partial<Record<BriefField, string>>): ParsedBrief
   const found: BriefField[] = [];
   const push = (field: BriefField, value: string | null) => {
     if (!value) return;
-    brief[field] = value;
+    // TS cannot prove the per-field value type through a union-keyed write;
+    // every caller above guarantees the field's own shape (string or enum).
+    (brief as Record<BriefField, unknown>)[field] = value;
     found.push(field);
   };
 
@@ -376,7 +378,7 @@ export function mergeBriefs(primary: ParsedBrief, fallback: ParsedBrief): Parsed
   for (const field of BRIEF_FIELDS) {
     const value = primary[field] ?? fallback[field];
     if (value) {
-      brief[field] = value;
+      (brief as Record<BriefField, unknown>)[field] = value;
       found.push(field);
     }
   }
