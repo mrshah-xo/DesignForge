@@ -149,7 +149,7 @@ export function Landing({ analyzing, onStart, onAudiencePrefill, audiencePrefill
                 {audiencePrefilled && (
                   <p className="flex items-center justify-center gap-1.5 text-xs font-medium text-ember-600 dark:text-ember-400">
                     <CircleCheck className="size-3.5" />
-                    Agent brief applied — the audience form will be prefilled in step 3.
+                    Agent brief applied — after your logo is analyzed we jump straight to Research review (step 4).
                   </p>
                 )}
               </div>

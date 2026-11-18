@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="assets/DF.png" alt="DesignForge" width="360" />
+<img src="assets/DFF.png" alt="DesignForge" width="200" />
 
 # DesignForge
 
@@ -145,6 +145,17 @@ Locally, the AI features read Z.AI credentials from `/etc/ai-gateway.json` autom
 4. Deploy. The app reads only `DATABASE_URL` at runtime.
 
 Use the pooled URL for `DATABASE_URL` on Vercel. The direct URL is intended for long-running servers.
+
+### Database provider auto-sync
+
+`prisma/schema.prisma`'s datasource `provider` is synced to the protocol of the effective
+`DATABASE_URL` automatically (scripts/sync-prisma-provider.mjs, runs before `dev`, `build`
+and `db:push`): a SQLite `file:` URL selects `sqlite`, a `postgres://` / `postgresql://`
+URL selects `postgresql`. The dev environment preview therefore runs on `db/custom.db`, while
+Vercel builds automatically compile the client for Prisma Postgres — no manual schema edits.
+To point the local dev environment at the cloud database again, put the real
+`DATABASE_URL=postgres://…` in `.env.local` (gitignored, survives dev environment reboots) and
+restart; the provider flips back to `postgresql` on the next `bun run dev` or `bun run db:push`.
 
 ---
 

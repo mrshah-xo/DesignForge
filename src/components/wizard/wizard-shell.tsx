@@ -6,7 +6,7 @@ import { toast } from 'sonner'
 import { Loader2, Plus } from 'lucide-react'
 
 import { api } from '@/lib/client/api'
-import { STEPS } from '@/lib/types'
+import { CATEGORIES, MONETIZATION, PLATFORMS, TRUST_LEVELS, STEPS } from '@/lib/types'
 import type {
   AudienceData,
   DesignTokens,
@@ -50,6 +50,39 @@ function resumeStep(p: ProjectDetail): number {
   if (!p.audience) return 3
   if (!p.research || p.research.status !== 'approved' || !p.design) return 4
   return 7
+}
+
+/** Monetization models where money changes hands (same rule as the audience form). */
+const MONEY_MONETIZATION = ['subscription', 'per_use', 'marketplace']
+
+/**
+ * Complete the agent brief into a full AudienceData (filling form defaults
+ * for anything the agent left out), or null when required fields are missing.
+ */
+function audienceFromBrief(brief: Partial<AudienceData>): AudienceData | null {
+  if (!brief.category || !brief.audienceDesc?.trim()) return null
+  const category = CATEGORIES.find((c) => c.value === brief.category)
+  if (!category) return null
+  const monetization = MONETIZATION.some((m) => m.value === brief.monetization)
+    ? (brief.monetization as string)
+    : MONETIZATION[0].value
+  const trustNeed = TRUST_LEVELS.some((t) => t.value === brief.trustNeed)
+    ? (brief.trustNeed as string)
+    : MONEY_MONETIZATION.includes(monetization)
+      ? 'critical'
+      : TRUST_LEVELS[1].value
+  const platform = PLATFORMS.some((p) => p.value === brief.platform)
+    ? (brief.platform as string)
+    : PLATFORMS[0].value
+  return {
+    category: brief.category,
+    categoryLabel: brief.categoryLabel || category.label,
+    audienceDesc: brief.audienceDesc.trim(),
+    platform,
+    monetization,
+    trustNeed,
+    notes: brief.notes?.trim() ?? '',
+  }
 }
 
 export function WizardShell() {
@@ -132,10 +165,35 @@ export function WizardShell() {
         const analysis = await api.analyzeProject(createdId)
         setProject((p) => (p && p.id === createdId ? { ...p, analysis } : p))
         await refresh(createdId)
-        setCurrentStep(2)
-        toast.success('Logo analysis ready', {
-          description: 'Review the extracted DNA, then tell us who will use it.',
-        })
+
+        // With a complete agent brief ("Want a prompt?" flow), skip steps 2-3:
+        // save the audience straight from the brief and land on step 4
+        // (Research review) so the user only reviews and runs research.
+        const briefAudience = pendingAudience ? audienceFromBrief(pendingAudience) : null
+        if (briefAudience) {
+          try {
+            const saved = await api.saveAudience(createdId, briefAudience)
+            setProject((p) => (p && p.id === createdId ? { ...p, audience: saved } : p))
+            await refresh(createdId)
+            setCurrentStep(4)
+            setPendingAudience(null)
+            void refreshProjects()
+            toast.success('Brief applied — ready for research', {
+              description: 'Logo analysis and audience were filled from your agent brief. Run the research, review the report, then approve.',
+            })
+          } catch {
+            // Audience save failed (e.g. validation) — fall back to step 3 prefill.
+            setCurrentStep(3)
+            toast.info('Audience prefilled from your brief', {
+              description: 'Check the fields, then Save & continue.',
+            })
+          }
+        } else {
+          setCurrentStep(2)
+          toast.success('Logo analysis ready', {
+            description: 'Review the extracted DNA, then tell us who will use it.',
+          })
+        }
       } catch (err) {
         setCurrentStep(2)
         toast.error('AI analysis failed', {
@@ -145,7 +203,7 @@ export function WizardShell() {
         setAnalyzing(false)
       }
     },
-    [refresh, refreshProjects]
+    [refresh, refreshProjects, pendingAudience]
   )
 
   // ---------------- Step 2: analysis ----------------
