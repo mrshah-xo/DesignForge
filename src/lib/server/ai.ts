@@ -165,10 +165,39 @@ function backoffMs(attempt: number): number {
   return 1000 * 2 ** attempt; // 1s, 2s, 4s...
 }
 
+/**
+ * The dev environment periodically rotates the token in /etc/ai-gateway.json; calls made
+ * during the swap fail with 401 / "missing X-Token header" for a few seconds.
+ * Wait generously on auth errors (and re-read the config via resetZAI) so a
+ * rotation is ridden out inside the retry loop instead of failing the job.
+ */
+const AUTH_BACKOFF_MS = 6000;
+
+function retryDelayMs(err: unknown, attempt: number): number {
+  return isAuthError(err) ? AUTH_BACKOFF_MS * (attempt + 1) : backoffMs(attempt);
+}
+
+async function waitOut(ms: number): Promise<void> {
+  await new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+/** Exhausted-retries error: auth hiccups read like a transient blip, not a bug. */
+function finalError(label: string, attempts: number, err: unknown, lastRaw = ''): Error {
+  if (isAuthError(err)) {
+    return new Error(
+      'AI credentials were just rotated and the request was rejected. '
+      + 'Please try again in a few seconds — retries now wait out credential rotations automatically.',
+    );
+  }
+  const reason = err instanceof Error ? err.message : String(err);
+  const suffix = lastRaw ? `. Last raw output: ${lastRaw.slice(0, 500)}` : '';
+  return new Error(`${label} failed after ${attempts} attempts: ${reason}${suffix}`);
+}
+
 // ---------- LLM calls ----------
 
 /** Text LLM call parsed as JSON, with retries + exponential backoff. */
-export async function llmJson<T>(system: string, user: string, attempts = 3): Promise<T> {
+export async function llmJson<T>(system: string, user: string, attempts = 4): Promise<T> {
   const zai = await getZAI();
   let lastRaw = '';
   let lastError: unknown = null;
@@ -191,17 +220,14 @@ export async function llmJson<T>(system: string, user: string, attempts = 3): Pr
       console.error(`llmJson attempt ${attempt + 1}/${attempts} failed:`, err instanceof Error ? err.message : err);
       // Stale credentials? Drop the cached SDK so the next attempt re-reads config.
       if (isAuthError(err)) resetZAI();
-      if (attempt < attempts - 1) await new Promise((resolve) => setTimeout(resolve, backoffMs(attempt)));
+      if (attempt < attempts - 1) await waitOut(retryDelayMs(err, attempt));
     }
   }
-  const reason = lastError instanceof Error ? lastError.message : String(lastError);
-  throw new Error(
-    `LLM JSON generation failed after ${attempts} attempts: ${reason}. Last raw output: ${lastRaw.slice(0, 500)}`,
-  );
+  throw finalError('LLM JSON generation', attempts, lastError, lastRaw);
 }
 
 /** Vision LLM call (logo analysis) parsed as JSON, with retries. */
-export async function visionJson<T>(prompt: string, base64Png: string, attempts = 2): Promise<T> {
+export async function visionJson<T>(prompt: string, base64Png: string, attempts = 3): Promise<T> {
   const zai = await getZAI();
   let lastRaw = '';
   let lastError: unknown = null;
@@ -224,13 +250,10 @@ export async function visionJson<T>(prompt: string, base64Png: string, attempts 
       lastError = err;
       console.error(`visionJson attempt ${attempt + 1}/${attempts} failed:`, err instanceof Error ? err.message : err);
       if (isAuthError(err)) resetZAI();
-      if (attempt < attempts - 1) await new Promise((resolve) => setTimeout(resolve, backoffMs(attempt)));
+      if (attempt < attempts - 1) await waitOut(retryDelayMs(err, attempt));
     }
   }
-  const reason = lastError instanceof Error ? lastError.message : String(lastError);
-  throw new Error(
-    `Vision JSON generation failed after ${attempts} attempts: ${reason}. Last raw output: ${lastRaw.slice(0, 500)}`,
-  );
+  throw finalError('Vision JSON generation', attempts, lastError, lastRaw);
 }
 
 /**
@@ -242,7 +265,7 @@ export async function visionJson<T>(prompt: string, base64Png: string, attempts 
 export async function llmText(
   system: string,
   user: string,
-  attempts = 2,
+  attempts = 3,
   maxTokens = 16000,
 ): Promise<string> {
   const zai = await getZAI();
@@ -264,28 +287,29 @@ export async function llmText(
       lastError = err;
       console.error(`llmText attempt ${attempt + 1}/${attempts} failed:`, err instanceof Error ? err.message : err);
       if (isAuthError(err)) resetZAI();
-      if (attempt < attempts - 1) await new Promise((resolve) => setTimeout(resolve, backoffMs(attempt)));
+      if (attempt < attempts - 1) await waitOut(retryDelayMs(err, attempt));
     }
   }
-  const reason = lastError instanceof Error ? lastError.message : String(lastError);
-  throw new Error(`LLM text generation failed after ${attempts} attempts: ${reason}`);
+  throw finalError('LLM text generation', attempts, lastError);
 }
 
 /** Real internet web search via the SDK function-calling bridge (with retry). */
 export async function webSearch(query: string, num = 5): Promise<SearchFunctionResultItem[]> {
   let lastError: unknown = null;
-  for (let attempt = 0; attempt < 3; attempt++) {
+  const attempts = 4;
+  for (let attempt = 0; attempt < attempts; attempt++) {
     try {
       const zai = await getZAI();
       const results = await zai.functions.invoke('web_search', { query, num });
       return Array.isArray(results) ? results : [];
     } catch (err) {
       lastError = err;
-      console.error(`webSearch attempt ${attempt + 1}/3 failed:`, err instanceof Error ? err.message : err);
+      console.error(`webSearch attempt ${attempt + 1}/${attempts} failed:`, err instanceof Error ? err.message : err);
       if (isAuthError(err)) resetZAI();
-      if (attempt < 2) await new Promise((resolve) => setTimeout(resolve, backoffMs(attempt)));
+      if (attempt < attempts - 1) await waitOut(retryDelayMs(err, attempt));
     }
   }
+  if (isAuthError(lastError)) return Promise.reject(finalError('Web search', attempts, lastError));
   throw lastError instanceof Error ? lastError : new Error(String(lastError));
 }
 
