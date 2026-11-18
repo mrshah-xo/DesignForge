@@ -38,6 +38,7 @@ Most design systems begin with a blank page and a guess at a color palette. Desi
 
 - **Pixel-level palette extraction** combined with VLM naming of colors, style tags, mood and trust signals.
 - **Audience research with a review gate.** Generation never starts until the research is approved.
+- **Agent-assisted flows.** The "Want a prompt?" dialogs generate ready-to-paste prompts for your AI assistant: the brief prompt fills all 8 wizard fields in one message, and the research-review prompt (step 4) critiques and fixes the report — paste the `DESIGNFORGE_RESEARCH` block back and the sections, competitor brands and sources update (and save) automatically.
 - **Logo fit report** with a match score, detected issues and suggestions.
 - **Domain-aware preview.** Components render with copy that fits the audience's domain.
 - **Visual and spec editing.** Adjust tokens in a visual editor or edit the spec directly.
