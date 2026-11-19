@@ -8,6 +8,7 @@
 // derived DesignSpec on completion.
 // ============================================================
 
+import { after } from 'next/server';
 import { NextRequest, NextResponse } from 'next/server';
 import type { PaletteColor } from '@/lib/types';
 import { db } from '@/lib/db';
@@ -20,10 +21,22 @@ import {
   normalizeLogo,
   rgbDistance,
 } from '@/lib/server/logo-image';
-import { createJob, finishJob, findRunningJob, getJob, publicJob } from '@/lib/server/jobs';
+import {
+  createJob,
+  finishJob,
+  findRunningJob,
+  getJob,
+  jobStartTs,
+  publicJob,
+  syntheticJob,
+  JOB_TS_SKEW_MS,
+  STALE_JOB_MS,
+} from '@/lib/server/jobs';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
+// Vercel: `after()` keeps the invocation alive past the POST response.
+export const maxDuration = 60;
 
 const HEX_RE = /^#[0-9A-Fa-f]{6}$/;
 
@@ -163,7 +176,9 @@ export async function POST(_req: NextRequest, { params }: { params: Promise<{ id
     }
 
     const job = createJob('analyze', id);
-    void runAnalysisPipeline(id, job.id);
+    // `after()` keeps the serverless invocation alive past the POST response
+    // (no-op overhead on long-lived servers like the preview sandbox).
+    after(() => runAnalysisPipeline(id, job.id));
     return NextResponse.json({ ok: true, data: { job: publicJob(job) } });
   } catch (err) {
     console.error('POST /api/projects/[id]/analyze failed:', err);
@@ -184,38 +199,16 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
       return NextResponse.json({ ok: false, error: 'jobId query parameter is required' }, { status: 400 });
     }
     const job = getJob(jobId);
-    if (!job || job.projectId !== id) {
-      return NextResponse.json({ ok: false, error: 'Job not found' }, { status: 404 });
+    if (job && job.projectId === id) {
+      if (job.status !== 'done') {
+        return NextResponse.json({ ok: true, data: { job: publicJob(job) } });
+      }
+      return NextResponse.json({ ok: true, data: await donePayload(id, job.id) });
     }
 
-    if (job.status !== 'done') {
-      return NextResponse.json({ ok: true, data: { job: publicJob(job) } });
-    }
-
-    // Done — return the fresh analysis from the DB.
-    const project = await db.project.findUnique({ where: { id }, include: { analysis: true } });
-    if (!project || !project.analysis) {
-      return NextResponse.json(
-        { ok: false, error: 'Generation finished but no analysis was saved' },
-        { status: 500 },
-      );
-    }
-    return NextResponse.json({
-      ok: true,
-      data: {
-        job: publicJob(job),
-        analysis: {
-          palette: JSON.parse(project.analysis.palette) as PaletteColor[],
-          styleTags: JSON.parse(project.analysis.styleTags) as string[],
-          mood: project.analysis.mood,
-          temperature: project.analysis.temperature,
-          industry: project.analysis.industry,
-          audienceGuess: project.analysis.audienceGuess,
-          trustSignals: JSON.parse(project.analysis.trustSignals) as string[],
-          description: project.analysis.description,
-        },
-      },
-    });
+    // Serverless fallback: this instance never saw the in-memory job.
+    // Derive the state from DB timestamps instead of failing with 404.
+    return NextResponse.json({ ok: true, data: await fallbackJobPayload(id, jobId) });
   } catch (err) {
     console.error('GET /api/projects/[id]/analyze failed:', err);
     return NextResponse.json(
@@ -223,4 +216,67 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
       { status: 500 },
     );
   }
+}
+
+/** Done payload shared by the in-memory fast path and the DB fallback. */
+async function donePayload(
+  id: string,
+  jobId: string,
+): Promise<{ job: ReturnType<typeof publicJob>; analysis: Record<string, unknown> }> {
+  const project = await db.project.findUnique({ where: { id }, include: { analysis: true } });
+  if (!project || !project.analysis) {
+    throw new Error('Generation finished but no analysis was saved');
+  }
+  return {
+    job: syntheticJob(jobId, 'analyze', id, 'done'),
+    analysis: {
+      palette: JSON.parse(project.analysis.palette) as PaletteColor[],
+      styleTags: JSON.parse(project.analysis.styleTags) as string[],
+      mood: project.analysis.mood,
+      temperature: project.analysis.temperature,
+      industry: project.analysis.industry,
+      audienceGuess: project.analysis.audienceGuess,
+      trustSignals: JSON.parse(project.analysis.trustSignals) as string[],
+      description: project.analysis.description,
+    },
+  };
+}
+
+/**
+ * Reconstruct job state from DB timestamps when the in-memory job is
+ * unavailable (poll landed on a different serverless instance).
+ */
+async function fallbackJobPayload(
+  id: string,
+  jobId: string,
+): Promise<{ job: ReturnType<typeof publicJob>; analysis?: Record<string, unknown> }> {
+  const startTs = jobStartTs(jobId);
+  if (startTs === null) {
+    return {
+      job: syntheticJob(jobId, 'analyze', id, 'error', 'Analysis status could not be tracked. Please run analysis again.'),
+    };
+  }
+  const project = await db.project.findUnique({ where: { id }, include: { analysis: true } });
+  const analysis = project?.analysis ?? null;
+  if (analysis && project) {
+    const savedDuringJob =
+      analysis.createdAt.getTime() >= startTs - JOB_TS_SKEW_MS ||
+      project.updatedAt.getTime() >= startTs - JOB_TS_SKEW_MS;
+    if (savedDuringJob) {
+      // The pipeline completed on another instance and saved the analysis.
+      return await donePayload(id, jobId);
+    }
+  }
+  if (Date.now() - startTs > STALE_JOB_MS) {
+    return {
+      job: syntheticJob(
+        jobId,
+        'analyze',
+        id,
+        'error',
+        'Logo analysis was interrupted before it finished (often a deployment time limit). Please run it again.',
+      ),
+    };
+  }
+  return { job: syntheticJob(jobId, 'analyze', id, 'running') };
 }
