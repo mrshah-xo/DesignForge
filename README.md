@@ -137,6 +137,23 @@ Locally, the AI features read Z.AI credentials from `/etc/ai-gateway.json` autom
 
    The AI features (logo analysis, research, design generation) require the `ZAI_*` variables on Vercel because there is no config file on the serverless filesystem.
 
+   **Where to get Z.AI credentials:** create an API key on the Z.AI Open Platform
+   (API Keys page in your Z.AI account), then set `ZAI_BASE_URL=https://api.z.ai/api/paas/v4`
+   and `ZAI_API_KEY=<your key>`. If your gateway issues a session token, also set `ZAI_TOKEN`.
+
+   **Notes:**
+   - Live web search uses the gateway's function bridge. Gateways without a
+     `functions/invoke` endpoint still work — research degrades gracefully and
+     generates the report without live citations.
+   - Long pipelines run through `after()` (post-response work kept alive) with
+     DB-backed job state, so polling survives serverless instance switches.
+     Research needs a duration cap of at least 90s and design generation at
+     least 120s (defaults exported in each route; Fluid compute supports this
+     on all current plans).
+   - No AI keys? The app still works end-to-end for free: the "Want a prompt?"
+     flows on the brief and research steps generate a copy-paste prompt block,
+     your agent fills it in, and you paste the result back — no AI API needed.
+
 3. Apply the schema to the database once, from your machine or a CI step:
 
    ```bash

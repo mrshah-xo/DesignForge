@@ -9,6 +9,7 @@
 // runs in the background; the frontend polls GET until done.
 // ============================================================
 
+import { after } from 'next/server';
 import { NextRequest, NextResponse } from 'next/server';
 import type { AudienceData, AnalysisData, DesignData, DesignTokens, LogoFeedback, ResearchData } from '@/lib/types';
 import { db } from '@/lib/db';
@@ -28,10 +29,23 @@ import {
   parseResearchRow,
   safeJsonParse,
 } from '@/lib/server/export';
-import { createJob, finishJob, findRunningJob, getJob, publicJob } from '@/lib/server/jobs';
+import {
+  createJob,
+  finishJob,
+  findRunningJob,
+  getJob,
+  jobStartTs,
+  publicJob,
+  syntheticJob,
+  JOB_TS_SKEW_MS,
+  STALE_JOB_MS,
+} from '@/lib/server/jobs';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
+// Vercel: `after()` keeps the invocation alive past the POST response.
+// Design is the longest pipeline (tokens LLM + DESIGN.md LLM).
+export const maxDuration = 120;
 
 function isPlainObject(v: unknown): v is Record<string, unknown> {
   return typeof v === 'object' && v !== null && !Array.isArray(v);
@@ -167,7 +181,9 @@ export async function POST(_req: NextRequest, { params }: { params: Promise<{ id
     }
 
     const job = createJob('design', id);
-    void runDesignPipeline(id, job.id);
+    // `after()` keeps the serverless invocation alive past the POST response
+    // (no-op overhead on long-lived servers like the preview dev environment).
+    after(() => runDesignPipeline(id, job.id));
     return NextResponse.json({ ok: true, data: { job: publicJob(job) } });
   } catch (err) {
     console.error('POST /api/projects/[id]/design failed:', err);
@@ -188,27 +204,19 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
       return NextResponse.json({ ok: false, error: 'jobId query parameter is required' }, { status: 400 });
     }
     const job = getJob(jobId);
-    if (!job || job.projectId !== id) {
-      return NextResponse.json({ ok: false, error: 'Job not found' }, { status: 404 });
+    if (job && job.projectId === id) {
+      if (job.status === 'running') {
+        return NextResponse.json({ ok: true, data: { job: publicJob(job) } });
+      }
+      if (job.status === 'error') {
+        return NextResponse.json({ ok: true, data: { job: publicJob(job) } });
+      }
+      return NextResponse.json({ ok: true, data: await donePayload(id, job.id) });
     }
 
-    if (job.status === 'running') {
-      return NextResponse.json({ ok: true, data: { job: publicJob(job) } });
-    }
-    if (job.status === 'error') {
-      return NextResponse.json({ ok: true, data: { job: publicJob(job) } });
-    }
-
-    // Done — return the fresh design from the DB.
-    const project = await db.project.findUnique({ where: { id }, include: { design: true } });
-    const design = parseDesignRow(project?.design ?? null);
-    if (!design) {
-      return NextResponse.json(
-        { ok: false, error: 'Generation finished but no design was saved' },
-        { status: 500 },
-      );
-    }
-    return NextResponse.json({ ok: true, data: { job: publicJob(job), design } });
+    // Serverless fallback: this instance never saw the in-memory job.
+    // Derive the state from DB timestamps instead of failing with 404.
+    return NextResponse.json({ ok: true, data: await fallbackJobPayload(id, jobId) });
   } catch (err) {
     console.error('GET /api/projects/[id]/design failed:', err);
     return NextResponse.json(
@@ -216,6 +224,53 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
       { status: 500 },
     );
   }
+}
+
+/** Done payload shared by the in-memory fast path and the DB fallback. */
+async function donePayload(
+  id: string,
+  jobId: string,
+): Promise<{ job: ReturnType<typeof publicJob>; design: DesignData }> {
+  const project = await db.project.findUnique({ where: { id }, include: { design: true } });
+  const design = parseDesignRow(project?.design ?? null);
+  if (!design) {
+    throw new Error('Generation finished but no design was saved');
+  }
+  return { job: syntheticJob(jobId, 'design', id, 'done'), design };
+}
+
+/**
+ * Reconstruct job state from DB timestamps when the in-memory job is
+ * unavailable (poll landed on a different serverless instance).
+ */
+async function fallbackJobPayload(
+  id: string,
+  jobId: string,
+): Promise<{ job: ReturnType<typeof publicJob>; design?: DesignData }> {
+  const startTs = jobStartTs(jobId);
+  if (startTs === null) {
+    return {
+      job: syntheticJob(jobId, 'design', id, 'error', 'Generation status could not be tracked. Please run design generation again.'),
+    };
+  }
+  const project = await db.project.findUnique({ where: { id }, include: { design: true } });
+  const design = project?.design ?? null;
+  if (design && design.updatedAt.getTime() >= startTs - JOB_TS_SKEW_MS) {
+    // The pipeline completed on another instance and saved the spec.
+    return await donePayload(id, jobId);
+  }
+  if (Date.now() - startTs > STALE_JOB_MS) {
+    return {
+      job: syntheticJob(
+        jobId,
+        'design',
+        id,
+        'error',
+        'Design generation was interrupted before it finished (often a deployment time limit). Please run it again.',
+      ),
+    };
+  }
+  return { job: syntheticJob(jobId, 'design', id, 'running') };
 }
 
 // ---------- PUT: manual token / markdown edits ----------

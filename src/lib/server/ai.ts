@@ -79,9 +79,10 @@ function createZAI(): Promise<ZAI> {
   return ZAI.create().catch((err) => {
     const detail = err instanceof Error ? err.message : String(err);
     throw new Error(
-      'Z.AI credentials unavailable — set ZAI_BASE_URL and ZAI_API_KEY environment variables ' +
-        '(required on Vercel/serverless; see README) or provide a valid ai-gateway.json in the ' +
-        `project, home directory, or /etc. Original error: ${detail}`
+      'AI service is not configured on this deployment (missing ZAI_BASE_URL / ZAI_API_KEY). ' +
+        'The site owner must add these environment variables. Meanwhile, everything still works ' +
+        'for free through the "Want a prompt?" flow — copy the prompt, let your agent fill it in, ' +
+        'and paste the result back. Original error: ' + detail
     );
   });
 }
@@ -196,8 +197,18 @@ function finalError(label: string, attempts: number, err: unknown, lastRaw = '')
 
 // ---------- LLM calls ----------
 
-/** Text LLM call parsed as JSON, with retries + exponential backoff. */
-export async function llmJson<T>(system: string, user: string, attempts = 4): Promise<T> {
+/**
+ * Text LLM call parsed as JSON, with retries + exponential backoff.
+ * maxTokens defaults high (16k) because model-side defaults truncate around
+ * 4k tokens — long JSON payloads (research reports, design tokens) get cut
+ * mid-structure and parse as "unbalanced JSON" on every retry.
+ */
+export async function llmJson<T>(
+  system: string,
+  user: string,
+  attempts = 4,
+  maxTokens = 16000,
+): Promise<T> {
   const zai = await getZAI();
   let lastRaw = '';
   let lastError: unknown = null;
@@ -211,6 +222,7 @@ export async function llmJson<T>(system: string, user: string, attempts = 4): Pr
       const res = await zai.chat.completions.create({
         messages,
         thinking: { type: 'disabled' },
+        max_tokens: maxTokens,
       });
       const text: string = res?.choices?.[0]?.message?.content ?? '';
       lastRaw = text;

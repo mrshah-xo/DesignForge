@@ -4,6 +4,12 @@
 // job id immediately so no HTTP request stays open long enough
 // to be cut by the preview gateway (~60s limit) — the frontend
 // polls a short GET until the job reaches done/error.
+//
+// Serverless note (Vercel): lambdas are multi-instance, so an
+// in-memory Map alone cannot carry job state across polls. Job
+// ids therefore embed the start timestamp (job_<ms>_<rand>) and
+// each route falls back to DB markers (row updatedAt/status)
+// when a poll lands on an instance that never saw the job.
 // ============================================================
 
 export type JobKind = 'analyze' | 'research' | 'design';
@@ -22,14 +28,35 @@ export interface JobRecord {
 const JOB_TTL_MS = 30 * 60 * 1000; // keep finished jobs around for 30 min
 const MAX_TRACKED = 200;
 
-const jobs = new Map<string, JobRecord>();
+/**
+ * How long a poll may keep trusting "still running" on an instance that
+ * never saw the in-memory job. After this window, DB-marker fallbacks
+ * report an interruption instead of polling forever.
+ */
+export const STALE_JOB_MS = 5 * 60 * 1000;
+
+/** Grace window subtracted when comparing DB row timestamps to job start. */
+export const JOB_TS_SKEW_MS = 2000;
+
+const JOB_ID_RE = /^job_(\d{10,})_[a-z0-9]+$/i;
+
+/** Extract the start timestamp (epoch ms) embedded in a job id, if any. */
+export function jobStartTs(jobId: string): number | null {
+  const m = JOB_ID_RE.exec(jobId);
+  if (!m) return null;
+  const ts = Number(m[1]);
+  return Number.isFinite(ts) && ts > 0 ? ts : null;
+}
 
 function newJobId(): string {
-  if (typeof globalThis.crypto?.randomUUID === 'function') {
-    return globalThis.crypto.randomUUID();
-  }
-  return `job_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 10)}`;
+  const rand =
+    typeof globalThis.crypto?.randomUUID === 'function'
+      ? globalThis.crypto.randomUUID().replace(/-/g, '').slice(0, 12)
+      : Math.random().toString(36).slice(2, 14);
+  return `job_${Date.now()}_${rand}`;
 }
+
+const jobs = new Map<string, JobRecord>();
 
 function prune(): void {
   const now = Date.now();
@@ -100,4 +127,24 @@ export function publicJob(job: JobRecord): {
     status: job.status,
     error: job.error,
   };
+}
+
+/**
+ * A job view reconstructed on an instance that never held the in-memory
+ * record (serverless multi-instance polling). Same wire shape as publicJob.
+ */
+export function syntheticJob(
+  id: string,
+  kind: JobKind,
+  projectId: string,
+  status: JobStatus,
+  error: string | null = null,
+): {
+  id: string;
+  kind: JobKind;
+  projectId: string;
+  status: JobStatus;
+  error: string | null;
+} {
+  return { id, kind, projectId, status, error };
 }

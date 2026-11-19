@@ -9,6 +9,7 @@
 // background; the frontend polls GET until done.
 // ============================================================
 
+import { after } from 'next/server';
 import { NextRequest, NextResponse } from 'next/server';
 import type { AudienceData, AnalysisData, ResearchData } from '@/lib/types';
 import { db } from '@/lib/db';
@@ -21,12 +22,27 @@ import {
   parseAudienceRow,
   parseResearchRow,
 } from '@/lib/server/export';
-import { createJob, finishJob, findRunningJob, getJob, publicJob } from '@/lib/server/jobs';
+import {
+  createJob,
+  finishJob,
+  findRunningJob,
+  getJob,
+  jobStartTs,
+  publicJob,
+  syntheticJob,
+  JOB_TS_SKEW_MS,
+  STALE_JOB_MS,
+} from '@/lib/server/jobs';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
+// Vercel: with `after()` the pipeline keeps the invocation alive past the
+// response; this must fit inside the platform duration cap (Fluid Hobby: 300s).
+export const maxDuration = 90;
 
 const MAX_SEARCH_RESULTS = 15;
+/** A DB 'generating' marker newer than this is still considered in-flight. */
+const GENERATING_FRESH_MS = 4 * 60 * 1000;
 
 // ---------- Background pipeline ----------
 
@@ -98,8 +114,15 @@ async function runResearchPipeline(id: string, jobId: string): Promise<void> {
 
     finishJob(jobId, 'done');
   } catch (err) {
+    const message = err instanceof Error ? err.message : 'Research generation failed';
     console.error(`POST /api/projects/[id]/research pipeline failed for ${id}:`, err);
-    finishJob(jobId, 'error', err instanceof Error ? err.message : 'Research generation failed');
+    finishJob(jobId, 'error', message);
+    // Persist the failure so polls on OTHER serverless instances see it too.
+    try {
+      await db.researchReport.updateMany({ where: { projectId: id, status: 'generating' }, data: { status: 'error' } });
+    } catch (persistErr) {
+      console.error(`Could not persist research error state for ${id}:`, persistErr);
+    }
   }
 }
 
@@ -110,7 +133,7 @@ export async function POST(_req: NextRequest, { params }: { params: Promise<{ id
     const { id } = await params;
     const project = await db.project.findUnique({
       where: { id },
-      include: { analysis: true, audience: true },
+      include: { analysis: true, audience: true, research: true },
     });
     if (!project) {
       return NextResponse.json({ ok: false, error: 'Project not found' }, { status: 404 });
@@ -129,9 +152,31 @@ export async function POST(_req: NextRequest, { params }: { params: Promise<{ id
     if (running) {
       return NextResponse.json({ ok: true, data: { job: publicJob(running) } });
     }
+    // Cross-instance dedupe: a fresh DB 'generating' marker means another
+    // serverless instance is already running the pipeline.
+    if (
+      project.research?.status === 'generating' &&
+      Date.now() - project.research.updatedAt.getTime() < GENERATING_FRESH_MS
+    ) {
+      return NextResponse.json({
+        ok: true,
+        data: { job: syntheticJob(newResumeJobId(), 'research', id, 'running') },
+      });
+    }
 
     const job = createJob('research', id);
-    void runResearchPipeline(id, job.id);
+    // Persist a 'generating' marker (preserving any existing report content)
+    // so polls on other instances know a run is in flight.
+    if (project.research) {
+      await db.researchReport.update({ where: { projectId: id }, data: { status: 'generating' } });
+    } else {
+      await db.researchReport.create({
+        data: { projectId: id, status: 'generating', sections: '[]', sources: '[]' },
+      });
+    }
+    // `after()` keeps the serverless invocation alive past the POST response
+    // (no-op overhead on long-lived servers like the preview dev environment).
+    after(() => runResearchPipeline(id, job.id));
     return NextResponse.json({ ok: true, data: { job: publicJob(job) } });
   } catch (err) {
     console.error('POST /api/projects/[id]/research failed:', err);
@@ -152,24 +197,16 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
       return NextResponse.json({ ok: false, error: 'jobId query parameter is required' }, { status: 400 });
     }
     const job = getJob(jobId);
-    if (!job || job.projectId !== id) {
-      return NextResponse.json({ ok: false, error: 'Job not found' }, { status: 404 });
+    if (job && job.projectId === id) {
+      if (job.status !== 'done') {
+        return NextResponse.json({ ok: true, data: { job: publicJob(job) } });
+      }
+      return NextResponse.json({ ok: true, data: await donePayload(id, job.id) });
     }
 
-    if (job.status !== 'done') {
-      return NextResponse.json({ ok: true, data: { job: publicJob(job) } });
-    }
-
-    // Done — return the fresh research from the DB.
-    const project = await db.project.findUnique({ where: { id }, include: { research: true } });
-    const research = parseResearchRow(project?.research ?? null);
-    if (!research) {
-      return NextResponse.json(
-        { ok: false, error: 'Generation finished but no research was saved' },
-        { status: 500 },
-      );
-    }
-    return NextResponse.json({ ok: true, data: { job: publicJob(job), research } });
+    // Serverless fallback: this instance never saw the in-memory job.
+    // Derive the state from DB markers instead of failing with 404.
+    return NextResponse.json({ ok: true, data: await fallbackJobPayload(id, jobId) });
   } catch (err) {
     console.error('GET /api/projects/[id]/research failed:', err);
     return NextResponse.json(
@@ -177,6 +214,84 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
       { status: 500 },
     );
   }
+}
+
+/** Done payload shared by the in-memory fast path and the DB fallback. */
+async function donePayload(
+  id: string,
+  jobId: string,
+): Promise<{ job: ReturnType<typeof publicJob>; research: ResearchData }> {
+  const project = await db.project.findUnique({ where: { id }, include: { research: true } });
+  const research = parseResearchRow(project?.research ?? null);
+  if (!research) {
+    throw new Error('Generation finished but no research was saved');
+  }
+  return { job: syntheticJob(jobId, 'research', id, 'done'), research };
+}
+
+/**
+ * Reconstruct job state from the ResearchReport row when the in-memory job
+ * is unavailable (poll landed on a different serverless instance).
+ */
+async function fallbackJobPayload(
+  id: string,
+  jobId: string,
+): Promise<{ job: ReturnType<typeof publicJob>; research?: ResearchData }> {
+  const startTs = jobStartTs(jobId);
+  const project = await db.project.findUnique({ where: { id }, include: { research: true } });
+  const row = project?.research ?? null;
+
+  if (row) {
+    const updated = row.updatedAt.getTime();
+    if (row.status === 'generating') {
+      if (Date.now() - updated < GENERATING_FRESH_MS) {
+        return { job: syntheticJob(jobId, 'research', id, 'running') };
+      }
+      return {
+        job: syntheticJob(
+          jobId,
+          'research',
+          id,
+          'error',
+          'Research was interrupted before it finished (often a deployment time limit). Run it again, or use the free "Want a prompt?" flow, which always works.',
+        ),
+      };
+    }
+    if (row.status === 'error') {
+      return {
+        job: syntheticJob(
+          jobId,
+          'research',
+          id,
+          'error',
+          'The last research run failed. Run it again, or use the free "Want a prompt?" flow, which always works.',
+        ),
+      };
+    }
+    if (startTs !== null && updated >= startTs - JOB_TS_SKEW_MS) {
+      // The pipeline completed on another instance and saved the report.
+      const research = parseResearchRow(row);
+      if (research) return { job: syntheticJob(jobId, 'research', id, 'done'), research };
+    }
+  }
+
+  if (startTs === null || Date.now() - startTs > STALE_JOB_MS) {
+    return {
+      job: syntheticJob(
+        jobId,
+        'research',
+        id,
+        'error',
+        'Research status could not be tracked to completion. Run it again, or use the free "Want a prompt?" flow.',
+      ),
+    };
+  }
+  return { job: syntheticJob(jobId, 'research', id, 'running') };
+}
+
+/** Synthetic job id for clients to poll when deduping across instances. */
+function newResumeJobId(): string {
+  return `job_${Date.now()}_resumegen`;
 }
 
 // ---------- PUT: user review — edit sections/sources, approve ----------
@@ -225,7 +340,14 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
     const sections = normalizeResearchSections(mergedRawSections);
     const sources = hasSources ? normalizeSources(body.sources) : normalizeSources(existingSources);
 
-    const status = approve ? 'approved' : (existing?.status ?? 'needs_review');
+    // Generative states never survive a user edit: providing content means
+    // the report is back in normal review flow.
+    const base = existing?.status ?? 'needs_review';
+    const status = approve
+      ? 'approved'
+      : base === 'error' || base === 'generating'
+        ? 'needs_review'
+        : base;
     const reviewedAt = approve ? new Date() : (existing?.reviewedAt ?? null);
 
     const record = {
