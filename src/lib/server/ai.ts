@@ -198,6 +198,15 @@ function finalError(label: string, attempts: number, err: unknown, lastRaw = '')
 // ---------- LLM calls ----------
 
 /**
+ * Model overrides via env, so deployments can pick free-tier models:
+ *   ZAI_TEXT_MODEL   (e.g. glm-4.5-flash — free on the Z.AI Open Platform)
+ *   ZAI_VISION_MODEL (e.g. glm-4.6v — used for logo analysis)
+ * Unset ZAI_TEXT_MODEL keeps the gateway's default text model.
+ */
+const TEXT_MODEL = process.env.ZAI_TEXT_MODEL || undefined;
+const VISION_MODEL = process.env.ZAI_VISION_MODEL || 'glm-4.6v';
+
+/**
  * Text LLM call parsed as JSON, with retries + exponential backoff.
  * maxTokens defaults high (16k) because model-side defaults truncate around
  * 4k tokens — long JSON payloads (research reports, design tokens) get cut
@@ -220,6 +229,7 @@ export async function llmJson<T>(
       ];
       if (attempt > 0) messages.push({ role: 'user', content: RETRY_NOTE });
       const res = await zai.chat.completions.create({
+        ...(TEXT_MODEL ? { model: TEXT_MODEL } : {}),
         messages,
         thinking: { type: 'disabled' },
         max_tokens: maxTokens,
@@ -251,7 +261,7 @@ export async function visionJson<T>(prompt: string, base64Png: string, attempts 
       ];
       if (attempt > 0) content.push({ type: 'text', text: RETRY_NOTE });
       const res = await zai.chat.completions.createVision({
-        model: 'glm-4.6v',
+        model: VISION_MODEL,
         messages: [{ role: 'user', content }],
         thinking: { type: 'disabled' },
       });
@@ -285,6 +295,7 @@ export async function llmText(
   for (let attempt = 0; attempt < attempts; attempt++) {
     try {
       const res = await zai.chat.completions.create({
+        ...(TEXT_MODEL ? { model: TEXT_MODEL } : {}),
         messages: [
           { role: 'assistant', content: system },
           { role: 'user', content: user },
