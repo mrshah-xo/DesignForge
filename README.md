@@ -134,6 +134,8 @@ Locally, the AI features read Z.AI credentials from `/etc/.z-ai-config` automati
    | `ZAI_BASE_URL` | Z.AI gateway base URL, from `.z-ai-config` |
    | `ZAI_API_KEY` | Z.AI API key, from `.z-ai-config` |
    | `ZAI_CHAT_ID`, `ZAI_USER_ID`, `ZAI_TOKEN` | Optional remaining fields from `.z-ai-config` |
+   | `ZAI_TEXT_MODEL` | Optional. Set `glm-4.5-flash` to run research/DESIGN generation on Z.AI's **free** text model |
+   | `ZAI_VISION_MODEL` | Optional. Overrides the logo-analysis vision model (default `glm-4.6v`) |
 
    The AI features (logo analysis, research, design generation) require the `ZAI_*` variables on Vercel because there is no config file on the serverless filesystem.
 
