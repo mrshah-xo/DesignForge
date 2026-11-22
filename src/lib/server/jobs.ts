@@ -12,7 +12,7 @@
 // when a poll lands on an instance that never saw the job.
 // ============================================================
 
-export type JobKind = 'analyze' | 'research' | 'design';
+export type JobKind = 'analyze' | 'research' | 'design' | 'themes';
 export type JobStatus = 'running' | 'done' | 'error';
 
 export interface JobRecord {

@@ -24,6 +24,7 @@ model Project {
   audience    AudienceProfile?
   research    ResearchReport?
   design      DesignSpec?
+  themes      DesignTheme[]
 }
 
 model LogoAnalysis {
@@ -86,4 +87,23 @@ model DesignSpec {
   logoFeedback String
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
+}
+
+// AI-suggested design-theme variants (each a full alternative DesignTokens set).
+// Regenerated as a set per project: old rows are deleted when new ones arrive.
+model DesignTheme {
+  id        String   @id @default(cuid())
+  projectId String
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  // Short evocative name, e.g. "Trust Ledger"
+  name      String
+  // 2-3 sentences grounding the variant in the research findings
+  reason    String
+  // 0-100 research-fit score; highest score is the AI's best outcome
+  score     Int      @default(0)
+  // JSON: DesignTokens (same normalizer as DesignSpec.tokens)
+  tokens    String
+  createdAt DateTime @default(now())
+
+  @@index([projectId])
 }

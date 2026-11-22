@@ -129,17 +129,7 @@ Rules:
 
 // ---------- 3) Design tokens + match analysis ----------
 
-const DESIGN_TOKENS_SCHEMA = `{
-  "matchAnalysis": {
-    "score": 0-100,
-    "verdict": "one paragraph judging how well the logo fits this audience/purpose, referencing specific findings",
-    "issues": [{ "severity": "high|medium|low", "title": "...", "detail": "..." }]  // 0-5; empty array if excellent fit
-    "suggestions": [{ "title": "...", "detail": "..." }]  // 2-4 concrete logo or usage fixes; if fit is excellent, give refinement suggestions
-  },
-  "tokens": { ...full DesignTokens JSON schema below... }
-}
-
-DesignTokens TypeScript interface (fill every field):
+const DESIGN_TOKENS_INTERFACE = `DesignTokens TypeScript interface (fill every field):
 interface ColorToken { hex: string; name: string; usage: string }
 interface PaletteStep { step: string; hex: string; name: string }  // step: "50" | "100" | ... | "900", exactly 10 steps
 export interface DesignTokens {
@@ -168,6 +158,18 @@ export interface DesignTokens {
     alerts: { success: { title: string, text: string }, warning: { title: string, text: string }, danger: { title: string, text: string } };
   };
 }`;
+
+const DESIGN_TOKENS_SCHEMA = `{
+  "matchAnalysis": {
+    "score": 0-100,
+    "verdict": "one paragraph judging how well the logo fits this audience/purpose, referencing specific findings",
+    "issues": [{ "severity": "high|medium|low", "title": "...", "detail": "..." }]  // 0-5; empty array if excellent fit
+    "suggestions": [{ "title": "...", "detail": "..." }]  // 2-4 concrete logo or usage fixes; if fit is excellent, give refinement suggestions
+  },
+  "tokens": { ...full DesignTokens JSON schema below... }
+}
+
+${DESIGN_TOKENS_INTERFACE}`;
 
 export function buildDesignPrompt(
   project: { name: string; description?: string | null },
@@ -198,6 +200,68 @@ Token rules:
 ${DESIGN_CORPUS_DIGEST}
 - brand.personality: 3-6 adjectives; brand.voice: one sentence describing the product voice.
 - previewCopy: landing-page microcopy written FOR THIS EXACT product, domain and audience (a farming app must read like a farming app — e.g. 'Plan your season with confidence'; NEVER generic fintech/wallet copy). Ground it in the audience psychology research: the headline/subhead should address what this audience fears and wants, and CTAs should feel natural to them. featureCards texts showcase how the product builds the trust levers found in research.`;
+}
+
+// ---------- 3b) Design theme variants (research-grounded alternatives) ----------
+
+export const THEMES_SYSTEM =
+  'You are a world-class design director proposing distinct design-system directions. Respond with ONLY a valid JSON object. No markdown fences.';
+
+const THEMES_SCHEMA = `{
+  "themes": [
+    {
+      "name": "short evocative direction name (<= 24 chars), e.g. 'Trust Ledger', 'Warm Craft', 'Quiet Grid'",
+      "reason": "2-3 sentences: why this direction fits the audience psychology and which specific research findings it applies",
+      "score": 0-100,  // how strongly this direction matches the reviewed research; the FIRST theme must be the highest-scoring
+      "tokens": { ...full DesignTokens JSON schema below... }
+    }
+    // exactly 3 theme objects, ordered best-first (highest research fit first)
+  ]
+}
+
+${DESIGN_TOKENS_INTERFACE}`;
+
+export function buildThemesPrompt(
+  project: { name: string; description?: string | null },
+  audience: AudienceData,
+  analysis: AnalysisData,
+  research: ResearchData,
+  currentTokens: DesignTokens | null,
+): string {
+  const current = currentTokens
+    ? `CURRENT APPLIED DESIGN TOKENS (use as the baseline; copy its previewCopy and trustPatterns verbatim into every variant):
+${JSON.stringify(
+      { previewCopy: currentTokens.previewCopy, trustPatterns: currentTokens.trustPatterns, brand: currentTokens.brand },
+      null,
+      1,
+    )}`
+    : 'No design has been generated yet — invent domain-appropriate previewCopy and trustPatterns per the schema.';
+
+  return `Propose 3 alternative design-system themes for this project.
+
+PROJECT: "${project.name}" — ${project.description || 'no description provided'}
+
+AUDIENCE: ${JSON.stringify(compactAudience(audience))}
+
+FULL LOGO ANALYSIS: ${JSON.stringify(analysis)}
+
+RESEARCH DIGEST (reviewed findings — every theme MUST apply these):
+${digestResearch(research)}
+
+${current}
+
+${THEMES_SCHEMA}
+
+Theme rules:
+- The three variants must be MEANINGFULLY different directions (e.g. different primary hue family, different heading/body pairing, different radius/shadow character), yet ALL of them must stay true to the research: use the colorTheory findings for hue/harmony choices, respect the trustFactors and commonMistakes sections as guardrails, and take positioning cues from competitorLogos (differentiate, do not clone).
+- The FIRST theme is your recommended best outcome: the safest, most research-aligned direction. Its score must be the highest.
+- Derive each primary color from the logo palette when it serves the field's psychology; if a variant shifts away from the logo color for psychological fit, say so in its reason.
+- primary/primaryForeground must meet WCAG AA (contrastRatio >= 4.5 — the system re-checks this).
+- Typography heading+body families MUST be chosen from this exact list: Inter, Manrope, Poppins, Space Grotesk, Sora, Outfit, IBM Plex Sans, Playfair Display, DM Serif Display, Lora, Merriweather, JetBrains Mono.
+- radius/shadows must match the logo styleTags (${analysis.styleTags.join(', ') || 'unknown'}).
+- brand: keep the same brand.name; personality/voice may shift subtly per direction.
+- previewCopy and trustPatterns: copy verbatim from the CURRENT APPLIED DESIGN TOKENS when provided (do not rewrite them); only invent them when no current tokens are given.
+- paletteScale: 10 steps derived from each variant's own primary.`;
 }
 
 // ---------- 4) DESIGN.md markdown ----------

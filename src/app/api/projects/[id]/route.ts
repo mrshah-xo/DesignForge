@@ -14,7 +14,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
     const { id } = await params;
     const project = await db.project.findUnique({
       where: { id },
-      include: { analysis: true, audience: true, research: true, design: true },
+      include: { analysis: true, audience: true, research: true, design: true, themes: true },
     });
     if (!project) {
       return NextResponse.json({ ok: false, error: 'Project not found' }, { status: 404 });

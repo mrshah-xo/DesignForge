@@ -14,6 +14,7 @@ import type {
   ProjectSummary,
   ResearchSections,
   ResearchSource,
+  ThemeVariant,
 } from '@/lib/types'
 
 import { Header } from '@/components/wizard/header'
@@ -330,6 +331,20 @@ export function WizardShell() {
   )
 
   // ---------------- Step 6: design ----------------
+  const generateThemes = useCallback(async (): Promise<ThemeVariant[]> => {
+    if (!project) throw new Error('No project open')
+    const id = project.id
+    try {
+      const themes = await api.generateThemes(id)
+      setProject((p) => (p && p.id === id ? { ...p, themes } : p))
+      toast.success('Theme suggestions ready')
+      return themes
+    } catch (err) {
+      toast.error('Could not generate theme suggestions', { description: errMsg(err) })
+      throw err
+    }
+  }, [project])
+
   const saveDesignTokens = useCallback(
     async (tokens: DesignTokens) => {
       if (!project) return
@@ -488,6 +503,7 @@ export function WizardShell() {
             onSaveTokens={saveDesignTokens}
             onSaveMarkdown={saveDesignMarkdown}
             onRegenerate={() => generateDesign(false)}
+            onGenerateThemes={generateThemes}
           />
         )
       case 7:

@@ -12,6 +12,7 @@ import type {
   LogoAnalysis,
   ResearchReport,
   DesignSpec,
+  DesignTheme,
 } from '@prisma/client';
 import type {
   AnalysisData,
@@ -29,6 +30,7 @@ import type {
   CompetitorBrand,
   DesignTokens,
   PaletteColor,
+  ThemeVariant,
 } from '@/lib/types';
 import type { PaletteStep } from '@/lib/types';
 import { normalizeTokens } from '@/lib/server/ai';
@@ -43,6 +45,7 @@ type AudienceRow = AudienceProfile;
 type AnalysisRow = LogoAnalysis;
 type ResearchRow = ResearchReport;
 type DesignRow = DesignSpec;
+type ThemeRow = DesignTheme;
 
 // ---------- generic JSON helpers ----------
 
@@ -221,6 +224,17 @@ export function parseDesignRow(row: DesignRow | null): DesignData | null {
   };
 }
 
+/** DB theme row → wire ThemeVariant (tokens re-normalized for safety). */
+export function parseThemeRow(row: ThemeRow): ThemeVariant {
+  return {
+    id: row.id,
+    name: row.name,
+    reason: row.reason,
+    score: row.score,
+    tokens: normalizeTokens(safeJsonParse<unknown>(row.tokens, {})),
+  };
+}
+
 export function toProjectSummary(project: ProjectRow): ProjectSummary {
   return {
     id: project.id,
@@ -239,6 +253,7 @@ export function toProjectDetail(
     audience: AudienceRow | null;
     research: ResearchRow | null;
     design: DesignRow | null;
+    themes?: ThemeRow[];
   },
 ): ProjectDetail {
   return {
@@ -247,6 +262,7 @@ export function toProjectDetail(
     audience: parseAudienceRow(project.audience),
     research: parseResearchRow(project.research),
     design: parseDesignRow(project.design),
+    themes: (project.themes ?? []).map(parseThemeRow),
   };
 }
 

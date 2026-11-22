@@ -16,6 +16,7 @@ import type {
   ResearchData,
   ResearchSections,
   ResearchSource,
+  ThemeVariant,
   ApiEnvelope,
 } from '@/lib/types'
 import type { ParsedBrief } from '@/lib/brief'
@@ -223,6 +224,24 @@ export const api = {
       }
     )
     return data.design
+  },
+
+  /** AI-suggested research-grounded theme variants (starts job + polls). */
+  generateThemes(id: string): Promise<ThemeVariant[]> {
+    const base = `/api/projects/${encodeURIComponent(id)}/design/themes`
+    return runJob<ThemeVariant[]>(
+      base,
+      (jobId) => `${base}?jobId=${encodeURIComponent(jobId)}`,
+      (data) => data.themes as ThemeVariant[],
+      'Theme suggestions',
+    )
+  },
+
+  async fetchThemes(id: string): Promise<ThemeVariant[]> {
+    const data = await request<{ themes: ThemeVariant[] }>(
+      `/api/projects/${encodeURIComponent(id)}/design/themes`,
+    )
+    return data.themes ?? []
   },
 
   async fetchExportJson(id: string): Promise<ExportJson> {

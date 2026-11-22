@@ -242,6 +242,15 @@ export interface DesignData {
   logoFeedback: LogoFeedback;
 }
 
+// AI-suggested design theme variant (research-grounded alternative tokens set)
+export interface ThemeVariant {
+  id: string;
+  name: string;
+  reason: string;
+  score: number; // 0-100 research fit; highest = AI's best outcome
+  tokens: DesignTokens;
+}
+
 // ---------- API payloads ----------
 export interface ProjectSummary {
   id: string;
@@ -258,6 +267,7 @@ export interface ProjectDetail extends ProjectSummary {
   audience: AudienceData | null;
   research: ResearchData | null;
   design: DesignData | null;
+  themes: ThemeVariant[];
 }
 
 // ---------- Curated Google fonts for the live preview ----------
@@ -298,7 +308,7 @@ export interface ApiEnvelope<T> {
 }
 
 // Async generation job (started via POST, polled via GET?jobId=...)
-export type JobKind = 'analyze' | 'research' | 'design';
+export type JobKind = 'analyze' | 'research' | 'design' | 'themes';
 export type JobStatus = 'running' | 'done' | 'error';
 
 export interface JobInfo {

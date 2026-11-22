@@ -4,7 +4,9 @@ import { useState } from 'react'
 import ReactMarkdown from 'react-markdown'
 import { toast } from 'sonner'
 import {
+  Check,
   Copy,
+  Download,
   Eye,
   FileText,
   Loader2,
@@ -12,6 +14,7 @@ import {
   RotateCcw,
   Save,
   SlidersHorizontal,
+  Sparkles,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -39,15 +42,17 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog'
 import { LivePreview, FALLBACK_HEX, isHex } from '@/components/preview/live-preview'
+import { themeSwatches, themeTokens } from '@/lib/preview-themes'
 import { DesignGenerating } from '@/components/wizard/design-generating'
 import { DESIGN_MESSAGES } from '@/components/wizard/progress-messages'
-import { copyToClipboard } from '@/lib/client/api'
+import { copyToClipboard, downloadText } from '@/lib/client/api'
 import {
   FONT_OPTIONS,
   type ColorRole,
   type ColorToken,
   type DesignTokens,
   type ProjectDetail,
+  type ThemeVariant,
 } from '@/lib/types'
 
 interface DesignStepProps {
@@ -57,6 +62,7 @@ interface DesignStepProps {
   onSaveTokens: (tokens: DesignTokens) => Promise<void>
   onSaveMarkdown: (markdown: string) => Promise<void>
   onRegenerate: () => Promise<void>
+  onGenerateThemes: () => Promise<ThemeVariant[]>
 }
 
 const COLOR_ROLES = Object.keys(FALLBACK_HEX) as ColorRole[]
@@ -102,12 +108,20 @@ export function DesignStep({
   onSaveTokens,
   onSaveMarkdown,
   onRegenerate,
+  onGenerateThemes,
 }: DesignStepProps) {
   const serverDesign = project.design
 
   const [tokens, setTokens] = useState<DesignTokens | null>(serverDesign?.tokens ?? null)
   const [markdown, setMarkdown] = useState(serverDesign?.markdown ?? '')
   const [hexDrafts, setHexDrafts] = useState<Partial<Record<ColorRole, string>>>({})
+
+  // ---------- AI theme directions + light/dark presets (live preview switcher) ----------
+  const [themes, setThemes] = useState<ThemeVariant[]>(project.themes ?? [])
+  const [themesLoading, setThemesLoading] = useState(false)
+  // activeThemeId selects: 'original' | 'light' | 'dark' | a ThemeVariant id
+  const [activeThemeId, setActiveThemeId] = useState<string>('original')
+  const [applyingTheme, setApplyingTheme] = useState(false)
 
   // Editors are initialized once at mount; the shell remounts this step
   // (keyed by project id + design nonce) when the design is regenerated,
@@ -135,6 +149,76 @@ export function DesignStep({
     const hex = tokens.colors?.[role]?.hex
     return isHex(hex) ? hex : FALLBACK_HEX[role]
   }
+
+  // ---------- Theme switcher helpers ----------
+  const bestThemeId =
+    themes.length > 0
+      ? themes.reduce((best, t) => (t.score > best.score ? t : best), themes[0]).id
+      : null
+  const activePreset: 'light' | 'dark' | null =
+    activeThemeId === 'light' || activeThemeId === 'dark' ? activeThemeId : null
+  const activeTheme = activeThemeId === 'original' || activePreset
+    ? null
+    : themes.find((t) => t.id === activeThemeId) ?? null
+  const previewTokens = activeTheme
+    ? activeTheme.tokens
+    : activePreset
+      ? themeTokens(tokens, activePreset, null)
+      : tokens
+
+  const handleGenerateThemes = () => {
+    setThemesLoading(true)
+    setActiveThemeId('original')
+    onGenerateThemes()
+      .then((list) => setThemes(list))
+      .catch(() => {
+        /* error already surfaced by the shell toast */
+      })
+      .finally(() => setThemesLoading(false))
+  }
+
+  const applyTheme = (theme: ThemeVariant) => {
+    setApplyingTheme(true)
+    Promise.resolve(onSaveTokens(theme.tokens))
+      .then(() => {
+        setTokens(theme.tokens)
+        setActiveThemeId('original')
+        toast.success(`Theme "${theme.name}" applied`, {
+          description: 'DESIGN.md still describes the previous direction — use Regenerate with AI (Visual editor tab) or edit it to refresh the copy.',
+        })
+      })
+      .catch(() => {
+        /* error already surfaced by the shell toast */
+      })
+      .finally(() => setApplyingTheme(false))
+  }
+
+  /** Apply a light/dark preset: persists the derived tokens as the new design. */
+  const applyPreset = () => {
+    if (!activePreset) return
+    const label = activePreset === 'light' ? 'Light' : 'Dark'
+    const next = themeTokens(tokens, activePreset, null)
+    setApplyingTheme(true)
+    Promise.resolve(onSaveTokens(next))
+      .then(() => {
+        setTokens(next)
+        setActiveThemeId('original')
+        toast.success(`${label} theme applied`, {
+          description: 'Same brand colors, remapped surfaces. DESIGN.md still describes the previous direction — regenerate it to refresh the copy.',
+        })
+      })
+      .catch(() => {
+        /* error already surfaced by the shell toast */
+      })
+      .finally(() => setApplyingTheme(false))
+  }
+
+  const previewPill = (active: boolean) =>
+    `inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition-colors disabled:opacity-60 ${
+      active
+        ? 'border-ember-300 bg-ember-50 text-ember-800 dark:border-ember-500/40 dark:bg-ember-500/10 dark:text-ember-300'
+        : 'border-border bg-transparent text-muted-foreground hover:bg-muted/60'
+    }`
 
   const patchColor = (role: ColorRole, hex: string) => {
     setTokens((t) => {
@@ -185,8 +269,144 @@ export function DesignStep({
       </TabsList>
 
       {/* ---------------- Live preview ---------------- */}
-      <TabsContent value="preview" className="mt-2">
-        <LivePreview tokens={tokens} />
+      <TabsContent value="preview" className="mt-2 space-y-3">
+        {/* AI theme directions — switch themes live, apply the best outcome */}
+        <div className="rounded-lg border border-border bg-card p-4 shadow-sm">
+          <div className="mb-3 flex flex-wrap items-start justify-between gap-2">
+            <div className="min-w-0">
+              <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-50">Theme directions</h3>
+              <p className="text-xs text-muted-foreground">
+                AI variants built from your approved research — switch live to compare, then apply one.
+              </p>
+            </div>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={themesLoading || saving || generating}
+                >
+                  {themesLoading ? (
+                    <Loader2 className="size-3.5 animate-spin" />
+                  ) : (
+                    <Sparkles className="size-3.5" />
+                  )}
+                  {themes.length === 0 ? 'Suggest themes' : 'Regenerate themes'}
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>
+                    {themes.length === 0 ? 'Generate theme directions?' : 'Regenerate theme directions?'}
+                  </AlertDialogTitle>
+                  <AlertDialogDescription>
+                    The AI will propose 3 alternative directions (colors, typography, shapes) grounded
+                    in your approved research, with the best-matching one marked. Your current design
+                    stays untouched until you apply a direction.
+                    {themes.length > 0 && ' The previous suggestions will be replaced.'}
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction
+                    className="bg-primary text-primary-foreground hover:bg-ember-600"
+                    onClick={handleGenerateThemes}
+                  >
+                    Generate
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          </div>
+
+          {themesLoading ? (
+            <div className="flex flex-wrap items-center gap-2">
+              {[0, 1, 2, 3].map((i) => (
+                <span
+                  key={i}
+                  className="h-7 animate-pulse rounded-full bg-muted"
+                  style={{ width: `${96 + i * 26}px` }}
+                />
+              ))}
+              <span className="text-xs text-muted-foreground">Generating research-grounded directions…</span>
+            </div>
+          ) : (
+            <div className="flex flex-wrap gap-2">
+              <button
+                type="button"
+                className={previewPill(activeThemeId === 'original')}
+                onClick={() => setActiveThemeId('original')}
+                aria-pressed={activeThemeId === 'original'}
+              >
+                Applied design
+              </button>
+              {themes.map((t) => (
+                <button
+                  key={t.id}
+                  type="button"
+                  className={previewPill(activeThemeId === t.id)}
+                  onClick={() => setActiveThemeId(t.id)}
+                  aria-pressed={activeThemeId === t.id}
+                >
+                  {t.id === bestThemeId && <Sparkles className="size-3 text-ember-500" />}
+                  {t.name}
+                  <span className="rounded-full bg-muted px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground">
+                    {t.score}
+                  </span>
+                </button>
+              ))}
+            </div>
+          )}
+
+          {themes.length === 0 && !themesLoading && (
+            <p className="mt-2 text-xs text-muted-foreground">
+              No suggestions yet — generate to get 3 research-backed directions with the best outcome marked.
+            </p>
+          )}
+
+          {activeTheme && (
+            <div className="mt-3 rounded-md border border-ember-200 bg-ember-50/60 p-3 dark:border-ember-500/30 dark:bg-ember-500/5">
+              <div className="flex flex-wrap items-start justify-between gap-2">
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-semibold text-ember-800 dark:text-ember-300">
+                      {activeTheme.name}
+                    </span>
+                    {activeTheme.id === bestThemeId && (
+                      <Badge className="border-ember-200 bg-ember-100 text-ember-800 dark:border-ember-500/40 dark:bg-ember-500/15 dark:text-ember-300">
+                        <Sparkles className="size-3" />
+                        Best match
+                      </Badge>
+                    )}
+                    <span className="font-mono text-xs text-muted-foreground">{activeTheme.score}/100</span>
+                  </div>
+                  <p className="mt-1 text-xs leading-relaxed text-muted-foreground">{activeTheme.reason}</p>
+                </div>
+                <div className="flex shrink-0 items-center gap-2">
+                  <Button
+                    size="sm"
+                    onClick={() => applyTheme(activeTheme)}
+                    disabled={applyingTheme || saving}
+                    className="bg-primary text-primary-foreground hover:bg-ember-600"
+                  >
+                    {applyingTheme ? <Loader2 className="size-3.5 animate-spin" /> : <Check className="size-3.5" />}
+                    Apply to design
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => setActiveThemeId('original')}
+                    disabled={applyingTheme}
+                  >
+                    Back to applied
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+
+        <LivePreview tokens={previewTokens} />
       </TabsContent>
 
       {/* ---------------- Visual editor ---------------- */}
