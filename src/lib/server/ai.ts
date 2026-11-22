@@ -67,6 +67,8 @@ function createZAI(): Promise<ZAI> {
   const apiKey = process.env.ZAI_API_KEY;
   if (baseUrl && apiKey) {
     return Promise.resolve(
+      // @ts-expect-error - SDK types the constructor private; the runtime
+      // accepts the options object and this branch is how Vercel gets credentials.
       new ZAI({
         baseUrl,
         apiKey,

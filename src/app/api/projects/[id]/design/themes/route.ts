@@ -36,6 +36,7 @@ import {
   JOB_TS_SKEW_MS,
   STALE_JOB_MS,
 } from '@/lib/server/jobs';
+import { withSchemaRetry } from '@/lib/server/ensure-schema';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -126,14 +127,16 @@ async function runThemesPipeline(id: string, jobId: string): Promise<void> {
     }
 
     // 3. Replace the stored set (themes are regenerated as a group).
-    await db.$transaction([
-      db.designTheme.deleteMany({ where: { projectId: id } }),
-      ...variants.map((v) =>
-        db.designTheme.create({
-          data: { projectId: id, name: v.name, reason: v.reason, score: v.score, tokens: JSON.stringify(v.tokens) },
-        }),
-      ),
-    ]);
+    await withSchemaRetry(() =>
+      db.$transaction([
+        db.designTheme.deleteMany({ where: { projectId: id } }),
+        ...variants.map((v) =>
+          db.designTheme.create({
+            data: { projectId: id, name: v.name, reason: v.reason, score: v.score, tokens: JSON.stringify(v.tokens) },
+          }),
+        ),
+      ]),
+    );
 
     finishJob(jobId, 'done');
   } catch (err) {
@@ -221,10 +224,12 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
 }
 
 async function themesList(id: string): Promise<ThemeVariant[]> {
-  const rows = await db.designTheme.findMany({
-    where: { projectId: id },
-    orderBy: [{ score: 'desc' }, { createdAt: 'asc' }],
-  });
+  const rows = await withSchemaRetry(() =>
+    db.designTheme.findMany({
+      where: { projectId: id },
+      orderBy: [{ score: 'desc' }, { createdAt: 'asc' }],
+    }),
+  );
   return rows.map(parseThemeRow);
 }
 
@@ -254,10 +259,12 @@ async function fallbackJobPayload(
       job: syntheticJob(jobId, 'themes', id, 'error', 'Generation status could not be tracked. Please generate themes again.'),
     };
   }
-  const latest = await db.designTheme.findFirst({
-    where: { projectId: id },
-    orderBy: { createdAt: 'desc' },
-  });
+  const latest = await withSchemaRetry(() =>
+    db.designTheme.findFirst({
+      where: { projectId: id },
+      orderBy: { createdAt: 'desc' },
+    }),
+  );
   if (latest && latest.createdAt.getTime() >= startTs - JOB_TS_SKEW_MS) {
     // The pipeline completed on another instance and saved the themes.
     return await donePayload(id, jobId);
