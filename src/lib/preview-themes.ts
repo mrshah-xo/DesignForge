@@ -80,11 +80,13 @@ function hexToHsl(hex: string): { h: number; s: number; l: number } {
   return { h: h * 360, s, l }
 }
 
-/** { h, s, l } -> hex */
+/** { h, s, l } -> hex. Lightness is accepted in either 0-1 or 0-100 scale. */
 function hslToHex(h: number, s: number, l: number): string {
   const hn = ((h % 360) + 360) % 360 / 360
   const sn = Math.max(0, Math.min(1, s))
-  const ln = Math.max(0, Math.min(1, l))
+  // Normalize lightness: call sites pass 0-100 values (e.g. 8, 95, 98.5);
+  // clamping those to [0, 1] silently forced every color to white.
+  const ln = Math.max(0, Math.min(1, l > 1 ? l / 100 : l))
   if (sn === 0) {
     const v = Math.round(ln * 255)
     return rgbToHex(v, v, v)

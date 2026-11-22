@@ -2,7 +2,8 @@
 
 import { useSyncExternalStore } from 'react'
 import Image from 'next/image'
-import { Clock, ChevronDown, Plus, Loader2 } from 'lucide-react'
+import { Clock, ChevronDown, Moon, Plus, Loader2, Sun } from 'lucide-react'
+import { useTheme } from 'next-themes'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import {
@@ -14,6 +15,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { LogoThumb } from '@/components/wizard/logo-thumb'
+import { SecretsPanel } from '@/components/wizard/secrets-panel'
 import { prettyStatus } from '@/components/wizard/status-badge'
 import type { ProjectSummary } from '@/lib/types'
 
@@ -37,6 +39,12 @@ export function Header({ projects, loadingProjects, onOpenProject, onNewProject 
     () => true,
     () => false
   )
+
+  // Light/Dark toggle for the DesignForge UI itself. The icon is gated on
+  // `mounted` so the server render (and the hydration pass) always agree.
+  const { resolvedTheme, setTheme } = useTheme()
+  const isDark = mounted && resolvedTheme === 'dark'
+  const themeLabel = isDark ? 'Switch to light mode' : 'Switch to dark mode'
 
   return (
     <header className="sticky top-0 z-40 border-b border-border bg-background/80 backdrop-blur">
@@ -65,6 +73,19 @@ export function Header({ projects, loadingProjects, onOpenProject, onNewProject 
         </div>
 
         <nav aria-label="Project actions" className="flex items-center gap-2">
+          <SecretsPanel />
+
+          <Button
+            variant="outline"
+            size="icon"
+            className="size-9 shrink-0"
+            onClick={() => setTheme(isDark ? 'light' : 'dark')}
+            aria-label={themeLabel}
+            title={themeLabel}
+          >
+            {isDark ? <Sun className="size-4" /> : <Moon className="size-4" />}
+          </Button>
+
           {mounted ? (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>

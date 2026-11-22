@@ -2,7 +2,7 @@
 
 <img src="assets/DFF.png" alt="DesignForge" width="200" />
 
-# DesignForge
+# MrDesign.md
 
 **Generate a complete design system from a logo.**
 
