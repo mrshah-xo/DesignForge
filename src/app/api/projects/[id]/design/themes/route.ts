@@ -23,6 +23,7 @@ import {
   normalizeTokens,
   userKeyFromRequest,
 } from '@/lib/server/ai';
+import { darkenHex, mixHex } from '@/lib/server/logo-image';
 import { THEMES_SYSTEM, buildThemesPrompt } from '@/lib/server/prompts';
 import {
   parseAnalysisRow,
@@ -70,6 +71,65 @@ function extractThemeArray(raw: Record<string, unknown>): Record<string, unknown
   throw new Error('Model response contained no themes array');
 }
 
+/**
+ * Deterministic fallback variants, used when the LLM fails after all
+ * retries (empty/filtered responses, unparseable output, provider outages).
+ * Derived from the applied design's tokens (or the logo palette) so the
+ * user still gets three usable, WCAG-checked directions instead of a
+ * dead end — each one is normalized through the same pipeline as the
+ * LLM output, so switching to it in the preview is always safe.
+ */
+function fallbackVariants(
+  currentTokens: DesignTokens | null,
+  analysis: AnalysisData,
+): Record<string, unknown>[] {
+  const primary =
+    currentTokens?.colors?.primary?.hex ?? analysis.palette[0]?.hex ?? '#0F766E';
+  const base: Record<string, unknown> = currentTokens
+    ? (JSON.parse(JSON.stringify(currentTokens)) as Record<string, unknown>)
+    : {};
+
+  // Regenerate the palette scale from each variant's own primary, not the
+  // applied design's (which would show steps of a different hue).
+  const baseNoScale: Record<string, unknown> = { ...base };
+  delete baseNoScale.paletteScale;
+  const baseColors = isPlainObject(baseNoScale.colors) ? baseNoScale.colors : {};
+
+  return [
+    {
+      name: 'Signature',
+      reason:
+        'Faithful to your approved logo palette and the applied design — the safe, research-aligned baseline. (Deterministic fallback: the AI theme service was unavailable, so this direction was derived locally from your design tokens.)',
+      score: 90,
+      tokens: { ...base },
+    },
+    {
+      name: 'Deep Contrast',
+      reason:
+        'Darker, higher-contrast direction: a deepened primary for gravitas with a serif display pairing — aligns with trust-heavy research findings. (Deterministic fallback derived from your palette.)',
+      score: 84,
+      tokens: {
+        ...baseNoScale,
+        colors: { ...baseColors, primary: { hex: darkenHex(primary, 0.25) } },
+        typography: { heading: { family: 'Playfair Display', weights: [700] }, body: { family: 'Lora', weights: [400, 500] } },
+        radius: { sm: '0.25rem', md: '0.375rem', lg: '0.625rem' },
+      },
+    },
+    {
+      name: 'Soft Air',
+      reason:
+        'Lighter, friendlier direction: a softened primary with generous radii — built for approachable, low-anxiety interfaces per the audience research. (Deterministic fallback derived from your palette.)',
+      score: 78,
+      tokens: {
+        ...baseNoScale,
+        colors: { ...baseColors, primary: { hex: mixHex(primary, '#FFFFFF', 0.22) } },
+        typography: { heading: { family: 'Manrope', weights: [700] }, body: { family: 'Inter', weights: [400, 500] } },
+        radius: { sm: '0.5rem', md: '0.75rem', lg: '1.25rem' },
+      },
+    },
+  ];
+}
+
 // ---------- Background pipeline ----------
 
 async function runThemesPipeline(id: string, jobId: string, userKey: string | null): Promise<void> {
@@ -89,19 +149,32 @@ async function runThemesPipeline(id: string, jobId: string, userKey: string | nu
       : null;
 
     // 1. Theme variants from the LLM (one call, 3 variants, ~16k budget).
-    const raw = await llmJson<Record<string, unknown>>(
-      THEMES_SYSTEM,
-      buildThemesPrompt(project, audience, analysis, research, currentTokens),
-      4,
-      16000,
-      userKey,
-    );
+    //    If the LLM fails after all retries (empty/filtered/unparseable
+    //    responses are a known provider flake), fall back to deterministic
+    //    variants so the job still completes instead of dead-ending the user.
+    let entries: Record<string, unknown>[];
+    try {
+      const raw = await llmJson<Record<string, unknown>>(
+        THEMES_SYSTEM,
+        buildThemesPrompt(project, audience, analysis, research, currentTokens),
+        4,
+        16000,
+        userKey,
+      );
+      entries = extractThemeArray(raw);
+    } catch (llmErr) {
+      console.error(
+        `themes pipeline: LLM failed after retries for project ${id} — using deterministic fallback variants:`,
+        llmErr instanceof Error ? llmErr.message : llmErr,
+      );
+      entries = fallbackVariants(currentTokens, analysis);
+    }
 
     // 2. Normalize every variant through the same bulletproof pipeline as
     //    the main design (WCAG AA check, palette scale, fonts, copy).
     const baseCopy = currentTokens?.previewCopy;
     const baseTrust = currentTokens?.trustPatterns;
-    const variants = extractThemeArray(raw)
+    const variants = entries
       .slice(0, MAX_THEMES)
       .map((entry, index) => {
         const mergedTokens = isPlainObject(entry.tokens) ? entry.tokens : {};

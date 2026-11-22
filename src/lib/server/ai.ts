@@ -241,15 +241,10 @@ export function stripFences(text: string): string {
 }
 
 /**
- * Extract the first balanced {...} or [...] block (string-aware) and
- * JSON.parse it. Throws a descriptive error on failure.
+ * Scan for the first balanced {...} / [...] block (string-aware).
+ * Returns the candidate substring, or null when the scan never closes.
  */
-export function extractJson<T = unknown>(text: string): T {
-  const cleaned = stripFences(text ?? '');
-  const start = cleaned.search(/[{[]/);
-  if (start === -1) {
-    throw new Error('No JSON object or array found in model response.');
-  }
+function balancedSlice(cleaned: string, start: number): string | null {
   const open = cleaned[start];
   const close = open === '{' ? '}' : ']';
   let depth = 0;
@@ -267,22 +262,185 @@ export function extractJson<T = unknown>(text: string): T {
     else if (ch === open) depth++;
     else if (ch === close) {
       depth--;
-      if (depth === 0) {
-        const candidate = cleaned.slice(start, i + 1);
-        try {
-          return JSON.parse(candidate) as T;
-        } catch (err) {
-          throw new Error(
-            `Failed to parse JSON from model response: ${err instanceof Error ? err.message : String(err)}. Snippet: ${candidate.slice(0, 200)}`,
-          );
-        }
+      if (depth === 0) return cleaned.slice(start, i + 1);
+    }
+  }
+  return null;
+}
+
+/** Drop illegal trailing commas before a closing bracket (a common LLM slip). */
+function stripTrailingCommas(text: string): string {
+  return text.replace(/,\s*([}\]])/g, '$1');
+}
+
+/**
+ * Salvage near-JSON model output. Strategies, tried in order:
+ *  1. strip trailing commas (e.g. `[1,2,3,]`) and parse;
+ *  2. prose glued after the JSON block — cut at the last balanced close;
+ *  3. truncated output (finish_reason=length) — repeatedly cut back to the
+ *     last complete element, close the open strings/brackets and parse.
+ * Returns null when nothing parses. The themes/design pipelines always
+ * re-normalize the result, so a partially-repaired payload is still safe.
+ */
+export function repairJson(cleaned: string, start: number): unknown | null {
+  // Strategy 1: trailing commas.
+  const strict = balancedSlice(cleaned, start);
+  if (strict) {
+    try {
+      return JSON.parse(stripTrailingCommas(strict));
+    } catch {
+      // fall through to the other strategies
+    }
+  }
+
+  // Strategy 2 + 3: work on a shrinking window that always ends just after
+  // a complete structural element, appending the missing closers.
+  let work = cleaned.slice(start);
+  for (let round = 0; round < 12; round++) {
+    // Close an unterminated string, then every open bracket, innermost first.
+    let inString = false;
+    let escaped = false;
+    const stack: string[] = [];
+    for (let i = 0; i < work.length; i++) {
+      const ch = work[i];
+      if (inString) {
+        if (escaped) escaped = false;
+        else if (ch === '\\') escaped = true;
+        else if (ch === '"') inString = false;
+        continue;
       }
+      if (ch === '"') inString = true;
+      else if (ch === '{' || ch === '[') stack.push(ch);
+      else if (ch === '}' || ch === ']') stack.pop();
+    }
+    let candidate = work;
+    if (inString) candidate += '"';
+    candidate += stack
+      .reverse()
+      .map((ch) => (ch === '{' ? '}' : ']'))
+      .join('');
+    try {
+      return JSON.parse(stripTrailingCommas(candidate));
+    } catch {
+      // Cut back: drop the last incomplete member. Find the last structural
+      // close (} or ]) outside strings and slice just after it, then strip
+      // any dangling `,` / `:` fragments.
+      let cut = -1;
+      inString = false;
+      escaped = false;
+      for (let i = 0; i < work.length; i++) {
+        const ch = work[i];
+        if (inString) {
+          if (escaped) escaped = false;
+          else if (ch === '\\') escaped = true;
+          else if (ch === '"') inString = false;
+          continue;
+        }
+        if (ch === '"') inString = true;
+        else if (ch === '}' || ch === ']') cut = i;
+      }
+      if (cut <= 0) return null;
+      work = work.slice(0, cut + 1).replace(/,\s*$/, '').replace(/:\s*$/, '');
+      if (!work) return null;
+    }
+  }
+  return null;
+}
+
+/**
+ * Extract the first balanced {...} or [...] block (string-aware) and
+ * JSON.parse it. Falls back to lenient repair (truncation, trailing
+ * commas, glued prose) before throwing a descriptive error.
+ */
+export function extractJson<T = unknown>(text: string): T {
+  const cleaned = stripFences(text ?? '');
+  const start = cleaned.search(/[{[]/);
+  if (start === -1) {
+    throw new Error('No JSON object or array found in model response.');
+  }
+
+  const balanced = balancedSlice(cleaned, start);
+  if (balanced) {
+    try {
+      return JSON.parse(balanced) as T;
+    } catch {
+      // Not valid as-is — let the repair pass take over below.
+    }
+  }
+
+  const repaired = repairJson(cleaned, start);
+  if (repaired !== null) return repaired as T;
+
+  if (balanced) {
+    try {
+      JSON.parse(balanced);
+    } catch (err) {
+      throw new Error(
+        `Failed to parse JSON from model response: ${err instanceof Error ? err.message : String(err)}. Snippet: ${balanced.slice(0, 200)}`,
+      );
     }
   }
   throw new Error('Unbalanced JSON block in model response.');
 }
 
-const RETRY_NOTE = 'Your previous response was not valid JSON. Respond with ONLY the JSON object.';
+// ---------- Model response helpers ----------
+
+interface RawChatResponse {
+  choices?: Array<{
+    finish_reason?: unknown;
+    message?: { content?: unknown; reasoning_content?: unknown };
+  }>;
+  model?: unknown;
+}
+
+/** Some gateways return content as an array of typed parts; join the text ones. */
+function joinContentParts(content: unknown): string {
+  if (typeof content === 'string') return content;
+  if (Array.isArray(content)) {
+    return content
+      .map((part) => {
+        if (typeof part === 'string') return part;
+        if (typeof part === 'object' && part !== null && typeof (part as { text?: unknown }).text === 'string') {
+          return (part as { text: string }).text;
+        }
+        return '';
+      })
+      .join('');
+  }
+  return '';
+}
+
+/**
+ * Read the text out of a chat-completion response, tolerating the response
+ * shapes different gateways/models produce:
+ *  - string content (standard);
+ *  - array-of-parts content;
+ *  - reasoning models that leave `content` empty and put the answer in
+ *    `reasoning_content`.
+ * Empty text signals a provider-side problem (content filter, exhausted
+ * quota, model unavailable) — callers treat it as a retryable failure.
+ */
+export function messageText(res: unknown): { text: string; finishReason: string; model: string } {
+  const r = (res ?? {}) as RawChatResponse;
+  const choice = Array.isArray(r.choices) ? r.choices[0] : undefined;
+  const message = choice?.message ?? {};
+  let text = joinContentParts(message.content);
+  if (!text.trim()) text = joinContentParts(message.reasoning_content);
+  return {
+    text: typeof text === 'string' ? text : '',
+    finishReason: typeof choice?.finish_reason === 'string' ? choice.finish_reason : 'unknown',
+    model: typeof r.model === 'string' ? r.model : '',
+  };
+}
+
+const RETRY_NOTE_BASE =
+  'Your previous response was not valid JSON. Respond AGAIN with ONLY the raw JSON object — start with { and end with }. No prose, no explanations, no markdown fences, no code block.';
+
+/** Retry note that tells the model WHY its last output failed, so it can self-correct. */
+function retryNote(lastReason: string): string {
+  const reason = lastReason.trim().slice(0, 300);
+  return reason ? `${RETRY_NOTE_BASE} Previous failure: "${reason}".` : RETRY_NOTE_BASE;
+}
 
 function backoffMs(attempt: number): number {
   return 1000 * 2 ** attempt; // 1s, 2s, 4s...
@@ -356,16 +514,34 @@ export async function llmJson<T>(
         { role: 'assistant', content: system },
         { role: 'user', content: user },
       ];
-      if (attempt > 0) messages.push({ role: 'user', content: RETRY_NOTE });
+      if (attempt > 0) {
+        const reason = lastError instanceof Error ? lastError.message : '';
+        messages.push({ role: 'user', content: retryNote(reason) });
+      }
       const res = await zai.chat.completions.create({
         ...(TEXT_MODEL ? { model: TEXT_MODEL } : {}),
         messages,
         thinking: { type: 'disabled' },
         max_tokens: maxTokens,
       });
-      const text: string = res?.choices?.[0]?.message?.content ?? '';
+      const { text, finishReason, model } = messageText(res);
       lastRaw = text;
-      return extractJson<T>(text);
+      if (!text.trim()) {
+        throw new Error(
+          `Model returned an empty response (finish_reason=${finishReason}${model ? `, model=${model}` : ''}). ` +
+            'This usually means the provider filtered the request, the model is unavailable, or the quota is exhausted.',
+        );
+      }
+      try {
+        return extractJson<T>(text);
+      } catch (parseErr) {
+        // Keep the raw output for server-side debugging before rethrowing.
+        console.error(
+          `llmJson: unparseable output (attempt ${attempt + 1}/${attempts}, first 400 chars):`,
+          text.slice(0, 400).replace(/\s+/g, ' '),
+        );
+        throw parseErr;
+      }
     } catch (err) {
       lastError = err;
       console.error(`llmJson attempt ${attempt + 1}/${attempts} failed:`, err instanceof Error ? err.message : err);
@@ -391,14 +567,22 @@ export async function visionJson<T>(prompt: string, base64Png: string, attempts 
         { type: 'text', text: prompt },
         { type: 'image_url', image_url: { url: `data:image/png;base64,${base64Png}` } },
       ];
-      if (attempt > 0) content.push({ type: 'text', text: RETRY_NOTE });
+      if (attempt > 0) {
+        const reason = lastError instanceof Error ? lastError.message : '';
+        content.push({ type: 'text', text: retryNote(reason) });
+      }
       const res = await zai.chat.completions.createVision({
         model: VISION_MODEL,
         messages: [{ role: 'user', content }],
         thinking: { type: 'disabled' },
       });
-      const text: string = res?.choices?.[0]?.message?.content ?? '';
+      const { text, finishReason, model } = messageText(res);
       lastRaw = text;
+      if (!text.trim()) {
+        throw new Error(
+          `Model returned an empty response (finish_reason=${finishReason}${model ? `, model=${model}` : ''}).`,
+        );
+      }
       return extractJson<T>(text);
     } catch (err) {
       lastError = err;

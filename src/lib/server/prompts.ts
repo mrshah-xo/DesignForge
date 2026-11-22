@@ -205,7 +205,7 @@ ${DESIGN_CORPUS_DIGEST}
 // ---------- 3b) Design theme variants (research-grounded alternatives) ----------
 
 export const THEMES_SYSTEM =
-  'You are a world-class design director proposing distinct design-system directions. Respond with ONLY a valid JSON object. No markdown fences.';
+  'You are a world-class design director proposing distinct design-system directions. Respond with ONLY a valid JSON object — the very first characters of your reply must be {"themes": [ and the reply must end with ]}. No markdown fences, no commentary, no code block.';
 
 const THEMES_SCHEMA = `{
   "themes": [
