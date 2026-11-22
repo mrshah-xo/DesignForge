@@ -6,7 +6,7 @@
 // ============================================================
 
 import { NextRequest, NextResponse } from 'next/server';
-import { llmJson } from '@/lib/server/ai';
+import { isMissingUserKey, llmJson, userKeyFromRequest } from '@/lib/server/ai';
 import { PARSE_BRIEF_MAX_CHARS, normalizeBriefRaw } from '@/lib/brief';
 
 export const runtime = 'nodejs';
@@ -54,18 +54,23 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const raw = await llmJson<unknown>(EXTRACTION_SYSTEM, text.slice(0, 8000), 2);
+    // Visitor's own key (BYOK) — used for this request only.
+    const userKey = userKeyFromRequest(req);
+
+    const raw = await llmJson<unknown>(EXTRACTION_SYSTEM, text.slice(0, 8000), 2, 16000, userKey);
     const brief = normalizeBriefRaw(raw);
 
     return NextResponse.json({ ok: true, data: { brief } });
   } catch (err) {
     console.error('POST /api/parse-brief failed:', err);
+    const missing = isMissingUserKey(err);
     return NextResponse.json(
       {
         ok: false,
         error: err instanceof Error ? err.message : 'Could not extract the brief',
+        ...(missing ? { requiresUserKey: true } : {}),
       },
-      { status: 500 },
+      { status: missing ? 401 : 500 },
     );
   }
 }

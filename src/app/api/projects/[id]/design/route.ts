@@ -13,7 +13,15 @@ import { after } from 'next/server';
 import { NextRequest, NextResponse } from 'next/server';
 import type { AudienceData, AnalysisData, DesignData, DesignTokens, LogoFeedback, ResearchData } from '@/lib/types';
 import { db } from '@/lib/db';
-import { llmJson, llmText, normalizeTokens, stripFences } from '@/lib/server/ai';
+import {
+  assertAiUsable,
+  isMissingUserKey,
+  llmJson,
+  llmText,
+  normalizeTokens,
+  stripFences,
+  userKeyFromRequest,
+} from '@/lib/server/ai';
 import {
   DESIGN_SYSTEM,
   MARKDOWN_SYSTEM,
@@ -78,7 +86,7 @@ function cleanMarkdown(text: string): string {
 // ---------- Background pipeline ----------
 
 /** Full design pipeline: tokens + fit report + DESIGN.md, persisted to DB. */
-async function runDesignPipeline(id: string, jobId: string): Promise<void> {
+async function runDesignPipeline(id: string, jobId: string, userKey: string | null): Promise<void> {
   try {
     const project = await db.project.findUnique({
       where: { id },
@@ -95,6 +103,9 @@ async function runDesignPipeline(id: string, jobId: string): Promise<void> {
     const raw = await llmJson<Record<string, unknown>>(
       DESIGN_SYSTEM,
       buildDesignPrompt(project, audience, analysis, research),
+      4,
+      16000,
+      userKey,
     );
 
     // 2. Bulletproof normalization (also enforces the WCAG AA primary contrast).
@@ -116,7 +127,7 @@ async function runDesignPipeline(id: string, jobId: string): Promise<void> {
     let markdown = '';
     try {
       markdown = cleanMarkdown(
-        await llmText(MARKDOWN_SYSTEM, buildMarkdownPrompt(project, audience, analysis, research, normalized, logoFeedback)),
+        await llmText(MARKDOWN_SYSTEM, buildMarkdownPrompt(project, audience, analysis, research, normalized, logoFeedback), 3, 16000, userKey),
       );
     } catch (err) {
       console.error(`DESIGN.md generation failed for project ${id}, using fallback template:`, err instanceof Error ? err.message : err);
@@ -148,9 +159,12 @@ async function runDesignPipeline(id: string, jobId: string): Promise<void> {
 
 // ---------- POST: start generation (returns immediately) ----------
 
-export async function POST(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params;
+    // Visitor's own key (BYOK) — captured here at request time and passed
+    // explicitly into the background pipeline (after() detaches context).
+    const userKey = userKeyFromRequest(req);
     const project = await db.project.findUnique({
       where: { id },
       include: { analysis: true, audience: true, research: true },
@@ -180,16 +194,24 @@ export async function POST(_req: NextRequest, { params }: { params: Promise<{ id
       return NextResponse.json({ ok: true, data: { job: publicJob(running) } });
     }
 
+    // BYOK gate: reject before starting when no usable credentials exist.
+    await assertAiUsable(userKey);
+
     const job = createJob('design', id);
     // `after()` keeps the serverless invocation alive past the POST response
     // (no-op overhead on long-lived servers like the preview dev environment).
-    after(() => runDesignPipeline(id, job.id));
+    after(() => runDesignPipeline(id, job.id, userKey));
     return NextResponse.json({ ok: true, data: { job: publicJob(job) } });
   } catch (err) {
     console.error('POST /api/projects/[id]/design failed:', err);
+    const missing = isMissingUserKey(err);
     return NextResponse.json(
-      { ok: false, error: err instanceof Error ? err.message : 'Could not start design generation' },
-      { status: 500 },
+      {
+        ok: false,
+        error: err instanceof Error ? err.message : 'Could not start design generation',
+        ...(missing ? { requiresUserKey: true } : {}),
+      },
+      { status: missing ? 401 : 500 },
     );
   }
 }

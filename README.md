@@ -136,8 +136,18 @@ Locally, the AI features read Z.AI credentials from `/etc/ai-gateway.json` autom
    | `ZAI_CHAT_ID`, `ZAI_USER_ID`, `ZAI_TOKEN` | Optional remaining fields from `ai-gateway.json` |
    | `ZAI_TEXT_MODEL` | Optional. Set `glm-4.5-flash` to run research/DESIGN generation on Z.AI's **free** text model |
    | `ZAI_VISION_MODEL` | Optional. Overrides the logo-analysis vision model (default `glm-4.6v`) |
+   | `ZAI_ALLOW_OWNER_KEY` | Optional. Set `1` to let public visitors use your `ZAI_API_KEY`. **Default is off** — visitors must bring their own key (BYOK), so strangers never spend your credits |
 
    The AI features (logo analysis, research, design generation) require the `ZAI_*` variables on Vercel because there is no config file on the serverless filesystem.
+
+   **Bring-your-own-key (default on production):** visitors paste their own Z.AI API key
+   through the "API keys" panel in the header (generate one free at
+   [z.ai/manage-apikey/apikey-list](https://z.ai/manage-apikey/apikey-list)). The key is stored
+   only in the visitor's browser (localStorage), sent per-request in the `x-user-key` header,
+   and used exclusively for that visitor's generations — it is never persisted server-side.
+   Your `ZAI_API_KEY` then serves **only** local development, unless you set
+   `ZAI_ALLOW_OWNER_KEY=1`. Requests without a key receive `401 { requiresUserKey: true }`
+   and the UI opens the panel automatically.
 
    **Where to get Z.AI credentials:** create an API key on the Z.AI Open Platform
    (API Keys page in your Z.AI account), then set `ZAI_BASE_URL=https://api.z.ai/api/paas/v4`

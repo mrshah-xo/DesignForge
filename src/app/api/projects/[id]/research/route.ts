@@ -13,7 +13,13 @@ import { after } from 'next/server';
 import { NextRequest, NextResponse } from 'next/server';
 import type { AudienceData, AnalysisData, ResearchData } from '@/lib/types';
 import { db } from '@/lib/db';
-import { llmJson, webSearch } from '@/lib/server/ai';
+import {
+  assertAiUsable,
+  isMissingUserKey,
+  llmJson,
+  userKeyFromRequest,
+  webSearch,
+} from '@/lib/server/ai';
 import { RESEARCH_SYSTEM, buildResearchPrompt } from '@/lib/server/prompts';
 import {
   normalizeResearchSections,
@@ -47,7 +53,7 @@ const GENERATING_FRESH_MS = 4 * 60 * 1000;
 // ---------- Background pipeline ----------
 
 /** Research pipeline: 3 parallel web searches + LLM synthesis, persisted to DB. */
-async function runResearchPipeline(id: string, jobId: string): Promise<void> {
+async function runResearchPipeline(id: string, jobId: string, userKey: string | null): Promise<void> {
   try {
     const project = await db.project.findUnique({
       where: { id },
@@ -66,7 +72,7 @@ async function runResearchPipeline(id: string, jobId: string): Promise<void> {
       `color psychology trust ${audience.trustNeed} need digital products`,
     ];
     const settled = await Promise.allSettled(
-      queries.map((query) => webSearch(query, 5)),
+      queries.map((query) => webSearch(query, 5, userKey)),
     );
     const searchResults: Array<{ name: string; url: string; snippet: string }> = [];
     const seenUrls = new Set<string>();
@@ -89,6 +95,9 @@ async function runResearchPipeline(id: string, jobId: string): Promise<void> {
     const raw = await llmJson<Record<string, unknown>>(
       RESEARCH_SYSTEM,
       buildResearchPrompt(project, audience, analysis, searchResults),
+      4,
+      16000,
+      userKey,
     );
 
     // 3. Fill missing sections/sources with safe fallbacks.
@@ -128,9 +137,12 @@ async function runResearchPipeline(id: string, jobId: string): Promise<void> {
 
 // ---------- POST: start research (returns immediately) ----------
 
-export async function POST(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params;
+    // Visitor's own key (BYOK) — captured here at request time and passed
+    // explicitly into the background pipeline (after() detaches context).
+    const userKey = userKeyFromRequest(req);
     const project = await db.project.findUnique({
       where: { id },
       include: { analysis: true, audience: true, research: true },
@@ -174,15 +186,24 @@ export async function POST(_req: NextRequest, { params }: { params: Promise<{ id
         data: { projectId: id, status: 'generating', sections: '[]', sources: '[]' },
       });
     }
+
+    // BYOK gate: reject before starting when no usable credentials exist.
+    await assertAiUsable(userKey);
+
     // `after()` keeps the serverless invocation alive past the POST response
     // (no-op overhead on long-lived servers like the preview dev environment).
-    after(() => runResearchPipeline(id, job.id));
+    after(() => runResearchPipeline(id, job.id, userKey));
     return NextResponse.json({ ok: true, data: { job: publicJob(job) } });
   } catch (err) {
     console.error('POST /api/projects/[id]/research failed:', err);
+    const missing = isMissingUserKey(err);
     return NextResponse.json(
-      { ok: false, error: err instanceof Error ? err.message : 'Could not start research' },
-      { status: 500 },
+      {
+        ok: false,
+        error: err instanceof Error ? err.message : 'Could not start research',
+        ...(missing ? { requiresUserKey: true } : {}),
+      },
+      { status: missing ? 401 : 500 },
     );
   }
 }

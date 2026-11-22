@@ -12,7 +12,12 @@ import { after } from 'next/server';
 import { NextRequest, NextResponse } from 'next/server';
 import type { PaletteColor } from '@/lib/types';
 import { db } from '@/lib/db';
-import { visionJson } from '@/lib/server/ai';
+import {
+  assertAiUsable,
+  isMissingUserKey,
+  userKeyFromRequest,
+  visionJson,
+} from '@/lib/server/ai';
 import { ANALYSIS_SYSTEM, buildAnalysisPrompt } from '@/lib/server/prompts';
 import {
   colorNameFromHex,
@@ -65,7 +70,7 @@ function normalizeVlmPalette(raw: unknown): PaletteColor[] {
 // ---------- Background pipeline ----------
 
 /** Analysis pipeline: VLM + deterministic pixel palette merge, persisted to DB. */
-async function runAnalysisPipeline(id: string, jobId: string): Promise<void> {
+async function runAnalysisPipeline(id: string, jobId: string, userKey: string | null): Promise<void> {
   try {
     const project = await db.project.findUnique({ where: { id } });
     if (!project) {
@@ -81,6 +86,8 @@ async function runAnalysisPipeline(id: string, jobId: string): Promise<void> {
       vlm = await visionJson<Record<string, unknown>>(
         `${ANALYSIS_SYSTEM}\n\n${buildAnalysisPrompt(project.name, project.description)}`,
         base64,
+        3,
+        userKey,
       );
     } catch (err) {
       console.error(`VLM analysis failed for project ${id}:`, err instanceof Error ? err.message : err);
@@ -161,9 +168,12 @@ async function runAnalysisPipeline(id: string, jobId: string): Promise<void> {
 
 // ---------- POST: start analysis (returns immediately) ----------
 
-export async function POST(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params;
+    // Visitor's own key (BYOK) — captured here at request time and passed
+    // explicitly into the background pipeline (after() detaches context).
+    const userKey = userKeyFromRequest(req);
     const exists = await db.project.findUnique({ where: { id }, select: { id: true } });
     if (!exists) {
       return NextResponse.json({ ok: false, error: 'Project not found' }, { status: 404 });
@@ -175,16 +185,24 @@ export async function POST(_req: NextRequest, { params }: { params: Promise<{ id
       return NextResponse.json({ ok: true, data: { job: publicJob(running) } });
     }
 
+    // BYOK gate: reject before starting when no usable credentials exist.
+    await assertAiUsable(userKey);
+
     const job = createJob('analyze', id);
     // `after()` keeps the serverless invocation alive past the POST response
     // (no-op overhead on long-lived servers like the preview dev environment).
-    after(() => runAnalysisPipeline(id, job.id));
+    after(() => runAnalysisPipeline(id, job.id, userKey));
     return NextResponse.json({ ok: true, data: { job: publicJob(job) } });
   } catch (err) {
     console.error('POST /api/projects/[id]/analyze failed:', err);
+    const missing = isMissingUserKey(err);
     return NextResponse.json(
-      { ok: false, error: err instanceof Error ? err.message : 'Could not start logo analysis' },
-      { status: 500 },
+      {
+        ok: false,
+        error: err instanceof Error ? err.message : 'Could not start logo analysis',
+        ...(missing ? { requiresUserKey: true } : {}),
+      },
+      { status: missing ? 401 : 500 },
     );
   }
 }

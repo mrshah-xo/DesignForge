@@ -4,7 +4,6 @@
 //   { ok: true, data } | { ok: false, error }
 // All requests use relative paths only (the reverse proxy gateway friendly).
 // ============================================================
-
 import type {
   AnalysisData,
   AudienceData,
@@ -31,11 +30,53 @@ export interface ExportJson {
   brand_sheet_svg: string
 }
 
+// ---------- Bring-your-own-key (browser side) ----------
+
+const USER_KEY_STORAGE = 'df_user_api_key'
+/** Emitted when the server reports a request needs the visitor's API key. */
+export const MISSING_KEY_EVENT = 'df:missing-key'
+
+/** The visitor's own Z.AI key — lives ONLY in this browser's localStorage. */
+export function getUserApiKey(): string {
+  try {
+    return (localStorage.getItem(USER_KEY_STORAGE) ?? '').trim()
+  } catch {
+    return ''
+  }
+}
+
+export function setUserApiKey(key: string): void {
+  try {
+    localStorage.setItem(USER_KEY_STORAGE, key.trim())
+  } catch {
+    /* storage unavailable (private mode) — key simply won't persist */
+  }
+}
+
+export function clearUserApiKey(): void {
+  try {
+    localStorage.removeItem(USER_KEY_STORAGE)
+  } catch {
+    /* ignore */
+  }
+}
+
+/** Masked preview for the panel (last 4 characters). */
+export function maskedUserApiKey(): string | undefined {
+  const key = getUserApiKey()
+  return key.length >= 8 ? `••••${key.slice(-4)}` : undefined
+}
+
 // ---------- Envelope-aware request wrapper ----------
 export async function request<T>(url: string, init?: RequestInit): Promise<T> {
   let res: Response
   try {
-    res = await fetch(url, init)
+    // Attach the visitor's own key to every request when present. The key is
+    // used for this request's AI calls only — never persisted server-side.
+    const userKey = getUserApiKey()
+    const headers = new Headers(init?.headers)
+    if (userKey) headers.set('x-user-key', userKey)
+    res = await fetch(url, { ...init, headers })
   } catch {
     throw new Error('Network error — could not reach the server.')
   }
@@ -49,6 +90,10 @@ export async function request<T>(url: string, init?: RequestInit): Promise<T> {
 
   const envelope = (json ?? null) as ApiEnvelope<T> | null
   if (!envelope || typeof envelope.ok !== 'boolean' || envelope.ok !== true || envelope.data === undefined) {
+    // BYOK gate: surface the panel so the visitor can paste a key.
+    if (envelope?.requiresUserKey === true && typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent(MISSING_KEY_EVENT))
+    }
     throw new Error(envelope?.error ?? `Request failed (${res.status})`)
   }
   return envelope.data

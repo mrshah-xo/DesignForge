@@ -17,7 +17,7 @@ import type {
   PreviewCopy,
   PreviewFeatureIcon,
 } from '@/lib/types';
-import { DEFAULT_PREVIEW_COPY, FONT_OPTIONS } from '@/lib/types';
+import { DEFAULT_PREVIEW_COPY, FONT_OPTIONS, ZAI_KEY_URL } from '@/lib/types';
 import {
   bestTextColor,
   colorNameFromHex,
@@ -38,6 +38,50 @@ let zaiCreatedAt = 0;
  */
 const ZAI_TTL_MS = 10 * 60 * 1000;
 
+/**
+ * Raised when a request needs an AI key but none was provided and the site
+ * owner's key is not allowed to serve public traffic. The UI catches the
+ * `requiresUserKey` flag and opens the API-keys panel.
+ */
+export class MissingUserKeyError extends Error {
+  readonly requiresUserKey = true as const;
+  constructor() {
+    super(
+      'This site runs on bring-your-own keys. Click "API keys" in the header and paste your own Z.AI key — generate one free at ' +
+        ZAI_KEY_URL +
+        '. Your key is stored only in your browser and is used just for your own generations.',
+    );
+    this.name = 'MissingUserKeyError';
+  }
+}
+
+/** True when the error is the BYOK gate (as opposed to a provider failure). */
+export function isMissingUserKey(err: unknown): boolean {
+  return err instanceof MissingUserKeyError;
+}
+
+/**
+ * Extract the visitor's BYOK key from the x-user-key request header.
+ * Returns null when absent/invalid. The value is used per-request only —
+ * it is never persisted, logged, or echoed back.
+ */
+export function userKeyFromRequest(req: Request): string | null {
+  const raw = req.headers.get('x-user-key');
+  if (!raw) return null;
+  const key = raw.trim();
+  if (key.length < 8 || key.length > 256 || /\s/.test(key)) return null;
+  return key;
+}
+
+/**
+ * Fail fast at POST time when the request would hit the BYOK gate, so the
+ * client gets a structured 401 + requiresUserKey instead of a job that dies
+ * mid-pipeline. Cheap: getZAI caches the client it builds.
+ */
+export async function assertAiUsable(userKey?: string | null): Promise<void> {
+  await getZAI(userKey);
+}
+
 /** Detect credential/auth failures returned by the remote API. */
 export function isAuthError(err: unknown): boolean {
   const msg = err instanceof Error ? err.message : String(err);
@@ -48,6 +92,18 @@ export function isAuthError(err: unknown): boolean {
 export function resetZAI(): void {
   zaiPromise = null;
   zaiCreatedAt = 0;
+}
+
+/**
+ * Whether the site owner's own credentials may serve AI requests.
+ * Local dev: always. Production (Vercel): opt-in via ZAI_ALLOW_OWNER_KEY=1 —
+ * by default public visitors must bring their own key so the owner's
+ * credits are never spent by strangers.
+ */
+function ownerKeyAllowed(): boolean {
+  if (process.env.NODE_ENV !== 'production') return true;
+  const flag = (process.env.ZAI_ALLOW_OWNER_KEY ?? '').toLowerCase();
+  return flag === '1' || flag === 'true' || flag === 'yes';
 }
 
 /**
@@ -89,12 +145,76 @@ function createZAI(): Promise<ZAI> {
   });
 }
 
+// ---------- Per-visitor clients (bring-your-own-key) ----------
+
+interface UserClientEntry {
+  promise: Promise<ZAI>;
+  createdAt: number;
+}
+
+/** Cached per visitor key (in-memory only, TTL'd, never logged). */
+const userClients = new Map<string, UserClientEntry>();
+const MAX_USER_CLIENTS = 100;
+
+function pruneUserClients(): void {
+  const now = Date.now();
+  for (const [key, entry] of userClients) {
+    if (now - entry.createdAt > ZAI_TTL_MS) userClients.delete(key);
+  }
+  while (userClients.size > MAX_USER_CLIENTS) {
+    const oldest = [...userClients.entries()].sort((a, b) => a[1].createdAt - b[1].createdAt)[0];
+    if (!oldest) break;
+    userClients.delete(oldest[0]);
+  }
+}
+
+/** Drop one visitor's cached client (used when their key is rejected). */
+function evictUserClient(userKey: string): void {
+  userClients.delete(userKey);
+}
+
+/** Build a client for a visitor's own key against the public Z.AI endpoint. */
+function createUserClient(userKey: string): Promise<ZAI> {
+  const baseUrl = process.env.ZAI_BASE_URL || 'https://api.z.ai/api/paas/v4';
+  return Promise.resolve(
+    // @ts-expect-error - SDK types the constructor private (see createZAI).
+    new ZAI({ baseUrl, apiKey: userKey })
+  );
+}
+
 /**
- * Create (once) and return the shared ZAI SDK instance.
+ * Create (once) and return the ZAI SDK instance for this request.
+ * - A visitor key (BYOK) gets its own cached client — the owner's
+ *   credentials are never touched for those calls.
+ * - Without a key, the owner's credentials are used only where allowed
+ *   (local dev, or production with ZAI_ALLOW_OWNER_KEY=1); otherwise the
+ *   BYOK gate raises MissingUserKeyError.
  * - Failed creations are never cached: the next call retries automatically.
  * - Instances older than ZAI_TTL_MS are recreated to pick up refreshed tokens.
  */
-export async function getZAI(): Promise<ZAI> {
+export async function getZAI(userKey?: string | null): Promise<ZAI> {
+  const key = typeof userKey === 'string' && userKey.trim() ? userKey.trim() : null;
+  if (key) {
+    const cached = userClients.get(key);
+    if (cached && Date.now() - cached.createdAt <= ZAI_TTL_MS) return cached.promise;
+    const entry: UserClientEntry = {
+      promise: createUserClient(key).catch((err) => {
+        userClients.delete(key);
+        throw err;
+      }),
+      createdAt: Date.now(),
+    };
+    userClients.set(key, entry);
+    pruneUserClients();
+    return entry.promise;
+  }
+
+  // Owner-credential path (local dev or explicit opt-in on production).
+  if (!ownerKeyAllowed()) {
+    // Production without opt-in: never spend the owner's credits on
+    // anonymous traffic — visitors must bring their own key.
+    throw new MissingUserKeyError();
+  }
   if (!zaiPromise || Date.now() - zaiCreatedAt > ZAI_TTL_MS) {
     zaiCreatedAt = Date.now();
     zaiPromise = createZAI().catch((err) => {
@@ -184,9 +304,15 @@ async function waitOut(ms: number): Promise<void> {
   await new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-/** Exhausted-retries error: auth hiccups read like a transient blip, not a bug. */
-function finalError(label: string, attempts: number, err: unknown, lastRaw = ''): Error {
+/** Exhausted-retries error: distinguishes the visitor's own key from owner credentials. */
+function finalError(label: string, attempts: number, err: unknown, lastRaw = '', userKey?: string | null): Error {
   if (isAuthError(err)) {
+    if (userKey) {
+      return new Error(
+        'Your Z.AI API key was rejected (auth error). Open the "API keys" panel and check the key — generate a fresh one at ' +
+          ZAI_KEY_URL + '. Make sure the key has available credit/quota.',
+      );
+    }
     return new Error(
       'AI credentials were just rotated and the request was rejected. '
       + 'Please try again in a few seconds — retries now wait out credential rotations automatically.',
@@ -219,8 +345,9 @@ export async function llmJson<T>(
   user: string,
   attempts = 4,
   maxTokens = 16000,
+  userKey?: string | null,
 ): Promise<T> {
-  const zai = await getZAI();
+  const zai = await getZAI(userKey);
   let lastRaw = '';
   let lastError: unknown = null;
   for (let attempt = 0; attempt < attempts; attempt++) {
@@ -243,16 +370,19 @@ export async function llmJson<T>(
       lastError = err;
       console.error(`llmJson attempt ${attempt + 1}/${attempts} failed:`, err instanceof Error ? err.message : err);
       // Stale credentials? Drop the cached SDK so the next attempt re-reads config.
-      if (isAuthError(err)) resetZAI();
+      if (isAuthError(err)) {
+        if (userKey) evictUserClient(userKey);
+        else resetZAI();
+      }
       if (attempt < attempts - 1) await waitOut(retryDelayMs(err, attempt));
     }
   }
-  throw finalError('LLM JSON generation', attempts, lastError, lastRaw);
+  throw finalError('LLM JSON generation', attempts, lastError, lastRaw, userKey);
 }
 
 /** Vision LLM call (logo analysis) parsed as JSON, with retries. */
-export async function visionJson<T>(prompt: string, base64Png: string, attempts = 3): Promise<T> {
-  const zai = await getZAI();
+export async function visionJson<T>(prompt: string, base64Png: string, attempts = 3, userKey?: string | null): Promise<T> {
+  const zai = await getZAI(userKey);
   let lastRaw = '';
   let lastError: unknown = null;
   for (let attempt = 0; attempt < attempts; attempt++) {
@@ -273,11 +403,14 @@ export async function visionJson<T>(prompt: string, base64Png: string, attempts 
     } catch (err) {
       lastError = err;
       console.error(`visionJson attempt ${attempt + 1}/${attempts} failed:`, err instanceof Error ? err.message : err);
-      if (isAuthError(err)) resetZAI();
+      if (isAuthError(err)) {
+        if (userKey) evictUserClient(userKey);
+        else resetZAI();
+      }
       if (attempt < attempts - 1) await waitOut(retryDelayMs(err, attempt));
     }
   }
-  throw finalError('Vision JSON generation', attempts, lastError, lastRaw);
+  throw finalError('Vision JSON generation', attempts, lastError, lastRaw, userKey);
 }
 
 /**
@@ -291,8 +424,9 @@ export async function llmText(
   user: string,
   attempts = 3,
   maxTokens = 16000,
+  userKey?: string | null,
 ): Promise<string> {
-  const zai = await getZAI();
+  const zai = await getZAI(userKey);
   let lastError: unknown = null;
   for (let attempt = 0; attempt < attempts; attempt++) {
     try {
@@ -311,30 +445,36 @@ export async function llmText(
     } catch (err) {
       lastError = err;
       console.error(`llmText attempt ${attempt + 1}/${attempts} failed:`, err instanceof Error ? err.message : err);
-      if (isAuthError(err)) resetZAI();
+      if (isAuthError(err)) {
+        if (userKey) evictUserClient(userKey);
+        else resetZAI();
+      }
       if (attempt < attempts - 1) await waitOut(retryDelayMs(err, attempt));
     }
   }
-  throw finalError('LLM text generation', attempts, lastError);
+  throw finalError('LLM text generation', attempts, lastError, '', userKey);
 }
 
 /** Real internet web search via the SDK function-calling bridge (with retry). */
-export async function webSearch(query: string, num = 5): Promise<SearchFunctionResultItem[]> {
+export async function webSearch(query: string, num = 5, userKey?: string | null): Promise<SearchFunctionResultItem[]> {
   let lastError: unknown = null;
   const attempts = 4;
   for (let attempt = 0; attempt < attempts; attempt++) {
     try {
-      const zai = await getZAI();
+      const zai = await getZAI(userKey);
       const results = await zai.functions.invoke('web_search', { query, num });
       return Array.isArray(results) ? results : [];
     } catch (err) {
       lastError = err;
       console.error(`webSearch attempt ${attempt + 1}/${attempts} failed:`, err instanceof Error ? err.message : err);
-      if (isAuthError(err)) resetZAI();
+      if (isAuthError(err)) {
+        if (userKey) evictUserClient(userKey);
+        else resetZAI();
+      }
       if (attempt < attempts - 1) await waitOut(retryDelayMs(err, attempt));
     }
   }
-  if (isAuthError(lastError)) return Promise.reject(finalError('Web search', attempts, lastError));
+  if (isAuthError(lastError)) return Promise.reject(finalError('Web search', attempts, lastError, '', userKey));
   throw lastError instanceof Error ? lastError : new Error(String(lastError));
 }
 

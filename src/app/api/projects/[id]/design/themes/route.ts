@@ -16,7 +16,13 @@ import { after } from 'next/server';
 import { NextRequest, NextResponse } from 'next/server';
 import type { AudienceData, AnalysisData, DesignTokens, ResearchData, ThemeVariant } from '@/lib/types';
 import { db } from '@/lib/db';
-import { llmJson, normalizeTokens } from '@/lib/server/ai';
+import {
+  assertAiUsable,
+  isMissingUserKey,
+  llmJson,
+  normalizeTokens,
+  userKeyFromRequest,
+} from '@/lib/server/ai';
 import { THEMES_SYSTEM, buildThemesPrompt } from '@/lib/server/prompts';
 import {
   parseAnalysisRow,
@@ -66,7 +72,7 @@ function extractThemeArray(raw: Record<string, unknown>): Record<string, unknown
 
 // ---------- Background pipeline ----------
 
-async function runThemesPipeline(id: string, jobId: string): Promise<void> {
+async function runThemesPipeline(id: string, jobId: string, userKey: string | null): Promise<void> {
   try {
     const project = await db.project.findUnique({
       where: { id },
@@ -86,6 +92,9 @@ async function runThemesPipeline(id: string, jobId: string): Promise<void> {
     const raw = await llmJson<Record<string, unknown>>(
       THEMES_SYSTEM,
       buildThemesPrompt(project, audience, analysis, research, currentTokens),
+      4,
+      16000,
+      userKey,
     );
 
     // 2. Normalize every variant through the same bulletproof pipeline as
@@ -147,9 +156,12 @@ async function runThemesPipeline(id: string, jobId: string): Promise<void> {
 
 // ---------- POST: start generation (returns immediately) ----------
 
-export async function POST(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params;
+    // Visitor's own key (BYOK) — captured here at request time and passed
+    // explicitly into the background pipeline (after() detaches context).
+    const userKey = userKeyFromRequest(req);
     const project = await db.project.findUnique({
       where: { id },
       include: { analysis: true, audience: true, research: true },
@@ -180,13 +192,20 @@ export async function POST(_req: NextRequest, { params }: { params: Promise<{ id
     }
 
     const job = createJob('themes', id);
-    after(() => runThemesPipeline(id, job.id));
+    // BYOK gate: reject before starting when no usable credentials exist.
+    await assertAiUsable(userKey);
+    after(() => runThemesPipeline(id, job.id, userKey));
     return NextResponse.json({ ok: true, data: { job: publicJob(job) } });
   } catch (err) {
     console.error('POST /api/projects/[id]/design/themes failed:', err);
+    const missing = isMissingUserKey(err);
     return NextResponse.json(
-      { ok: false, error: err instanceof Error ? err.message : 'Could not start theme generation' },
-      { status: 500 },
+      {
+        ok: false,
+        error: err instanceof Error ? err.message : 'Could not start theme generation',
+        ...(missing ? { requiresUserKey: true } : {}),
+      },
+      { status: missing ? 401 : 500 },
     );
   }
 }

@@ -305,7 +305,12 @@ export interface ApiEnvelope<T> {
   ok: boolean;
   data?: T;
   error?: string;
+  /** BYOK gate: the request needs the visitor's own API key. */
+  requiresUserKey?: boolean;
 }
+
+/** Where users generate their own Z.AI API key (bring-your-own-key). */
+export const ZAI_KEY_URL = 'https://z.ai/manage-apikey/apikey-list';
 
 // Async generation job (started via POST, polled via GET?jobId=...)
 export type JobKind = 'analyze' | 'research' | 'design' | 'themes';

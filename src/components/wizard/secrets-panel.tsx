@@ -1,7 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { Eye, EyeOff, KeyRound, Loader2, Lock, Plus, RefreshCw, Trash2 } from 'lucide-react'
+import { Eye, ExternalLink, EyeOff, KeyRound, Loader2, Lock, Plus, RefreshCw, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -16,7 +16,15 @@ import {
   SheetTitle,
   SheetTrigger,
 } from '@/components/ui/sheet'
-import { request } from '@/lib/client/api'
+import {
+  MISSING_KEY_EVENT,
+  clearUserApiKey,
+  getUserApiKey,
+  maskedUserApiKey,
+  request,
+  setUserApiKey,
+} from '@/lib/client/api'
+import { ZAI_KEY_URL } from '@/lib/types'
 
 // ---------- Types (mirror the server response) ----------
 
@@ -50,6 +58,47 @@ export function SecretsPanel() {
   const [savingKeys, setSavingKeys] = useState<Record<string, boolean>>({})
   const [customName, setCustomName] = useState('')
   const [customValue, setCustomValue] = useState('')
+
+  // ---------- Your key (this browser, BYOK) ----------
+  const [browserKey, setBrowserKey] = useState('')
+  const [browserKeyDraft, setBrowserKeyDraft] = useState('')
+  const [showBrowserKey, setShowBrowserKey] = useState(false)
+  const browserKeyRef = useRef<HTMLInputElement | null>(null)
+
+  const refreshBrowserKey = useCallback(() => {
+    setBrowserKey(getUserApiKey())
+  }, [])
+
+  // Auto-open the panel whenever the server reports a missing key (BYOK gate).
+  useEffect(() => {
+    const openPanel = () => {
+      setOpen(true)
+      // Let the sheet mount before moving focus into the key input.
+      window.setTimeout(() => browserKeyRef.current?.focus(), 350)
+    }
+    window.addEventListener(MISSING_KEY_EVENT, openPanel)
+    return () => window.removeEventListener(MISSING_KEY_EVENT, openPanel)
+  }, [])
+
+  const saveBrowserKey = () => {
+    const value = browserKeyDraft.trim()
+    if (!value) {
+      toast.error('Paste a key first')
+      return
+    }
+    setUserApiKey(value)
+    refreshBrowserKey()
+    setBrowserKeyDraft('')
+    toast.success('Your API key is saved in this browser', {
+      description: 'Stored only in your browser (localStorage). It is used for your AI generations and never leaves your device except to call the AI provider.',
+    })
+  }
+
+  const removeBrowserKey = () => {
+    clearUserApiKey()
+    refreshBrowserKey()
+    toast.success('Your API key was removed from this browser')
+  }
   // Refetch timers must survive unmount of the triggering interaction.
   const timers = useRef<ReturnType<typeof setTimeout>[]>([])
 
@@ -82,8 +131,11 @@ export function SecretsPanel() {
   }, [load])
 
   useEffect(() => {
-    if (open) void load()
-  }, [open, load])
+    if (open) {
+      void load()
+      refreshBrowserKey()
+    }
+  }, [open, load, refreshBrowserKey])
 
   useEffect(() => () => timers.current.forEach(clearTimeout), [])
 
@@ -218,13 +270,104 @@ export function SecretsPanel() {
             API keys &amp; secrets
           </SheetTitle>
           <SheetDescription className="text-xs leading-relaxed">
-            Paste keys once — they are stored in <code className="font-mono">.env.local</code>, a
-            git-ignored file that is never committed or pushed to GitHub. Values are never sent
-            back to the browser; only a masked preview is shown.
+            <strong>Your API key</strong> lives only in your browser and powers your generations —
+            on public deployments every visitor uses their own key. On a local dev server you can
+            also manage the server's <code className="font-mono">.env.local</code> keys below
+            (git-ignored, never pushed to GitHub).
           </SheetDescription>
         </SheetHeader>
 
         <div className="df-scroll min-h-0 flex-1 overflow-y-auto px-4 py-4">
+          {/* ---------------- Your key (this browser, BYOK) ---------------- */}
+          <div className="mb-5 rounded-lg border border-ember-200 bg-ember-50/60 p-4 shadow-sm dark:border-ember-500/30 dark:bg-ember-500/5">
+            <div className="mb-1 flex flex-wrap items-center gap-2">
+              <span className="text-sm font-semibold text-ember-800 dark:text-ember-300">
+                Your API key (this browser)
+              </span>
+              {browserKey ? (
+                <>
+                  <Badge
+                    variant="outline"
+                    className="border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-400"
+                  >
+                    Saved in this browser
+                  </Badge>
+                  <span className="font-mono text-[10px] text-muted-foreground">
+                    {maskedUserApiKey()}
+                  </span>
+                </>
+              ) : (
+                <Badge variant="outline" className="text-muted-foreground">
+                  Not set
+                </Badge>
+              )}
+            </div>
+            <p className="mb-2 text-xs leading-relaxed text-muted-foreground">
+              Used for every AI step — logo analysis, research, design and themes. Stored only in
+              your browser's localStorage, sent per-request, never saved on the server and never
+              seen by the site owner. Each visitor uses their own key, so the site owner's credits
+              are never spent.
+            </p>
+            <a
+              href={ZAI_KEY_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 rounded-md bg-white px-2 py-1.5 text-xs font-medium text-ember-700 ring-1 ring-ember-200 transition-colors hover:bg-ember-50 dark:bg-card dark:text-ember-400 dark:ring-ember-500/30 dark:hover:bg-ember-500/10"
+            >
+              <ExternalLink className="size-3.5" />
+              Generate your free Z.AI API key
+            </a>
+            <p className="mb-3 mt-1.5 text-[11px] leading-snug text-muted-foreground">
+              glm-4.5-flash (text) is free; logo vision analysis uses a low-cost vision model —
+              new accounts come with free credit.
+            </p>
+            <div className="flex items-center gap-2">
+              <div className="relative min-w-0 flex-1">
+                <Input
+                  ref={browserKeyRef}
+                  type={showBrowserKey ? 'text' : 'password'}
+                  value={browserKeyDraft}
+                  onChange={(e) => setBrowserKeyDraft(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') saveBrowserKey()
+                  }}
+                  placeholder={browserKey ? 'Replace with a new key' : 'Paste your Z.AI API key'}
+                  className="h-9 pr-9 font-mono text-xs"
+                  autoComplete="off"
+                  aria-label="Paste your own Z.AI API key"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowBrowserKey((v) => !v)}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  aria-label={showBrowserKey ? 'Hide your API key' : 'Show your API key'}
+                >
+                  {showBrowserKey ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+                </button>
+              </div>
+              <Button
+                size="sm"
+                className="h-9 shrink-0 bg-primary text-primary-foreground hover:bg-ember-600"
+                onClick={saveBrowserKey}
+                disabled={!browserKeyDraft.trim()}
+              >
+                <Lock className="size-3.5" />
+                Save
+              </Button>
+              {browserKey && (
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="h-9 shrink-0 text-destructive hover:text-destructive"
+                  onClick={removeBrowserKey}
+                  aria-label="Remove your API key from this browser"
+                >
+                  <Trash2 className="size-3.5" />
+                </Button>
+              )}
+            </div>
+          </div>
+
           {loading ? (
             <div className="flex items-center justify-center gap-2 py-10 text-sm text-muted-foreground">
               <Loader2 className="size-4 animate-spin" />
@@ -236,6 +379,9 @@ export function SecretsPanel() {
             </div>
           ) : (
             <div className="space-y-5">
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                Server secrets — .env.local (local dev only)
+              </p>
               {secrets.map((s) => (
                 <div key={s.name} className="rounded-lg border border-border bg-card p-4 shadow-sm">
                   <div className="mb-1 flex flex-wrap items-center gap-2">
