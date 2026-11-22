@@ -276,7 +276,7 @@ export function DesignStep({
             <div className="min-w-0">
               <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-50">Theme directions</h3>
               <p className="text-xs text-muted-foreground">
-                AI variants built from your approved research — switch live to compare, then apply one.
+                Switch live: Light/Dark derive instantly from your design, and AI directions are built from your approved research.
               </p>
             </div>
             <AlertDialog>
@@ -340,6 +340,27 @@ export function DesignStep({
               >
                 Applied design
               </button>
+              {(['light', 'dark'] as const).map((preset) => {
+                const { bg, fg } = themeSwatches(tokens, preset, null)
+                return (
+                  <button
+                    key={preset}
+                    type="button"
+                    className={previewPill(activeThemeId === preset)}
+                    onClick={() => setActiveThemeId(preset)}
+                    aria-pressed={activeThemeId === preset}
+                  >
+                    <span
+                      className="inline-flex size-3.5 shrink-0 overflow-hidden rounded-full border border-border"
+                      aria-hidden
+                    >
+                      <span className="h-full w-1/2" style={{ background: bg }} />
+                      <span className="h-full w-1/2" style={{ background: fg }} />
+                    </span>
+                    {preset === 'light' ? 'Light' : 'Dark'}
+                  </button>
+                )
+              })}
               {themes.map((t) => (
                 <button
                   key={t.id}
@@ -360,7 +381,7 @@ export function DesignStep({
 
           {themes.length === 0 && !themesLoading && (
             <p className="mt-2 text-xs text-muted-foreground">
-              No suggestions yet — generate to get 3 research-backed directions with the best outcome marked.
+              No AI suggestions yet — generate to get 3 research-backed directions with the best outcome marked. Light and Dark are always available above.
             </p>
           )}
 
@@ -391,6 +412,42 @@ export function DesignStep({
                   >
                     {applyingTheme ? <Loader2 className="size-3.5 animate-spin" /> : <Check className="size-3.5" />}
                     Apply to design
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => setActiveThemeId('original')}
+                    disabled={applyingTheme}
+                  >
+                    Back to applied
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {activePreset && !activeTheme && (
+            <div className="mt-3 rounded-md border border-border bg-muted/40 p-3">
+              <div className="flex flex-wrap items-start justify-between gap-2">
+                <div className="min-w-0 flex-1">
+                  <span className="text-sm font-semibold text-gray-900 dark:text-gray-50">
+                    {activePreset === 'light' ? 'Light variant' : 'Dark variant'}
+                  </span>
+                  <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+                    {activePreset === 'light'
+                      ? 'Derived automatically from your applied design — same brand colors on bright neutral surfaces.'
+                      : 'Derived automatically from your applied design — same brand colors on deep dark surfaces.'}
+                  </p>
+                </div>
+                <div className="flex shrink-0 items-center gap-2">
+                  <Button
+                    size="sm"
+                    onClick={applyPreset}
+                    disabled={applyingTheme || saving}
+                    className="bg-primary text-primary-foreground hover:bg-ember-600"
+                  >
+                    {applyingTheme ? <Loader2 className="size-3.5 animate-spin" /> : <Check className="size-3.5" />}
+                    Apply {activePreset === 'light' ? 'light' : 'dark'}
                   </Button>
                   <Button
                     size="sm"
@@ -706,7 +763,15 @@ export function DesignStep({
 
       {/* ---------------- DESIGN.md ---------------- */}
       <TabsContent value="markdown" className="mt-2">
-        <div className="mb-3 flex justify-end">
+        <div className="mb-3 flex justify-end gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => downloadText('DESIGN.md', markdown, 'text/markdown')}
+          >
+            <Download className="size-3.5" />
+            Download
+          </Button>
           <Button
             variant="outline"
             size="sm"

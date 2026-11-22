@@ -154,7 +154,7 @@ export function WizardShell() {
         if (description) form.append('description', description)
         const created = await api.createProject(form)
         createdId = created.id
-        setProject({ ...created, analysis: null, audience: null, research: null, design: null })
+        setProject({ ...created, analysis: null, audience: null, research: null, design: null, themes: [] })
         void refreshProjects()
       } catch (err) {
         toast.error('Could not create project', { description: errMsg(err) })
