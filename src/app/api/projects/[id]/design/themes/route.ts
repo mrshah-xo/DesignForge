@@ -4,12 +4,16 @@
 // GET  ?jobId= — poll the job status
 // GET  (no jobId) — list the stored theme variants
 //
-// Themes are alternative DesignTokens sets derived from the
-// approved research report (color theory, trust factors,
-// competitor positioning). Each runs through the same
-// normalizeTokens pipeline as the main design, so switching a
-// theme in the live preview is safe. Generation takes ~30-60s,
-// so POST returns a job id immediately (same pattern as design).
+// The LLM returns a COMPACT direction spec per theme (name, reason,
+// score, primary hex, surface mode, fonts, shape) — NOT full token
+// JSON. Requesting full DesignTokens blew past the model's output
+// limit, truncated mid-JSON, and failed every retry ("Unbalanced
+// JSON"), leaving the user staring at skeletons for minutes. The
+// compact spec parses in seconds; this route then merges each spec
+// over the applied design's tokens deterministically (surfaces for
+// light/dark, radius/shadow presets per shape) and runs the result
+// through the same normalizeTokens pipeline as the main design, so
+// switching a theme in the live preview is always safe.
 // ============================================================
 
 import { after } from 'next/server';
@@ -39,6 +43,7 @@ import {
   getJob,
   jobStartTs,
   publicJob,
+  setJobProgress,
   syntheticJob,
   JOB_TS_SKEW_MS,
   STALE_JOB_MS,
@@ -56,11 +61,39 @@ function isPlainObject(v: unknown): v is Record<string, unknown> {
   return typeof v === 'object' && v !== null && !Array.isArray(v);
 }
 
-/** Best-effort extraction of the theme array from the LLM response. */
+const HEX_RE = /^#[0-9A-Fa-f]{6}$/;
+const FONT_WHITELIST = [
+  'Inter',
+  'Manrope',
+  'Poppins',
+  'Space Grotesk',
+  'Sora',
+  'Outfit',
+  'IBM Plex Sans',
+  'Playfair Display',
+  'DM Serif Display',
+  'Lora',
+  'Merriweather',
+  'JetBrains Mono',
+] as const;
+
+interface ThemeDirection {
+  name: string;
+  reason: string;
+  score: number;
+  primary: string | null;
+  surface: 'light' | 'dark';
+  heading: string | null;
+  body: string | null;
+  shape: 'sharp' | 'soft' | 'generous';
+}
+
+/** Best-effort extraction of the compact theme array from the LLM response. */
 function extractThemeArray(raw: Record<string, unknown>): Record<string, unknown>[] {
   const candidates = [
     raw.themes,
     raw.variants,
+    raw.directions,
     isPlainObject(raw.data) ? raw.data.themes : undefined,
   ];
   for (const c of candidates) {
@@ -69,6 +102,154 @@ function extractThemeArray(raw: Record<string, unknown>): Record<string, unknown
     }
   }
   throw new Error('Model response contained no themes array');
+}
+
+function parseDirection(entry: Record<string, unknown>, index: number): ThemeDirection {
+  const rawScore = Number(entry.score);
+  const primaryRaw = typeof entry.primary === 'string' ? entry.primary.trim() : '';
+  const surfaceRaw = typeof entry.surface === 'string' ? entry.surface.toLowerCase() : '';
+  const shapeRaw = typeof entry.shape === 'string' ? entry.shape.toLowerCase() : '';
+  const font = (key: 'heading' | 'body'): string | null => {
+    const raw = typeof entry[key] === 'string' ? (entry[key] as string).trim() : '';
+    const hit = FONT_WHITELIST.find((f) => f.toLowerCase() === raw.toLowerCase());
+    return hit ?? null;
+  };
+  return {
+    name:
+      typeof entry.name === 'string' && entry.name.trim()
+        ? entry.name.trim().slice(0, 40)
+        : `Direction ${index + 1}`,
+    reason:
+      typeof entry.reason === 'string' && entry.reason.trim()
+        ? entry.reason.trim()
+        : 'Research-aligned alternative direction.',
+    score: Number.isFinite(rawScore)
+      ? Math.max(0, Math.min(100, Math.round(rawScore)))
+      : Math.max(60, 88 - index * 6),
+    primary: HEX_RE.test(primaryRaw) ? primaryRaw : null,
+    surface: surfaceRaw.includes('dark') ? 'dark' : 'light',
+    heading: font('heading'),
+    body: font('body'),
+    shape: shapeRaw.includes('sharp')
+      ? 'sharp'
+      : shapeRaw.includes('generous')
+        ? 'generous'
+        : 'soft',
+  };
+}
+
+// ---------- Deterministic token building from a direction spec ----------
+
+const SHAPE_PRESETS: Record<
+  ThemeDirection['shape'],
+  { radius: DesignTokens['radius']; shadows: DesignTokens['shadows'] }
+> = {
+  sharp: {
+    radius: { sm: '4px', md: '6px', lg: '10px', full: '9999px' },
+    shadows: {
+      sm: '0 1px 2px 0 rgb(0 0 0 / 0.06)',
+      md: '0 2px 4px 0 rgb(0 0 0 / 0.08)',
+      lg: '0 4px 12px 0 rgb(0 0 0 / 0.10)',
+    },
+  },
+  soft: {
+    radius: { sm: '6px', md: '10px', lg: '16px', full: '9999px' },
+    shadows: {
+      sm: '0 1px 2px 0 rgb(0 0 0 / 0.05)',
+      md: '0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)',
+      lg: '0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)',
+    },
+  },
+  generous: {
+    radius: { sm: '10px', md: '16px', lg: '24px', full: '9999px' },
+    shadows: {
+      sm: '0 1px 3px 0 rgb(0 0 0 / 0.04)',
+      md: '0 6px 16px -4px rgb(0 0 0 / 0.10)',
+      lg: '0 20px 45px -12px rgb(0 0 0 / 0.16)',
+    },
+  },
+};
+
+const ROLE_LABELS: Record<string, string> = {
+  primary: 'Primary',
+  primaryForeground: 'On primary',
+  secondary: 'Secondary',
+  accent: 'Accent',
+  background: 'Background',
+  foreground: 'Text',
+  muted: 'Muted surface',
+  mutedForeground: 'Muted text',
+  border: 'Border',
+};
+
+function token(hex: string, role: string, usage: string): Record<string, unknown> {
+  return { hex, name: ROLE_LABELS[role] ?? role, usage };
+}
+
+/**
+ * Merge a compact direction spec over the applied design's tokens:
+ * primary + light/dark surface palette + fonts + radius/shadow presets.
+ * previewCopy/trustPatterns/brand carry over verbatim. The result runs
+ * through normalizeTokens (WCAG AA on-primary re-check, palette scale
+ * regeneration) so every variant is as safe as the main design.
+ */
+function buildThemeTokens(
+  dir: ThemeDirection,
+  base: DesignTokens | null,
+  fallbackPrimary?: string,
+): Record<string, unknown> {
+  const baseObj: Record<string, unknown> = base
+    ? (JSON.parse(JSON.stringify(base)) as Record<string, unknown>)
+    : {};
+  delete baseObj.paletteScale; // regenerated from each variant's own primary
+  delete baseObj.style; // directions are pure token alternatives
+
+  const colors: Record<string, Record<string, unknown>> = isPlainObject(baseObj.colors)
+    ? (JSON.parse(JSON.stringify(baseObj.colors)) as Record<string, Record<string, unknown>>)
+    : {};
+
+  const primary = dir.primary ?? fallbackPrimary ?? '#0F766E';
+  colors.primary = token(primary, 'primary', 'Primary actions and highlights');
+
+  if (dir.surface === 'dark') {
+    // Deep graphite surfaces tinted by the direction's primary.
+    colors.secondary = token(mixHex(primary, '#101620', 0.9), 'secondary', 'Elevated surfaces on dark');
+    colors.accent = token(mixHex(primary, '#141B26', 0.72), 'accent', 'Chips and soft highlights on dark');
+    colors.background = token(mixHex('#0B0F14', primary, 0.06), 'background', 'Page canvas on dark');
+    colors.foreground = token('#F2F5F8', 'foreground', 'Primary text on dark surfaces');
+    colors.muted = token(mixHex('#151B23', primary, 0.05), 'muted', 'Cards, wells and secondary fills');
+    colors.mutedForeground = token('#A6B0BC', 'mutedForeground', 'Secondary text and captions');
+    colors.border = token(mixHex('#26303B', primary, 0.10), 'border', 'Dividers, outlines and input borders');
+  } else {
+    // Bright neutral surfaces tinted by the direction's primary.
+    colors.secondary = token(mixHex('#F4F6F8', primary, 0.08), 'secondary', 'Soft secondary fills and chips');
+    colors.accent = token(mixHex('#ECF2F5', primary, 0.14), 'accent', 'Badges, chips and soft highlights');
+    colors.background = token(mixHex('#FFFFFF', primary, 0.03), 'background', 'Page and section backgrounds');
+    colors.foreground = token('#101418', 'foreground', 'Primary text on light surfaces');
+    colors.muted = token(mixHex('#F3F5F7', primary, 0.06), 'muted', 'Cards, wells and secondary fills');
+    colors.mutedForeground = token('#5B6470', 'mutedForeground', 'Secondary text and captions');
+    colors.border = token(mixHex('#E5E8EC', primary, 0.10), 'border', 'Dividers, outlines and input borders');
+  }
+
+  const typography = isPlainObject(baseObj.typography)
+    ? (baseObj.typography as Record<string, unknown>)
+    : {};
+  const heading = isPlainObject(typography.heading) ? { ...typography.heading } : {};
+  const body = isPlainObject(typography.body) ? { ...typography.body } : {};
+  if (dir.heading) heading.family = dir.heading;
+  if (dir.body) body.family = dir.body;
+  typography.heading = heading;
+  typography.body = body;
+
+  const { radius, shadows } = SHAPE_PRESETS[dir.shape];
+
+  return {
+    ...baseObj,
+    colors,
+    typography,
+    radius,
+    shadows,
+  };
 }
 
 /**
@@ -82,51 +263,76 @@ function extractThemeArray(raw: Record<string, unknown>): Record<string, unknown
 function fallbackVariants(
   currentTokens: DesignTokens | null,
   analysis: AnalysisData,
-): Record<string, unknown>[] {
+): { dir: ThemeDirection; tokens: Record<string, unknown> }[] {
   const primary =
     currentTokens?.colors?.primary?.hex ?? analysis.palette[0]?.hex ?? '#0F766E';
-  const base: Record<string, unknown> = currentTokens
-    ? (JSON.parse(JSON.stringify(currentTokens)) as Record<string, unknown>)
-    : {};
-
-  // Regenerate the palette scale from each variant's own primary, not the
-  // applied design's (which would show steps of a different hue).
-  const baseNoScale: Record<string, unknown> = { ...base };
-  delete baseNoScale.paletteScale;
-  const baseColors = isPlainObject(baseNoScale.colors) ? baseNoScale.colors : {};
+  const mk = (
+    over: Partial<ThemeDirection>,
+    tokens: Record<string, unknown>,
+  ): { dir: ThemeDirection; tokens: Record<string, unknown> } => ({
+    dir: {
+      name: 'Direction',
+      reason: '',
+      score: 80,
+      primary,
+      surface: 'light',
+      heading: null,
+      body: null,
+      shape: 'soft',
+      ...over,
+    },
+    tokens,
+  });
 
   return [
-    {
-      name: 'Signature',
-      reason:
-        'Faithful to your approved logo palette and the applied design — the safe, research-aligned baseline. (Deterministic fallback: the AI theme service was unavailable, so this direction was derived locally from your design tokens.)',
-      score: 90,
-      tokens: { ...base },
-    },
-    {
-      name: 'Deep Contrast',
-      reason:
-        'Darker, higher-contrast direction: a deepened primary for gravitas with a serif display pairing — aligns with trust-heavy research findings. (Deterministic fallback derived from your palette.)',
-      score: 84,
-      tokens: {
-        ...baseNoScale,
-        colors: { ...baseColors, primary: { hex: darkenHex(primary, 0.25) } },
-        typography: { heading: { family: 'Playfair Display', weights: [700] }, body: { family: 'Lora', weights: [400, 500] } },
-        radius: { sm: '0.25rem', md: '0.375rem', lg: '0.625rem' },
+    mk(
+      {
+        name: 'Signature',
+        reason:
+          'Faithful to your approved logo palette and the applied design — the safe, research-aligned baseline. (Deterministic fallback: the AI theme service was unavailable, so this direction was derived locally from your design tokens.)',
+        score: 90,
+        shape: 'soft',
       },
-    },
-    {
-      name: 'Soft Air',
-      reason:
-        'Lighter, friendlier direction: a softened primary with generous radii — built for approachable, low-anxiety interfaces per the audience research. (Deterministic fallback derived from your palette.)',
-      score: 78,
-      tokens: {
-        ...baseNoScale,
-        colors: { ...baseColors, primary: { hex: mixHex(primary, '#FFFFFF', 0.22) } },
-        typography: { heading: { family: 'Manrope', weights: [700] }, body: { family: 'Inter', weights: [400, 500] } },
-        radius: { sm: '0.5rem', md: '0.75rem', lg: '1.25rem' },
+      buildThemeTokens(
+        { name: 'Signature', reason: '', score: 90, primary, surface: 'light', heading: null, body: null, shape: 'soft' },
+        currentTokens,
+        primary,
+      ),
+    ),
+    mk(
+      {
+        name: 'Deep Contrast',
+        reason:
+          'Darker, higher-contrast direction: a deepened primary for gravitas with a serif display pairing — aligns with trust-heavy research findings. (Deterministic fallback derived from your palette.)',
+        score: 84,
+        surface: 'dark',
+        heading: 'Playfair Display',
+        body: 'Lora',
+        shape: 'sharp',
       },
-    },
+      buildThemeTokens(
+        { name: 'Deep Contrast', reason: '', score: 84, primary: darkenHex(primary, 0.25), surface: 'dark', heading: 'Playfair Display', body: 'Lora', shape: 'sharp' },
+        currentTokens,
+        primary,
+      ),
+    ),
+    mk(
+      {
+        name: 'Soft Air',
+        reason:
+          'Lighter, friendlier direction: a softened primary with generous radii — built for approachable, low-anxiety interfaces per the audience research. (Deterministic fallback derived from your palette.)',
+        score: 78,
+        surface: 'light',
+        heading: 'Manrope',
+        body: 'Inter',
+        shape: 'generous',
+      },
+      buildThemeTokens(
+        { name: 'Soft Air', reason: '', score: 78, primary: mixHex(primary, '#FFFFFF', 0.22), surface: 'light', heading: 'Manrope', body: 'Inter', shape: 'generous' },
+        currentTokens,
+        primary,
+      ),
+    ),
   ];
 }
 
@@ -134,6 +340,7 @@ function fallbackVariants(
 
 async function runThemesPipeline(id: string, jobId: string, userKey: string | null): Promise<void> {
   try {
+    setJobProgress(jobId, 'Reading your approved research…');
     const project = await db.project.findUnique({
       where: { id },
       include: { analysis: true, audience: true, research: true, design: true },
@@ -148,67 +355,77 @@ async function runThemesPipeline(id: string, jobId: string, userKey: string | nu
       ? safeJsonParse<DesignTokens | null>(project.design.tokens, null)
       : null;
 
-    // 1. Theme variants from the LLM (one call, 3 variants, ~16k budget).
-    //    If the LLM fails after all retries (empty/filtered/unparseable
+    // 1. Compact direction specs from the LLM (one call, ~2k budget — a
+    //    reply this small cannot hit the output ceiling, so retries are
+    //    rare and the whole job finishes in seconds, not minutes).
+    //    If the LLM still fails after all retries (empty/filtered
     //    responses are a known provider flake), fall back to deterministic
-    //    variants so the job still completes instead of dead-ending the user.
-    let entries: Record<string, unknown>[];
+    //    variants so the job completes instead of dead-ending the user.
+    let directions: ThemeDirection[];
+    let fallbackTokens: Map<string, Record<string, unknown>> | null = null;
     try {
+      setJobProgress(jobId, 'Proposing 3 theme directions with AI…');
       const raw = await llmJson<Record<string, unknown>>(
         THEMES_SYSTEM,
         buildThemesPrompt(project, audience, analysis, research, currentTokens),
-        4,
-        16000,
+        3,
+        2000,
         userKey,
+        (attempt, attempts) => {
+          setJobProgress(
+            jobId,
+            attempt === 1
+              ? 'Proposing 3 theme directions with AI…'
+              : `Refining theme directions (retry ${attempt}/${attempts})…`,
+          );
+        },
       );
-      entries = extractThemeArray(raw);
+      directions = extractThemeArray(raw)
+        .slice(0, MAX_THEMES)
+        .map((entry, index) => parseDirection(entry, index));
+      if (directions.length === 0) throw new Error('Model returned no theme directions');
     } catch (llmErr) {
       console.error(
         `themes pipeline: LLM failed after retries for project ${id} — using deterministic fallback variants:`,
         llmErr instanceof Error ? llmErr.message : llmErr,
       );
-      entries = fallbackVariants(currentTokens, analysis);
+      setJobProgress(jobId, 'AI unavailable — building fallback directions…');
+      const fallbacks = fallbackVariants(currentTokens, analysis);
+      directions = fallbacks.map((f) => f.dir);
+      fallbackTokens = new Map(fallbacks.map((f) => [f.dir.name, f.tokens]));
     }
 
-    // 2. Normalize every variant through the same bulletproof pipeline as
+    // 2. Expand each direction into full tokens (merge over the applied
+    //    design) and normalize through the same bulletproof pipeline as
     //    the main design (WCAG AA check, palette scale, fonts, copy).
+    setJobProgress(jobId, 'Building tokens for each direction…');
     const baseCopy = currentTokens?.previewCopy;
     const baseTrust = currentTokens?.trustPatterns;
-    const variants = entries
-      .slice(0, MAX_THEMES)
-      .map((entry, index) => {
-        const mergedTokens = isPlainObject(entry.tokens) ? entry.tokens : {};
-        // Defensive copy: if the model dropped previewCopy/trustPatterns,
-        // fall back to the applied design's so the preview never loses copy.
-        if (baseCopy && !isPlainObject(mergedTokens.previewCopy)) {
-          mergedTokens.previewCopy = baseCopy;
-        }
-        if (baseTrust && !Array.isArray(mergedTokens.trustPatterns)) {
-          mergedTokens.trustPatterns = baseTrust;
-        }
-        const rawScore = Number(entry.score);
-        const name =
-          typeof entry.name === 'string' && entry.name.trim()
-            ? entry.name.trim().slice(0, 40)
-            : `Direction ${index + 1}`;
-        const reason =
-          typeof entry.reason === 'string' && entry.reason.trim()
-            ? entry.reason.trim()
-            : 'Research-aligned alternative direction.';
-        return {
-          name,
-          reason,
-          score: Number.isFinite(rawScore)
-            ? Math.max(0, Math.min(100, Math.round(rawScore)))
-            : Math.max(60, 88 - index * 6),
-          tokens: normalizeTokens(mergedTokens, analysis.palette[0]?.hex, analysis.palette[1]?.hex),
-        };
-      });
+    const variants = directions.map((dir) => {
+      const rawTokens =
+        fallbackTokens?.get(dir.name) ?? buildThemeTokens(dir, currentTokens, analysis.palette[0]?.hex);
+      const mergedTokens = isPlainObject(rawTokens) ? rawTokens : {};
+      // Defensive copy: if the base design lacked copy/trust patterns,
+      // the preview must never lose them.
+      if (baseCopy && !isPlainObject(mergedTokens.previewCopy)) {
+        mergedTokens.previewCopy = baseCopy;
+      }
+      if (baseTrust && !Array.isArray(mergedTokens.trustPatterns)) {
+        mergedTokens.trustPatterns = baseTrust;
+      }
+      return {
+        name: dir.name,
+        reason: dir.reason,
+        score: dir.score,
+        tokens: normalizeTokens(mergedTokens, analysis.palette[0]?.hex, analysis.palette[1]?.hex),
+      };
+    });
     if (variants.length === 0) {
-      throw new Error('Model returned no usable theme variants');
+      throw new Error('No usable theme variants');
     }
 
     // 3. Replace the stored set (themes are regenerated as a group).
+    setJobProgress(jobId, 'Saving your theme directions…');
     await withSchemaRetry(() =>
       db.$transaction([
         db.designTheme.deleteMany({ where: { projectId: id } }),

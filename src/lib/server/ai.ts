@@ -1039,6 +1039,7 @@ export const normalizeTokens = (raw: unknown, fallbackPrimary?: string, fallback
   const rawRadius = isPlainObject(root.radius) ? root.radius : {};
   const rawShadows = isPlainObject(root.shadows) ? root.shadows : {};
   const rawButtons = isPlainObject(root.buttons) ? root.buttons : {};
+  const rawStyle = isPlainObject(root.style) ? root.style : {};
 
   const tokens: DesignTokens = {
     brand: {
@@ -1093,6 +1094,11 @@ export const normalizeTokens = (raw: unknown, fallbackPrimary?: string, fallback
     },
     trustPatterns: stringList(root.trustPatterns, 8),
     previewCopy: normalizePreviewCopy(root.previewCopy),
+    style: {
+      glass: rawStyle.glass === true,
+      glow: rawStyle.glow === true,
+      gradientHero: rawStyle.gradientHero === true,
+    },
   };
 
   return tokens;

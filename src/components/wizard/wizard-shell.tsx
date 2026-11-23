@@ -123,6 +123,7 @@ export function WizardShell() {
   // Live pipeline progress (what the AI is actually doing), tracked per job.
   const [researchLive, setResearchLive] = useState<LiveProgress | null>(null)
   const [designLive, setDesignLive] = useState<LiveProgress | null>(null)
+  const [themesLive, setThemesLive] = useState<LiveProgress | null>(null)
   // Nonces force step remounts when server data is replaced wholesale
   // (regenerated research / design), so editors re-initialize cleanly.
   const [researchNonce, setResearchNonce] = useState(0)
@@ -361,14 +362,17 @@ export function WizardShell() {
   const generateThemes = useCallback(async (): Promise<ThemeVariant[]> => {
     if (!project) throw new Error('No project open')
     const id = project.id
+    setThemesLive(null)
     try {
-      const themes = await api.generateThemes(id)
+      const themes = await api.generateThemes(id, trackProgress(setThemesLive))
       setProject((p) => (p && p.id === id ? { ...p, themes } : p))
       toast.success('Theme suggestions ready')
       return themes
     } catch (err) {
       toast.error('Could not generate theme suggestions', { description: errMsg(err) })
       throw err
+    } finally {
+      setThemesLive(null)
     }
   }, [project])
 
@@ -530,6 +534,7 @@ export function WizardShell() {
             saving={savingDesign}
             generating={generating}
             designLive={designLive}
+            themesLive={themesLive}
             onSaveTokens={saveDesignTokens}
             onSaveMarkdown={saveDesignMarkdown}
             onRegenerate={() => generateDesign(false)}

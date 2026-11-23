@@ -57,6 +57,24 @@ export function withAlpha(hex: string, alpha: number): string {
   return `rgba(${r}, ${g}, ${b}, ${alpha})`
 }
 
+/** Mix two hex colors (t = 0 keeps a, t = 1 returns b). */
+export function mixHex(a: string, b: string, t: number): string {
+  const ca = expandHex(a)
+  const cb = expandHex(b)
+  if (!ca || !cb) return a
+  const k = Math.max(0, Math.min(1, t))
+  const pa = parseInt(ca.slice(1), 16)
+  const pb = parseInt(cb.slice(1), 16)
+  const ch = (sa: number, sb: number) =>
+    Math.round(sa + (sb - sa) * k)
+      .toString(16)
+      .padStart(2, '0')
+  const r = ch((pa >> 16) & 255, (pb >> 16) & 255)
+  const g = ch((pa >> 8) & 255, (pb >> 8) & 255)
+  const bl = ch(pa & 255, pb & 255)
+  return `#${r}${g}${bl}`
+}
+
 /** Pick black or white text depending on background luminance. */
 export function readableOn(bgHex: string): string {
   const full = expandHex(bgHex)
@@ -123,6 +141,26 @@ export function LivePreview({ tokens }: LivePreviewProps) {
   const radius = { ...FALLBACK_RADIUS, ...(tokens.radius ?? {}) }
   const shadows = { ...FALLBACK_SHADOWS, ...(tokens.shadows ?? {}) }
 
+  // ---------- Prebuilt style effects (Liquid Glass / Google glow / gradient hero) ----------
+  const styleFlags = tokens.style ?? {}
+  const glass = styleFlags.glass === true
+  const glow = styleFlags.glow === true
+  const gradientHero = styleFlags.gradientHero === true
+  const accent = color('accent')
+
+  // Google-style glowing edge — a soft colored halo applied ONLY to the
+  // selected components: primary buttons and the focused input.
+  const glowRing = `0 0 0 3px ${withAlpha(primary, 0.22)}, 0 0 18px ${withAlpha(primary, 0.5)}`
+
+  // Liquid-glass surfaces: translucent white (or dark) panes with real
+  // backdrop blur, floating over a brand-tinted gradient canvas.
+  const isDarkCanvas = readableOn(background) === '#ffffff'
+  const glassTintRgb = isDarkCanvas ? '22, 26, 36' : '255, 255, 255'
+  const glassSurface = `rgba(${glassTintRgb}, ${isDarkCanvas ? 0.6 : 0.55})`
+  const glassInputSurface = `rgba(${glassTintRgb}, ${isDarkCanvas ? 0.4 : 0.45})`
+  const glassBorder = isDarkCanvas ? 'rgba(255, 255, 255, 0.12)' : 'rgba(255, 255, 255, 0.6)'
+  const glassBlur = 'blur(18px) saturate(1.6)'
+
   const brandName = tokens.brand?.name?.trim() || 'Your brand'
   const initial = brandName.charAt(0).toUpperCase()
   const trustPatterns = (tokens.trustPatterns ?? []).filter((t) => t.trim().length > 0)
@@ -160,26 +198,28 @@ export function LivePreview({ tokens }: LivePreviewProps) {
     fontWeight: 600,
     lineHeight: 1,
     cursor: 'pointer',
-    border: '1px solid transparent',
+    border: glass ? `1px solid ${glassBorder}` : '1px solid transparent',
     whiteSpace: 'nowrap',
   }
   const cardBase: CSSProperties = {
-    background: background,
-    border: `1px solid ${border}`,
+    background: glass ? glassSurface : background,
+    border: `1px solid ${glass ? glassBorder : border}`,
     borderRadius: radius.lg,
-    boxShadow: shadows.sm,
+    boxShadow: glass ? '0 8px 32px rgba(15, 23, 42, 0.12)' : shadows.sm,
+    ...(glass ? { backdropFilter: glassBlur, WebkitBackdropFilter: glassBlur } : {}),
   }
   const inputBase: CSSProperties = {
     width: '100%',
     padding: '10px 12px',
     borderRadius: radius.md,
-    border: `1px solid ${border}`,
-    background: background,
+    border: `1px solid ${glass ? glassBorder : border}`,
+    background: glass ? glassInputSurface : background,
     color: foreground,
     fontSize: scale.small,
     fontFamily: bodyFamily,
     outline: 'none',
     boxSizing: 'border-box',
+    ...(glass ? { backdropFilter: glassBlur, WebkitBackdropFilter: glassBlur } : {}),
   }
 
   const navLinks = copy_.navLinks
@@ -194,7 +234,9 @@ export function LivePreview({ tokens }: LivePreviewProps) {
       {/* Token-styled canvas — everything below derives from tokens */}
       <div
         style={{
-          background,
+          background: glass
+            ? `linear-gradient(135deg, ${mixHex(background, primary, 0.18)} 0%, ${background} 45%, ${mixHex(background, accent, 0.16)} 100%)`
+            : background,
           color: foreground,
           fontFamily: bodyFamily,
           lineHeight,
@@ -209,8 +251,18 @@ export function LivePreview({ tokens }: LivePreviewProps) {
             justifyContent: 'space-between',
             gap: 16,
             padding: '16px 24px',
-            borderBottom: `1px solid ${border}`,
+            borderBottom: `1px solid ${glass ? glassBorder : border}`,
             flexWrap: 'wrap',
+            ...(glass
+              ? {
+                  background: glassSurface,
+                  backdropFilter: glassBlur,
+                  WebkitBackdropFilter: glassBlur,
+                  position: 'sticky' as const,
+                  top: 0,
+                  zIndex: 5,
+                }
+              : {}),
           }}
         >
           <span style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -247,14 +299,24 @@ export function LivePreview({ tokens }: LivePreviewProps) {
                 </span>
               ))}
             </div>
-            <button type="button" style={{ ...btnBase, background: primary, color: primaryForeground }}>
+            <button type="button" style={{ ...btnBase, background: primary, color: primaryForeground, ...(glow ? { boxShadow: glowRing } : {}) }}>
               {copy_.navCta}
             </button>
           </nav>
         </header>
 
         {/* (b) Hero */}
-        <section style={{ padding: '56px 24px', textAlign: 'center' }}>
+        <section
+          style={{
+            padding: '56px 24px',
+            textAlign: 'center',
+            ...(gradientHero
+              ? {
+                  background: `linear-gradient(160deg, ${withAlpha(primary, 0.16)} 0%, ${withAlpha(accent, 0.12)} 55%, transparent 85%)`,
+                }
+              : {}),
+          }}
+        >
           <h1
             style={{
               fontFamily: headingFamily,
@@ -290,7 +352,7 @@ export function LivePreview({ tokens }: LivePreviewProps) {
               marginBottom: 20,
             }}
           >
-            <button type="button" style={{ ...btnBase, background: primary, color: primaryForeground, boxShadow: shadows.md }}>
+            <button type="button" style={{ ...btnBase, background: primary, color: primaryForeground, boxShadow: glow ? glowRing : shadows.md }}>
               {copy_.primaryCta}
             </button>
             <button
@@ -327,7 +389,7 @@ export function LivePreview({ tokens }: LivePreviewProps) {
         {/* (c) Buttons */}
         <Section pad="24px" label="Buttons">
           <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'center' }}>
-            <button type="button" style={{ ...btnBase, background: primary, color: primaryForeground }}>
+            <button type="button" style={{ ...btnBase, background: primary, color: primaryForeground, ...(glow ? { boxShadow: glowRing } : {}) }}>
               Primary
             </button>
             <button type="button" style={{ ...btnBase, background: secondary, color: foreground }}>
@@ -425,7 +487,18 @@ export function LivePreview({ tokens }: LivePreviewProps) {
               </label>
               <label style={{ display: 'grid', gap: 6, fontSize: scale.small, fontWeight: 600 }}>
                 Work email
-                <input type="text" readOnly value="jane@company.com" style={inputBase} />
+                <input
+                  type="text"
+                  readOnly
+                  value="jane@company.com"
+                  aria-label="Work email (focused state)"
+                  style={{
+                    ...inputBase,
+                    ...(glow
+                      ? { borderColor: primary, boxShadow: glowRing }
+                      : {}),
+                  }}
+                />
               </label>
               <label style={{ display: 'grid', gap: 6, fontSize: scale.small, fontWeight: 600 }}>
                 Anything we should know?
@@ -449,7 +522,16 @@ export function LivePreview({ tokens }: LivePreviewProps) {
                 <input type="checkbox" defaultChecked readOnly style={{ accentColor: primary, width: 15, height: 15 }} />
                 Email me product updates
               </label>
-              <button type="button" style={{ ...btnBase, background: primary, color: primaryForeground, width: '100%' }}>
+              <button
+                type="button"
+                style={{
+                  ...btnBase,
+                  background: primary,
+                  color: primaryForeground,
+                  width: '100%',
+                  ...(glow ? { boxShadow: glowRing } : {}),
+                }}
+              >
                 Create account
               </button>
             </div>
@@ -530,7 +612,16 @@ export function LivePreview({ tokens }: LivePreviewProps) {
                 </li>
               ))}
             </ul>
-            <button type="button" style={{ ...btnBase, background: primary, color: primaryForeground, width: '100%' }}>
+            <button
+              type="button"
+              style={{
+                ...btnBase,
+                background: primary,
+                color: primaryForeground,
+                width: '100%',
+                ...(glow ? { boxShadow: glowRing } : {}),
+              }}
+            >
               Choose Growth
             </button>
           </div>

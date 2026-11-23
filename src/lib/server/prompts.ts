@@ -211,8 +211,14 @@ ${DESIGN_CORPUS_DIGEST}
 
 // ---------- 3b) Design theme variants (research-grounded alternatives) ----------
 
+// Compact output on purpose: the model returns a small "direction spec" per
+// theme (NOT full DesignTokens JSON). Full token sets blew past the model's
+// output limit, truncated mid-JSON, and made every retry fail ("Unbalanced
+// JSON") — the feature looked hung for minutes. A ~300-token reply parses
+// reliably and generates in seconds; the server merges the spec over the
+// applied design's tokens deterministically.
 export const THEMES_SYSTEM =
-  'You are a world-class design director proposing distinct design-system directions. Respond with ONLY a valid JSON object — the very first characters of your reply must be {"themes": [ and the reply must end with ]}. No markdown fences, no commentary, no code block.';
+  'You are a world-class design director proposing distinct design-system directions. Respond with ONLY a valid JSON object — the very first characters of your reply must be {"themes": [ and the reply must end with ]}. Keep each theme object SMALL (a short direction spec, not full token JSON). No markdown fences, no commentary, no code block.';
 
 const THEMES_SCHEMA = `{
   "themes": [
@@ -220,13 +226,15 @@ const THEMES_SCHEMA = `{
       "name": "short evocative direction name (<= 24 chars), e.g. 'Trust Ledger', 'Warm Craft', 'Quiet Grid'",
       "reason": "2-3 sentences: why this direction fits the audience psychology and which specific research findings it applies",
       "score": 0-100,  // how strongly this direction matches the reviewed research; the FIRST theme must be the highest-scoring
-      "tokens": { ...full DesignTokens JSON schema below... }
+      "primary": "#RRGGBB brand/primary color for this direction",
+      "surface": "light" or "dark",  // the surface atmosphere for this direction
+      "heading": "heading font family",
+      "body": "body font family",
+      "shape": "sharp" or "soft" or "generous"  // radius/shadow character
     }
     // exactly 3 theme objects, ordered best-first (highest research fit first)
   ]
-}
-
-${DESIGN_TOKENS_INTERFACE}`;
+}`;
 
 export function buildThemesPrompt(
   project: { name: string; description?: string | null },
@@ -236,21 +244,26 @@ export function buildThemesPrompt(
   currentTokens: DesignTokens | null,
 ): string {
   const current = currentTokens
-    ? `CURRENT APPLIED DESIGN TOKENS (use as the baseline; copy its previewCopy and trustPatterns verbatim into every variant):
+    ? `CURRENT APPLIED DESIGN (baseline — its colors/typography stay unless a field overrides them):
 ${JSON.stringify(
-      { previewCopy: currentTokens.previewCopy, trustPatterns: currentTokens.trustPatterns, brand: currentTokens.brand },
+      {
+        brand: currentTokens.brand,
+        primary: currentTokens.colors?.primary?.hex,
+        heading: currentTokens.typography?.heading?.family,
+        body: currentTokens.typography?.body?.family,
+      },
       null,
       1,
     )}`
-    : 'No design has been generated yet — invent domain-appropriate previewCopy and trustPatterns per the schema.';
+    : 'No design has been generated yet — the server will derive tokens from the logo palette.';
 
-  return `Propose 3 alternative design-system themes for this project.
+  return `Propose 3 alternative design-system DIRECTIONS for this project. Each is a compact spec (name, reason, score, primary hex, surface mode, two fonts, shape character) — the server turns each spec into full tokens by merging it over the current design.
 
 PROJECT: "${project.name}" — ${project.description || 'no description provided'}
 
 AUDIENCE: ${JSON.stringify(compactAudience(audience))}
 
-FULL LOGO ANALYSIS: ${JSON.stringify(analysis)}
+LOGO PALETTE: ${JSON.stringify(analysis.palette.map((c) => ({ hex: c.hex, name: c.name })))} | styleTags: ${analysis.styleTags.join(', ') || 'unknown'} | mood: ${analysis.mood}
 
 RESEARCH DIGEST (reviewed findings — every theme MUST apply these):
 ${digestResearch(research)}
@@ -259,16 +272,13 @@ ${current}
 
 ${THEMES_SCHEMA}
 
-Theme rules:
-- The three variants must be MEANINGFULLY different directions (e.g. different primary hue family, different heading/body pairing, different radius/shadow character), yet ALL of them must stay true to the research: use the colorTheory findings for hue/harmony choices, respect the trustFactors and commonMistakes sections as guardrails, and take positioning cues from competitorLogos (differentiate, do not clone).
-- The FIRST theme is your recommended best outcome: the safest, most research-aligned direction. Its score must be the highest.
-- Derive each primary color from the logo palette when it serves the field's psychology; if a variant shifts away from the logo color for psychological fit, say so in its reason.
-- primary/primaryForeground must meet WCAG AA (contrastRatio >= 4.5 — the system re-checks this).
-- Typography heading+body families MUST be chosen from this exact list: Inter, Manrope, Poppins, Space Grotesk, Sora, Outfit, IBM Plex Sans, Playfair Display, DM Serif Display, Lora, Merriweather, JetBrains Mono.
-- radius/shadows must match the logo styleTags (${analysis.styleTags.join(', ') || 'unknown'}).
-- brand: keep the same brand.name; personality/voice may shift subtly per direction.
-- previewCopy and trustPatterns: copy verbatim from the CURRENT APPLIED DESIGN TOKENS when provided (do not rewrite them); only invent them when no current tokens are given.
-- paletteScale: 10 steps derived from each variant's own primary.`;
+Direction rules:
+- The three directions must be MEANINGFULLY different (e.g. different primary hue family, light vs dark surface, different font pairing, different shape character), yet ALL stay true to the research: use the colorTheory findings for hue/harmony choices, respect trustFactors and commonMistakes as guardrails, take positioning cues from competitorLogos (differentiate, do not clone).
+- The FIRST direction is your recommended best outcome: the safest, most research-aligned one. Its score must be the highest.
+- Derive each primary from the logo palette when it serves the field's psychology; if a direction shifts away from the logo color for psychological fit, say so in its reason.
+- primary must have 4.5:1 contrast against a white OR near-black surface (the server re-checks and fixes the on-primary text color).
+- heading and body families MUST be chosen from this exact list: Inter, Manrope, Poppins, Space Grotesk, Sora, Outfit, IBM Plex Sans, Playfair Display, DM Serif Display, Lora, Merriweather, JetBrains Mono.
+- shape guides radius + shadows: "sharp" = tight radii, crisp edges; "soft" = balanced radii, gentle shadows; "generous" = large radii, airy ambient shadows.`;
 }
 
 // ---------- 4) DESIGN.md markdown ----------

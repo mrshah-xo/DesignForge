@@ -283,13 +283,14 @@ export const api = {
   },
 
   /** AI-suggested research-grounded theme variants (starts job + polls). */
-  generateThemes(id: string): Promise<ThemeVariant[]> {
+  generateThemes(id: string, onProgress?: (step: string) => void): Promise<ThemeVariant[]> {
     const base = `/api/projects/${encodeURIComponent(id)}/design/themes`
     return runJob<ThemeVariant[]>(
       base,
       (jobId) => `${base}?jobId=${encodeURIComponent(jobId)}`,
       (data) => data.themes as ThemeVariant[],
       'Theme suggestions',
+      onProgress,
     )
   },
 

@@ -130,6 +130,20 @@ export interface PaletteStep {
   name: string;
 }
 
+/**
+ * Visual style effects layered on top of the base tokens by a prebuilt
+ * style (Apple HIG, Liquid Glass, Google glow, …). Optional flags —
+ * the live preview renders the matching treatment when a flag is set.
+ */
+export interface DesignStyleFlags {
+  /** Liquid-glass surfaces: translucent cards/nav/inputs + backdrop blur over a gradient canvas. */
+  glass?: boolean;
+  /** Google-style glowing edges on SELECTED components (primary buttons + focused inputs). */
+  glow?: boolean;
+  /** Stripe-style tinted gradient wash behind the hero section. */
+  gradientHero?: boolean;
+}
+
 export interface DesignTokens {
   brand: {
     name: string;
@@ -148,6 +162,7 @@ export interface DesignTokens {
   buttons: { primary: string; secondary: string; shape: string };
   trustPatterns: string[];
   previewCopy: PreviewCopy;
+  style?: DesignStyleFlags;
 }
 
 /** Domain-aware microcopy used by the live component preview. */

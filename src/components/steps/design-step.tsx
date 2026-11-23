@@ -43,7 +43,9 @@ import {
 } from '@/components/ui/alert-dialog'
 import { LivePreview, FALLBACK_HEX, isHex } from '@/components/preview/live-preview'
 import { themeSwatches, themeTokens } from '@/lib/preview-themes'
+import { PREBUILT_STYLES, applyPrebuiltStyle, findPrebuiltStyle } from '@/lib/style-themes'
 import { DesignGenerating, type LiveProgress } from '@/components/wizard/design-generating'
+import { InlineProgress } from '@/components/wizard/inline-progress'
 import { DESIGN_MESSAGES } from '@/components/wizard/progress-messages'
 import { copyToClipboard, downloadText } from '@/lib/client/api'
 import {
@@ -61,6 +63,8 @@ interface DesignStepProps {
   generating: boolean
   /** Live pipeline steps while the design generates. */
   designLive: LiveProgress | null
+  /** Live pipeline steps while AI theme suggestions generate. */
+  themesLive: LiveProgress | null
   onSaveTokens: (tokens: DesignTokens) => Promise<void>
   onSaveMarkdown: (markdown: string) => Promise<void>
   onRegenerate: () => Promise<void>
@@ -108,6 +112,7 @@ export function DesignStep({
   saving,
   generating,
   designLive,
+  themesLive,
   onSaveTokens,
   onSaveMarkdown,
   onRegenerate,
@@ -125,6 +130,9 @@ export function DesignStep({
   // activeThemeId selects: 'original' | 'light' | 'dark' | a ThemeVariant id
   const [activeThemeId, setActiveThemeId] = useState<string>('original')
   const [applyingTheme, setApplyingTheme] = useState(false)
+  // Prebuilt style layered on the applied design (Apple, Liquid Glass, …).
+  const [activeStyleId, setActiveStyleId] = useState<string | null>(null)
+  const [applyingStyle, setApplyingStyle] = useState(false)
 
   // Editors are initialized once at mount; the shell remounts this step
   // (keyed by project id + design nonce) when the design is regenerated,
@@ -167,11 +175,16 @@ export function DesignStep({
   const activeTheme = activeThemeId === 'original' || activePreset
     ? null
     : themes.find((t) => t.id === activeThemeId) ?? null
-  const previewTokens = activeTheme
+  const activeStyle = findPrebuiltStyle(activeStyleId)
+  const baseTokens = activeTheme
     ? activeTheme.tokens
     : activePreset
       ? themeTokens(tokens, activePreset, null)
       : tokens
+  // Prebuilt styles layer over the applied design (not over AI/preset previews).
+  const previewTokens = !activeTheme && !activePreset && activeStyle
+    ? applyPrebuiltStyle(tokens, activeStyleId)
+    : baseTokens
 
   const handleGenerateThemes = () => {
     setThemesLoading(true)
@@ -218,6 +231,27 @@ export function DesignStep({
         /* error already surfaced by the shell toast */
       })
       .finally(() => setApplyingTheme(false))
+  }
+
+  /** Apply a prebuilt style (Apple, Liquid Glass, …): persists tokens + style flags. */
+  const applyStyle = () => {
+    if (!activeStyle || !tokens) return
+    const label = activeStyle.name
+    const next = applyPrebuiltStyle(tokens, activeStyle.id)
+    setApplyingStyle(true)
+    Promise.resolve(onSaveTokens(next))
+      .then(() => {
+        setTokens(next)
+        setActiveStyleId(null)
+        setActiveThemeId('original')
+        toast.success(`${label} style applied`, {
+          description: 'The style is baked into your design tokens. DESIGN.md still describes the previous direction — regenerate it to refresh the copy.',
+        })
+      })
+      .catch(() => {
+        /* error already surfaced by the shell toast */
+      })
+      .finally(() => setApplyingStyle(false))
   }
 
   const previewPill = (active: boolean) =>
@@ -327,23 +361,30 @@ export function DesignStep({
           </div>
 
           {themesLoading ? (
-            <div className="flex flex-wrap items-center gap-2">
-              {[0, 1, 2, 3].map((i) => (
+            <div className="flex flex-wrap items-center gap-3">
+              {[0, 1, 2].map((i) => (
                 <span
                   key={i}
                   className="h-7 animate-pulse rounded-full bg-muted"
                   style={{ width: `${96 + i * 26}px` }}
                 />
               ))}
-              <span className="text-xs text-muted-foreground">Generating research-grounded directions…</span>
+              <InlineProgress
+                live={themesLive}
+                fallback="Proposing 3 research-grounded directions…"
+                label="AI theme suggestions progress"
+              />
             </div>
           ) : (
             <div className="flex flex-wrap gap-2">
               <button
                 type="button"
-                className={previewPill(activeThemeId === 'original')}
-                onClick={() => setActiveThemeId('original')}
-                aria-pressed={activeThemeId === 'original'}
+                className={previewPill(activeThemeId === 'original' && !activeStyle)}
+                onClick={() => {
+                  setActiveThemeId('original')
+                  setActiveStyleId(null)
+                }}
+                aria-pressed={activeThemeId === 'original' && !activeStyle}
               >
                 Applied design
               </button>
@@ -354,7 +395,10 @@ export function DesignStep({
                     key={preset}
                     type="button"
                     className={previewPill(activeThemeId === preset)}
-                    onClick={() => setActiveThemeId(preset)}
+                    onClick={() => {
+                      setActiveThemeId(preset)
+                      setActiveStyleId(null)
+                    }}
                     aria-pressed={activeThemeId === preset}
                   >
                     <span
@@ -373,7 +417,10 @@ export function DesignStep({
                   key={t.id}
                   type="button"
                   className={previewPill(activeThemeId === t.id)}
-                  onClick={() => setActiveThemeId(t.id)}
+                  onClick={() => {
+                    setActiveThemeId(t.id)
+                    setActiveStyleId(null)
+                  }}
                   aria-pressed={activeThemeId === t.id}
                 >
                   {t.id === bestThemeId && <Sparkles className="size-3 text-ember-500" />}
@@ -385,6 +432,44 @@ export function DesignStep({
               ))}
             </div>
           )}
+
+          {/* Prebuilt styles — popular design languages, one click, zero AI wait */}
+          <div className="mt-3 border-t border-border pt-3">
+            <p className="mb-2 text-xs font-semibold text-gray-900 dark:text-gray-50">
+              Prebuilt styles
+              <span className="ml-2 font-normal text-muted-foreground">instant, inspired by official design systems</span>
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {PREBUILT_STYLES.map((style) => {
+                const sample = tokens ? applyPrebuiltStyle(tokens, style.id) : null
+                const bgHex = sample?.colors?.background?.hex ?? '#ffffff'
+                const fgHex = sample?.colors?.primary?.hex ?? '#0f766e'
+                return (
+                  <button
+                    key={style.id}
+                    type="button"
+                    className={previewPill(activeStyleId === style.id)}
+                    onClick={() => {
+                      setActiveStyleId(activeStyleId === style.id ? null : style.id)
+                      setActiveThemeId('original')
+                    }}
+                    aria-pressed={activeStyleId === style.id}
+                    title={style.description}
+                  >
+                    <span
+                      className="inline-flex size-3.5 shrink-0 overflow-hidden rounded-full border border-border"
+                      aria-hidden
+                    >
+                      <span className="h-full w-1/2" style={{ background: bgHex }} />
+                      <span className="h-full w-1/2" style={{ background: fgHex }} />
+                    </span>
+                    {style.name}
+                    <span className="text-[10px] font-normal text-muted-foreground">{style.tagline}</span>
+                  </button>
+                )
+              })}
+            </div>
+          </div>
 
           {themes.length === 0 && !themesLoading && (
             <p className="mt-2 text-xs text-muted-foreground">
@@ -433,7 +518,7 @@ export function DesignStep({
             </div>
           )}
 
-          {activePreset && !activeTheme && (
+          {activePreset && !activeTheme && !activeStyle && (
             <div className="mt-3 rounded-md border border-border bg-muted/40 p-3">
               <div className="flex flex-wrap items-start justify-between gap-2">
                 <div className="min-w-0 flex-1">
@@ -461,6 +546,46 @@ export function DesignStep({
                     variant="ghost"
                     onClick={() => setActiveThemeId('original')}
                     disabled={applyingTheme}
+                  >
+                    Back to applied
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {activeStyle && !activeTheme && !activePreset && (
+            <div className="mt-3 rounded-md border border-ember-200 bg-ember-50/60 p-3 dark:border-ember-500/30 dark:bg-ember-500/5">
+              <div className="flex flex-wrap items-start justify-between gap-2">
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-semibold text-ember-800 dark:text-ember-300">
+                      {activeStyle.name}
+                    </span>
+                    <Badge
+                      variant="outline"
+                      className="border-ember-200 bg-transparent text-ember-700 dark:border-ember-500/40 dark:text-ember-300"
+                    >
+                      Preview — not applied yet
+                    </Badge>
+                  </div>
+                  <p className="mt-1 text-xs leading-relaxed text-muted-foreground">{activeStyle.description}</p>
+                </div>
+                <div className="flex shrink-0 items-center gap-2">
+                  <Button
+                    size="sm"
+                    onClick={applyStyle}
+                    disabled={applyingStyle || saving}
+                    className="bg-primary text-primary-foreground hover:bg-ember-600"
+                  >
+                    {applyingStyle ? <Loader2 className="size-3.5 animate-spin" /> : <Check className="size-3.5" />}
+                    Apply to design
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => setActiveStyleId(null)}
+                    disabled={applyingStyle}
                   >
                     Back to applied
                   </Button>
