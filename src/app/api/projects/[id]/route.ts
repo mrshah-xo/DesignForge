@@ -1,5 +1,5 @@
 // ============================================================
-// GET /api/projects/[id] — full project detail incl. relations
+// GET /api/projects/[id] - full project detail incl. relations
 // ============================================================
 
 import { NextRequest, NextResponse } from 'next/server';
@@ -14,7 +14,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
   try {
     const { id } = await params;
     // Self-heals (applies the schema baseline + retries) when this server's
-    // database predates a table — e.g. a production Postgres missing DesignTheme.
+    // database predates a table - e.g. a production Postgres missing DesignTheme.
     const project = await withSchemaRetry(() =>
       db.project.findUnique({
         where: { id },

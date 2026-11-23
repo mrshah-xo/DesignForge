@@ -1,6 +1,6 @@
 // ============================================================
-// POST /api/projects — create project from multipart logo upload
-// GET  /api/projects — list projects (createdAt desc)
+// POST /api/projects - create project from multipart logo upload
+// GET  /api/projects - list projects (createdAt desc)
 // ============================================================
 
 import { NextRequest, NextResponse } from 'next/server';
@@ -66,7 +66,7 @@ export async function POST(req: NextRequest) {
         { status: 400 },
       );
     }
-    // Some browsers send image/jpg — normalize to the canonical mime.
+    // Some browsers send image/jpg - normalize to the canonical mime.
     const mime = file.type === 'image/jpg' ? 'image/jpeg' : file.type;
     if (!ALLOWED_MIMES[mime]) {
       return NextResponse.json(

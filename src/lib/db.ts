@@ -9,7 +9,7 @@ import { PrismaClient } from '@prisma/client'
  * it into the process environment on every container restart. An inherited
  * environment variable always wins over dotenv-style files (dotenv never
  * overrides existing variables), so when we detect that legacy `file:` URL
- * we swap in the real cloud URL from .env.local — a file the provisioning script
+ * we swap in the real cloud URL from .env.local - a file the provisioning script
  * does not touch.
  *
  * In normal deployments (e.g. Vercel, where DATABASE_URL is set correctly and
@@ -23,7 +23,7 @@ function resolveDatabaseUrl(): string | undefined {
     const match = raw.match(/^DATABASE_URL="?([^"\r\n]+)"?\s*$/m)
     if (match && match[1].startsWith('postgres')) return match[1]
   } catch {
-    // .env.local missing — fall through to the inherited URL
+    // .env.local missing - fall through to the inherited URL
   }
   return inherited
 }

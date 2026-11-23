@@ -1,16 +1,16 @@
 // ============================================================
-// "Want a prompt?" — research review helpers.
+// "Want a prompt?" - research review helpers.
 //
 // Step 4 shows an AI-written research report the user is expected
-// to review and fix by hand. That takes time, so — like the brief
-// flow — the user can copy a generated prompt into their coding
+// to review and fix by hand. That takes time, so - like the brief
+// flow - the user can copy a generated prompt into their coding
 // agent (ChatGPT, Claude, Gemini...). The agent critiques and
 // rewrites the report and prints a DESIGNFORGE_RESEARCH block;
-// the user pastes that reply back into DesignForge and the
+// the user pastes that reply back into MrDesign.md and the
 // sections / competitor brands / sources update automatically,
 // then save to the project.
 //
-// Pure functions only — safe for both client and server use.
+// Pure functions only - safe for both client and server use.
 // ============================================================
 
 import type {
@@ -59,7 +59,7 @@ export const RESEARCH_SECTIONS: ResearchSectionMeta[] = [
     key: 'trustFactors',
     code: 'TRUST_FACTORS',
     label: 'trust factors',
-    blurb: 'the signals that make this audience believe — and pay',
+    blurb: 'the signals that make this audience believe - and pay',
     aliases: ['TRUSTFACTORS', 'TRUST'],
   },
   {
@@ -140,7 +140,7 @@ export function buildReportSummary(sections: ResearchSections): string[] {
       if (comp.body?.trim()) bits.push(`Summary: ${truncate(cleanText(comp.body), 300)}`);
       const brands = comp.brands.map((b) => b.name?.trim()).filter(Boolean) as string[];
       if (brands.length) bits.push(`Brands: ${brands.join(', ')}`);
-      if (bits.length) lines.push(`[${meta.code}] ${bits.join(' — ')}`);
+      if (bits.length) lines.push(`[${meta.code}] ${bits.join(' - ')}`);
       continue;
     }
     const s: ResearchSection = sections[meta.key as Exclude<ResearchSectionKey, 'competitorLogos'>];
@@ -149,7 +149,7 @@ export function buildReportSummary(sections: ResearchSections): string[] {
     if (s.body?.trim()) bits.push(`Body: ${truncate(cleanText(s.body), 300)}`);
     const bullets = (s.bullets ?? []).map((b) => b?.trim()).filter(Boolean) as string[];
     if (bullets.length) bits.push(`Points: ${truncate(bullets.join(' | '), 400)}`);
-    if (bits.length) lines.push(`[${meta.code}] ${bits.join(' — ')}`);
+    if (bits.length) lines.push(`[${meta.code}] ${bits.join(' - ')}`);
   }
   return lines;
 }
@@ -159,7 +159,7 @@ export function buildResearchPrompt(ctx: ResearchPromptContext): string {
   const contextLines: string[] = [];
   const name = cleanText(ctx.name);
   const description = cleanText(ctx.description);
-  if (name) contextLines.push(`- Project: ${name}${description ? ` — ${description}` : ''}`);
+  if (name) contextLines.push(`- Project: ${name}${description ? ` - ${description}` : ''}`);
   if (ctx.category && cleanText(ctx.category)) contextLines.push(`- Category: ${cleanText(ctx.category)}`);
   if (ctx.audienceDesc && cleanText(ctx.audienceDesc)) contextLines.push(`- Audience: ${cleanText(ctx.audienceDesc)}`);
   if (ctx.platform && cleanText(ctx.platform)) contextLines.push(`- Platform: ${cleanText(ctx.platform)}`);
@@ -172,7 +172,7 @@ export function buildResearchPrompt(ctx: ResearchPromptContext): string {
   const summary = ctx.sections ? buildReportSummary(ctx.sections) : [];
   const hasReport = summary.length > 0;
 
-  const head = `You are reviewing the audience research report for DesignForge, a tool that turns a logo plus brand info into a complete design system. I am pasting this into you, my AI assistant, because you already know this product and the people it is for.
+  const head = `You are reviewing the audience research report for MrDesign.md, a tool that turns a logo plus brand info into a complete design system. I am pasting this into you, my AI assistant, because you already know this product and the people it is for.
 
 Answer in ONE single message. Do NOT interview me. Do NOT ask questions. Do NOT split the answer across messages. Critique the current report (if any), fix what is weak, generic or wrong, keep what is already good, and return the corrected report in the exact block below.`;
 
@@ -189,15 +189,15 @@ Answer in ONE single message. Do NOT interview me. Do NOT ask questions. Do NOT 
   if (hasReport) {
     parts.push(`CURRENT REPORT (keep what is good, fix what is weak or generic)\n${summary.join('\n')}`);
   } else {
-    parts.push('There is no report yet — write the complete report yourself from the project context above.');
+    parts.push('There is no report yet - write the complete report yourself from the project context above.');
   }
 
   const explainer = RESEARCH_SECTIONS.map(
-    (meta, i) => `${i + 1}. ${meta.code} — ${meta.blurb}`,
+    (meta, i) => `${i + 1}. ${meta.code} - ${meta.blurb}`,
   ).join('\n');
   parts.push(`THE SIX SECTIONS\n${explainer}`);
 
-  parts.push(`OUTPUT PATTERN — your reply must be EXACTLY this block, nothing before it and nothing after it:
+  parts.push(`OUTPUT PATTERN - your reply must be EXACTLY this block, nothing before it and nothing after it:
 
 ${RESEARCH_BLOCK_START}
 AUDIENCE_PSYCHOLOGY_TITLE: <one line>
@@ -241,7 +241,7 @@ ${RESEARCH_BLOCK_END}`);
 - Keep every _TITLE / _BODY / _SUMMARY value on ONE line (long is fine). POINTS, BRANDS and SOURCES are headers; put each item on its own "- " line.
 - 3-5 points per section, 3-5 brands, 2-5 sources. Brand and source items separate their parts with " | ".
 - Only include sections you actually fixed or wrote; unchanged sections can be left out and will be kept as-is.
-- Write like a design researcher for THIS exact audience: name concrete UI patterns, colors and trust signals — no generic filler.`);
+- Write like a design researcher for THIS exact audience: name concrete UI patterns, colors and trust signals - no generic filler.`);
 
   return parts.join('\n\n');
 }
@@ -520,7 +520,7 @@ function scanLines(body: string, c: CollectState): void {
     const line = rawLine.trim();
     if (!line) continue; // blank lines do not close the open list
 
-    // While a list is open, bulleted lines are list items — their content
+    // While a list is open, bulleted lines are list items - their content
     // often contains colons and would confuse field matching.
     const bullet = BULLET_RE.exec(line);
     if (c.openList && bullet) {
@@ -538,7 +538,7 @@ function scanLines(body: string, c: CollectState): void {
       }
     }
 
-    if (bullet) continue; // stray bullet with no open list — ignore prose
+    if (bullet) continue; // stray bullet with no open list - ignore prose
 
     // Any other non-blank line closes the open list (prose between lists).
     c.openList = null;
@@ -694,7 +694,7 @@ export function parseResearchLocally(text: string): ParsedResearch {
       const obj: unknown = JSON.parse(raw.slice(jsonStart, jsonEnd + 1));
       if (isPlainObject(obj)) collectFromJson(obj, c);
     } catch {
-      // Not valid JSON — fall through to line scanning.
+      // Not valid JSON - fall through to line scanning.
     }
   }
 

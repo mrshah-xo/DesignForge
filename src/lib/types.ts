@@ -1,5 +1,5 @@
 // ============================================================
-// Shared types for DesignForge — Logo → DESIGN.md platform
+// Shared types for MrDesign.md platform
 // Single source of truth for backend (API routes) and frontend.
 // ============================================================
 
@@ -18,7 +18,7 @@ export interface BackgroundSuggestion {
   mode: 'solid' | 'gradient';
   /** First (dominant) surface hex. */
   from: string;
-  /** Second surface hex for gradients — equals `from` when mode is solid. */
+  /** Second surface hex for gradients - equals `from` when mode is solid. */
   to: string;
   /** Human-readable why: contrast, mood and industry reasoning. */
   reason: string;
@@ -68,10 +68,10 @@ export const MONETIZATION = [
 ] as const;
 
 export const TRUST_LEVELS = [
-  { value: 'low', label: 'Low — casual use, no sensitive data' },
-  { value: 'medium', label: 'Medium — personal data involved' },
-  { value: 'high', label: 'High — sensitive personal data' },
-  { value: 'critical', label: 'Critical — users pay / money involved' },
+  { value: 'low', label: 'Low - casual use, no sensitive data' },
+  { value: 'medium', label: 'Medium - personal data involved' },
+  { value: 'high', label: 'High - sensitive personal data' },
+  { value: 'critical', label: 'Critical - users pay / money involved' },
 ] as const;
 
 export interface AudienceData {
@@ -151,7 +151,7 @@ export type CursorPackValue = 'windows' | 'macos' | 'dot' | 'crosshair' | '';
 
 /**
  * Visual style effects layered on top of the base tokens by a prebuilt
- * style (Apple HIG, Liquid Glass, Google glow, …). Optional flags —
+ * style (Apple HIG, Liquid Glass, Google glow, …). Optional flags -
  * the live preview renders the matching treatment when a flag is set.
  */
 export interface DesignStyleFlags {
@@ -216,14 +216,14 @@ export const DEFAULT_PREVIEW_COPY: PreviewCopy = {
   navCta: 'Get started',
   heroHeadline: 'Everything you need in one place',
   heroSubhead:
-    'A cleaner, faster way to get things done — designed around how you already work.',
+    'A cleaner, faster way to get things done - designed around how you already work.',
   primaryCta: 'Get started',
   secondaryCta: 'Learn more',
   featureCards: [
     {
       icon: 'sparkles',
       title: 'Instant setup',
-      text: 'Get up and running in minutes — no complex configuration required.',
+      text: 'Get up and running in minutes - no complex configuration required.',
     },
     {
       icon: 'shield',

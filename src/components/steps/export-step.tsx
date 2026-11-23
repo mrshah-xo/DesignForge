@@ -37,7 +37,7 @@ const PACKAGE_CONTENTS = [
   {
     icon: FileJson,
     name: 'tokens.json',
-    detail: 'Design tokens in structured JSON — colors, type scale, radius, shadows, patterns.',
+    detail: 'Design tokens in structured JSON - colors, type scale, radius, shadows, patterns.',
   },
   {
     icon: FileJson,
@@ -57,10 +57,10 @@ const PACKAGE_CONTENTS = [
 ]
 
 const AGENT_TIPS = [
-  'Paste DESIGN.md into Cursor, v0, Lovable, or Claude Code — the agent gets your full brand context instantly.',
+  'Paste DESIGN.md into Cursor, v0, Lovable, or Claude Code - the agent gets your full brand context instantly.',
   'Import tokens.json into your Tailwind config or design tool so every screen stays on-brand.',
   'Keep the logo file in /brand and reference brand-sheet.svg for quick mockups.',
-  'Iterate anytime — regenerate the design system from step 6 without redoing research.',
+  'Iterate anytime - regenerate the design system from step 6 without redoing research.',
 ]
 
 function trustLabel(value: string): string {
@@ -136,7 +136,7 @@ export function ExportStep({ project, onStartNew }: ExportStepProps) {
                 {audience.categoryLabel}
               </Badge>
               <Badge variant="outline" className="border-border bg-muted text-muted-foreground">
-                Trust need: {trustLabel(audience.trustNeed).split(' — ')[0]}
+                Trust need: {trustLabel(audience.trustNeed).split(' - ')[0]}
               </Badge>
             </>
           )}

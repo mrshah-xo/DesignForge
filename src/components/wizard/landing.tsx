@@ -60,7 +60,7 @@ export function Landing({ analyzing, onStart, onAudiencePrefill, audiencePrefill
 
   return (
     <div className="mx-auto w-full max-w-5xl px-4 py-10 sm:py-14">
-      {/* Hero — the single allowed flourish: neutral mesh wash under a glass pane */}
+      {/* Hero - the single allowed flourish: neutral mesh wash under a glass pane */}
       <section className="df-mesh df-glass rounded-lg border border-border/80 px-6 py-10 text-center shadow-sm sm:px-10 sm:py-14">
         <motion.div
           initial={{ opacity: 0, y: 8 }}
@@ -76,7 +76,7 @@ export function Landing({ analyzing, onStart, onAudiencePrefill, audiencePrefill
             Design Without Compromise
           </h1>
           <p className="text-pretty text-sm text-muted-foreground sm:text-base">
-            Your creative forge, where precision meets passion. Upload a logo — get an
+            Your creative forge, where precision meets passion. Upload a logo - get an
             agent-ready DESIGN.md, design tokens, a live component preview, and a
             trust-focused fit report.
           </p>
@@ -91,7 +91,7 @@ export function Landing({ analyzing, onStart, onAudiencePrefill, audiencePrefill
         >
           {analyzing ? (
             <div className="rounded-lg border border-border bg-card shadow-sm">
-              <DesignGenerating messages={ANALYSIS_MESSAGES} subtext="Our vision model is reading your logo — this can take up to 40 seconds." />
+              <DesignGenerating messages={ANALYSIS_MESSAGES} subtext="Our vision model is reading your logo - this can take up to 40 seconds." />
             </div>
           ) : (
             <div className="rounded-lg border border-border bg-card p-6 text-left shadow-sm">
@@ -101,7 +101,7 @@ export function Landing({ analyzing, onStart, onAudiencePrefill, audiencePrefill
                   <Label htmlFor="project-name">Project name</Label>
                   <Input
                     id="project-name"
-                    placeholder="e.g. PayFlow — payments for freelancers"
+                    placeholder="e.g. PayFlow - payments for freelancers"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     maxLength={80}
@@ -120,7 +120,7 @@ export function Landing({ analyzing, onStart, onAudiencePrefill, audiencePrefill
                     maxLength={280}
                   />
                 </div>
-                {/* Venom pill CTA with the animated RGB glow — selected
+                {/* Venom pill CTA with the animated RGB glow - selected
                     component only, never the whole page (DESIGN.md). */}
                 <div className="df-rgb-glow w-full rounded-full">
                   <Button
@@ -153,7 +153,7 @@ export function Landing({ analyzing, onStart, onAudiencePrefill, audiencePrefill
                 {audiencePrefilled && (
                   <p className="flex items-center justify-center gap-1.5 text-xs font-medium text-ink-600 dark:text-ink-300">
                     <CircleCheck className="size-3.5" />
-                    Agent brief applied — after your logo is analyzed we jump straight to Research review (step 4).
+                    Agent brief applied - after your logo is analyzed we jump straight to Research review (step 4).
                   </p>
                 )}
               </div>

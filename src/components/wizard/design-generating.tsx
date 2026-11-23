@@ -8,7 +8,7 @@ import { CheckCircle2 } from 'lucide-react'
 export interface LiveProgress {
   /** What the AI is doing right now (server job progress). */
   step: string | null
-  /** Every distinct step seen so far — `step` is always the last entry. */
+  /** Every distinct step seen so far - `step` is always the last entry. */
   trail: string[]
 }
 
@@ -20,7 +20,7 @@ interface DesignGeneratingProps {
   live?: LiveProgress | null
 }
 
-const DEFAULT_SUBTEXT = 'This usually takes up to a minute — real research is running.'
+const DEFAULT_SUBTEXT = 'This usually takes up to a minute - real research is running.'
 
 /**
  * Full-step progress panel shown while long AI jobs run.
@@ -33,7 +33,7 @@ export function DesignGenerating({ messages, subtext = DEFAULT_SUBTEXT, live }: 
   const liveStep = live?.step ?? null
   const trail = live?.trail ?? []
 
-  // Fallback rotation — paused whenever live progress is available.
+  // Fallback rotation - paused whenever live progress is available.
   const [index, setIndex] = useState(0)
   useEffect(() => {
     if (liveStep || messages.length <= 1) return
@@ -78,7 +78,7 @@ export function DesignGenerating({ messages, subtext = DEFAULT_SUBTEXT, live }: 
         <div className="absolute inset-3 rounded-full border border-border" />
       </div>
 
-      {/* Current step — ChatGPT-style shimmer sweep */}
+      {/* Current step - ChatGPT-style shimmer sweep */}
       <div className="min-h-[3.5rem]">
         <AnimatePresence mode="wait" initial={false}>
           <motion.p
@@ -94,7 +94,7 @@ export function DesignGenerating({ messages, subtext = DEFAULT_SUBTEXT, live }: 
         </AnimatePresence>
       </div>
 
-      {/* Completed steps trail — muted, checkmarked, like ChatGPT tool usage */}
+      {/* Completed steps trail - muted, checkmarked, like ChatGPT tool usage */}
       {visibleCompleted.length > 0 && (
         <ul
           ref={trailRef}

@@ -40,7 +40,7 @@ export function Header({ projects, loadingProjects, onOpenProject, onNewProject 
     () => false
   )
 
-  // Light/Dark toggle for the DesignForge UI itself. The icon is gated on
+  // Light/Dark toggle for the MrDesign.md UI itself. The icon is gated on
   // `mounted` so the server render (and the hydration pass) always agree.
   const { resolvedTheme, setTheme } = useTheme()
   const isDark = mounted && resolvedTheme === 'dark'
@@ -48,28 +48,31 @@ export function Header({ projects, loadingProjects, onOpenProject, onNewProject 
 
   return (
     <header className="df-glass sticky top-0 z-40 border-b border-border/80">
-      <div className="mx-auto flex h-16 w-full max-w-7xl items-center justify-between gap-3 px-4">
+      <div className="mx-auto flex h-16 w-full max-w-7xl items-center justify-between gap-2 px-3 sm:gap-3 sm:px-4">
         <div className="flex min-w-0 items-center gap-2.5">
-          <span
-            aria-hidden="true"
-            className="flex h-11 shrink-0 items-center rounded-lg bg-black px-3 shadow-sm"
-          >
+          {/* Brand signature: black calligraphy in light mode, white in dark.
+              Both renderings stay in the markup and are switched purely via
+              CSS (dark:hidden / dark:block), so the server render and the
+              hydration pass always agree - no mounted-gate needed. */}
+          <span aria-hidden="true" className="flex shrink-0 items-center">
             <Image
-              src="/mrdesign-logo.png"
+              src="/mrdesign-logo-light.png"
               alt=""
-              width={953}
-              height={221}
+              width={941}
+              height={211}
               priority
-              className="h-7 w-auto"
+              className="h-9 w-auto sm:h-10 dark:hidden"
+            />
+            <Image
+              src="/mrdesign-logo-dark.png"
+              alt=""
+              width={2057}
+              height={685}
+              priority
+              className="hidden h-9 w-auto sm:h-12 dark:block"
             />
           </span>
-          <span className="sr-only">DesignForge</span>
-          <Badge
-            variant="outline"
-            className="hidden shrink-0 border-ink-100 bg-ink-50 text-ink-700 sm:inline-flex dark:border-ink-500/30 dark:bg-ink-500/10 dark:text-ink-300"
-          >
-            Logo → DESIGN.md
-          </Badge>
+          <span className="sr-only">MrDesign.md</span>
         </div>
 
         <nav aria-label="Project actions" className="flex items-center gap-2">
@@ -89,10 +92,14 @@ export function Header({ projects, loadingProjects, onOpenProject, onNewProject 
           {mounted ? (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm" className="gap-1.5">
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-1.5"
+                title="Recent projects"
+              >
                 <Clock className="size-4 text-gray-400" />
                 <span className="hidden sm:inline">Recent projects</span>
-                <span className="sm:hidden">Recent</span>
                 <ChevronDown className="size-3.5 text-gray-400" />
               </Button>
             </DropdownMenuTrigger>
@@ -108,7 +115,7 @@ export function Header({ projects, loadingProjects, onOpenProject, onNewProject 
                 </div>
               ) : projects.length === 0 ? (
                 <p className="px-3 py-6 text-center text-sm text-muted-foreground">
-                  No projects yet — upload a logo to start.
+                  No projects yet - upload a logo to start.
                 </p>
               ) : (
                 <div className="max-h-72 overflow-y-auto df-scroll">
@@ -138,10 +145,15 @@ export function Header({ projects, loadingProjects, onOpenProject, onNewProject 
             </DropdownMenuContent>
           </DropdownMenu>
           ) : (
-            <Button variant="outline" size="sm" className="gap-1.5" aria-label="Recent projects">
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-1.5"
+              aria-label="Recent projects"
+              title="Recent projects"
+            >
               <Clock className="size-4 text-gray-400" />
               <span className="hidden sm:inline">Recent projects</span>
-              <span className="sm:hidden">Recent</span>
               <ChevronDown className="size-3.5 text-gray-400" />
             </Button>
           )}
@@ -149,10 +161,12 @@ export function Header({ projects, loadingProjects, onOpenProject, onNewProject 
           <Button
             size="sm"
             onClick={onNewProject}
+            aria-label="New project"
+            title="New project"
             className="bg-primary text-primary-foreground hover:bg-ink-600"
           >
             <Plus className="size-4" />
-            New project
+            <span className="hidden sm:inline">New project</span>
           </Button>
         </nav>
       </div>

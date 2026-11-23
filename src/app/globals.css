@@ -42,8 +42,8 @@
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
 
-  /* Ink scale — mrdesign.md monochrome ladder (DESIGN.md paletteScale,
-     500 = primary #383838; 50–200 provide hairline borders and washes). */
+  /* Ink scale - mrdesign.md monochrome ladder (DESIGN.md paletteScale,
+     500 = primary #383838; 50-200 provide hairline borders and washes). */
   --color-ink-50: #efefef;
   --color-ink-100: #dfdfdf;
   --color-ink-200: #bfbfbf;
@@ -61,7 +61,7 @@
 }
 
 /*
- * mrdesign.md theme — generated from the project's own DESIGN.md export
+ * mrdesign.md theme - generated from the project's own DESIGN.md export
  * (design package: Deep Gray #383838 single-accent discipline on a neutral
  * canvas). One accent carries every primary action; depth comes from
  * hairline borders + surface brightness steps, not shadows. Glass and the
@@ -76,12 +76,12 @@
   --card-foreground: #18181b;
   --popover: #ffffff;
   --popover-foreground: #18181b;
-  --primary: #383838; /* Deep Gray — the system's center of gravity */
+  --primary: #383838; /* Deep Gray - the system's center of gravity */
   --primary-foreground: #ffffff;
-  --secondary: #5d5d5d; /* Dark Gray — secondary surfaces, soft highlights */
+  --secondary: #5d5d5d; /* Dark Gray - secondary surfaces, soft highlights */
   --secondary-foreground: #ffffff;
-  --muted: #f4f4f5; /* Pale Gray — subtle fills and skeletons */
-  --muted-foreground: #71717a; /* Gray — captions, secondary text */
+  --muted: #f4f4f5; /* Pale Gray - subtle fills and skeletons */
+  --muted-foreground: #71717a; /* Gray - captions, secondary text */
   --accent: #f4f4f5; /* hover surfaces */
   --accent-foreground: #383838;
   --destructive: #dc2626; /* Red */
@@ -103,7 +103,7 @@
   --sidebar-ring: #383838;
 }
 
-/* Inverted monochrome dark mode — light pills on near-black carry actions */
+/* Inverted monochrome dark mode - light pills on near-black carry actions */
 .dark {
   --background: #121214;
   --foreground: #fafafa;
@@ -177,10 +177,10 @@
 }
 
 /* ============================================================
-   DesignForge utilities
+   MrDesign.md utilities
    ============================================================ */
 
-/* Hero mesh — the single allowed flourish (landing only), neutral wash */
+/* Hero mesh - the single allowed flourish (landing only), neutral wash */
 .df-mesh {
   background-image: radial-gradient(
       58% 85% at 12% 8%,
@@ -202,7 +202,7 @@
     radial-gradient(36% 48% at 18% 88%, rgb(255 255 255 / 0.03), transparent 62%);
 }
 
-/* Liquid Glass — frosted translucent panes (feature layer, on by design) */
+/* Liquid Glass - frosted translucent panes (feature layer, on by design) */
 .df-glass {
   background: rgb(255 255 255 / 0.72);
   backdrop-filter: blur(14px) saturate(1.35);
@@ -249,7 +249,7 @@
 }
 
 /* ============================================================
- * Venom pill button — the app's own primary CTA preset.
+ * Venom pill button - the app's own primary CTA preset.
  * Matte near-black pill with a soft under-glow and springy press,
  * adapted from the Vision Pictures pack (same CSS as the live
  * preview's .df-btn-venom, scoped to the app chrome). In dark mode
@@ -304,11 +304,11 @@
 }
 
 /* ============================================================
- * Google RGB glow for the app chrome — the animated conic-gradient
+ * Google RGB glow for the app chrome - the animated conic-gradient
  * border Google uses on its Gemini AI action elements, applied ONLY
  * to the hero primary CTA wrapper (never globally). Same technique
  * as the live preview: @property + conic-gradient so the color
- * rotation travels around the component — blurred halo layer behind
+ * rotation travels around the component - blurred halo layer behind
  * a crisp masked ring. Reduced-motion users get a static gradient.
  * ============================================================ */
 @property --df-chrome-rgb-angle {

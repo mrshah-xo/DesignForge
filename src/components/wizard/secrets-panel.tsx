@@ -270,7 +270,7 @@ export function SecretsPanel() {
             API keys &amp; secrets
           </SheetTitle>
           <SheetDescription className="text-xs leading-relaxed">
-            <strong>Your API key</strong> lives only in your browser and powers your generations —
+            <strong>Your API key</strong> lives only in your browser and powers your generations -
             on public deployments every visitor uses their own key. On a local dev server you can
             also manage the server's <code className="font-mono">.env.local</code> keys below
             (git-ignored, never pushed to GitHub).
@@ -303,7 +303,7 @@ export function SecretsPanel() {
               )}
             </div>
             <p className="mb-2 text-xs leading-relaxed text-muted-foreground">
-              Used for every AI step — logo analysis, research, design and themes. Stored only in
+              Used for every AI step - logo analysis, research, design and themes. Stored only in
               your browser's localStorage, sent per-request, never saved on the server and never
               seen by the site owner. Each visitor uses their own key, so the site owner's credits
               are never spent.
@@ -318,7 +318,7 @@ export function SecretsPanel() {
               Generate your free Z.AI API key
             </a>
             <p className="mb-3 mt-1.5 text-[11px] leading-snug text-muted-foreground">
-              glm-4.5-flash (text) is free; logo vision analysis uses a low-cost vision model —
+              glm-4.5-flash (text) is free; logo vision analysis uses a low-cost vision model -
               new accounts come with free credit.
             </p>
             <div className="flex items-center gap-2">
@@ -380,7 +380,7 @@ export function SecretsPanel() {
           ) : (
             <div className="space-y-5">
               <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
-                Server secrets — .env.local (local dev only)
+                Server secrets - .env.local (local dev only)
               </p>
               {secrets.map((s) => (
                 <div key={s.name} className="rounded-lg border border-border bg-card p-4 shadow-sm">
@@ -501,7 +501,7 @@ export function SecretsPanel() {
           <div className="flex items-center justify-between gap-2">
             <p className="flex items-center gap-1.5 text-[11px] leading-snug text-muted-foreground">
               <Lock className="size-3 shrink-0" />
-              .env.local is covered by .gitignore — verify with `git status`.
+              .env.local is covered by .gitignore - verify with `git status`.
             </p>
             <Button
               size="sm"

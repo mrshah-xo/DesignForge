@@ -78,7 +78,7 @@ const SECTION_META: { key: SectionKey; label: string; blurb: string }[] = [
   {
     key: 'trustFactors',
     label: 'Trust factors',
-    blurb: 'The signals that make this audience believe — and pay.',
+    blurb: 'The signals that make this audience believe - and pay.',
   },
   {
     key: 'successfulPatterns',
@@ -140,7 +140,7 @@ function newBrandId(): string {
   return `brand-${Math.random().toString(36).slice(2, 10)}`
 }
 
-/** Assemble the server payload sections from a draft (pure — safe anywhere). */
+/** Assemble the server payload sections from a draft (pure - safe anywhere). */
 function buildSectionsFromDraft(d: ResearchDraft): ResearchSections {
   return {
     audiencePsychology: d.sections.audiencePsychology,
@@ -223,7 +223,7 @@ export function ResearchStep({
           <DesignGenerating
             messages={RESEARCH_MESSAGES}
             live={researchLive}
-            subtext="Real web search runs under the hood — every step is shown live."
+            subtext="Real web search runs under the hood - every step is shown live."
           />
         </div>
       )
@@ -238,8 +238,8 @@ export function ResearchStep({
         </h2>
         <p className="mx-auto mt-1 max-w-lg text-sm text-muted-foreground">
           We research your audience&apos;s psychology, trust factors, successful design patterns,
-          competitor logos, color theory — then you review before anything is generated. Real web
-          search runs under the hood, so this takes 20–90 seconds.
+          competitor logos, color theory - then you review before anything is generated. Real web
+          search runs under the hood, so this takes 20-90 seconds.
         </p>
         <div>
           <Button
@@ -257,7 +257,7 @@ export function ResearchStep({
           className="mt-2 gap-1.5 text-xs text-muted-foreground"
         >
           <Wand2 className="size-3.5" />
-          Or have your agent write it — &quot;Want a prompt?&quot;
+          Or have your agent write it - &quot;Want a prompt?&quot;
         </Button>
         <ResearchPromptDialog
           open={promptOpen}
@@ -313,7 +313,7 @@ export function ResearchStep({
         ? draft.sections.competitorLogos.title
         : draft.sections[key].title
     // The AI (and the offline fallback) often name a section exactly like
-    // its card label — rendering both reads as a duplicated heading.
+    // its card label - rendering both reads as a duplicated heading.
     const showSectionTitle =
       !!sectionTitle?.trim() && sectionTitle.trim().toLowerCase() !== label.trim().toLowerCase()
     const body =
@@ -458,7 +458,7 @@ export function ResearchStep({
             </p>
             {!hasContent && (
               <p className="text-xs italic text-muted-foreground">
-                No content in this section yet — open Edit to add findings.
+                No content in this section yet - open Edit to add findings.
               </p>
             )}
             {key === 'competitorLogos' ? (
@@ -537,7 +537,7 @@ export function ResearchStep({
 
       {approved && !designExists && (
         <p className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-400">
-          Research is approved — generate the design system to continue.
+          Research is approved - generate the design system to continue.
         </p>
       )}
 
@@ -614,7 +614,7 @@ export function ResearchStep({
 
       <p className="flex items-start gap-2 rounded-lg border border-border bg-muted/60 px-4 py-3 text-xs text-muted-foreground">
         <Lightbulb className="mt-0.5 size-3.5 shrink-0 text-amber-500" />
-        Editing sections is encouraged — approving uses exactly what you see here. Nothing is
+        Editing sections is encouraged - approving uses exactly what you see here. Nothing is
         generated until you approve.
       </p>
 

@@ -4,7 +4,7 @@
 // synthesis fails after every retry (rate limits, outages, quota).
 // Real web-search sources + built-in category design knowledge,
 // fed through the same normalizeResearchSections pipeline as LLM
-// output — so the wizard never dead-ends at step 4.
+// output - so the wizard never dead-ends at step 4.
 // ============================================================
 
 import type { AnalysisData, AudienceData, ResearchSource } from '@/lib/types';
@@ -27,26 +27,26 @@ const CATEGORY_KNOWLEDGE: Record<string, CategoryKnowledge> = {
     psychology: [
       'Money is emotionally charged: users scan for safety signals before they scan for features.',
       'A single missing security cue costs more trust than ten great features add.',
-      'Users test credibility with small amounts first — the first-transaction experience decides retention.',
+      'Users test credibility with small amounts first - the first-transaction experience decides retention.',
       'Regulatory familiarity (licences, KYC badges) is read as competence, not bureaucracy.',
     ],
     patterns: [
       'Show security and compliance badges directly on signup and payment screens (SSL, PCI DSS, licence numbers).',
       'Set balances and transactions in tabular numerals with consistent decimal alignment.',
       'Break KYC onboarding into progress-stepped screens so it never feels like an endless form.',
-      'Disclose fees before the confirm step — transparent pricing outperforms fine print.',
+      'Disclose fees before the confirm step - transparent pricing outperforms fine print.',
       'Guard destructive actions with confirmation patterns: re-authentication, typed confirmation, delays.',
     ],
     competitors: [
-      { name: 'Stripe', colors: 'Indigo-violet #635BFF on white', approach: 'Developer-first minimalism — muted surfaces, one confident accent, meticulous microcopy.' },
+      { name: 'Stripe', colors: 'Indigo-violet #635BFF on white', approach: 'Developer-first minimalism - muted surfaces, one confident accent, meticulous microcopy.' },
       { name: 'PayPal', colors: 'Institutional blues #003087 / #0070BA', approach: 'Buyer-protection messaging and the recognizable wordmark repeated at every checkout.' },
-      { name: 'Revolut', colors: 'Near-black surfaces with electric accents', approach: 'Dark, card-first identity — the product is shown, not described.' },
+      { name: 'Revolut', colors: 'Near-black surfaces with electric accents', approach: 'Dark, card-first identity - the product is shown, not described.' },
       { name: 'Wise', colors: 'Bright green #9FE870 on forest #163150', approach: 'Radical fee transparency: the currency calculator is the hero section.' },
     ],
     mistakes: [
-      'Hiding fees until late in the flow — the top reason fintech users abandon checkout.',
+      'Hiding fees until late in the flow - the top reason fintech users abandon checkout.',
       'Playful, rounded "fun" styling that makes money features feel unserious.',
-      'Low-contrast text on dark dashboards — financial data must be legible at a glance.',
+      'Low-contrast text on dark dashboards - financial data must be legible at a glance.',
       'Generic illustrations instead of real product screenshots, which reads as vaporware.',
       'No visible customer-support path on screens where money moves.',
     ],
@@ -54,7 +54,7 @@ const CATEGORY_KNOWLEDGE: Record<string, CategoryKnowledge> = {
   ecommerce: {
     psychology: [
       'Shoppers fear scams and slow refunds more than they fear high prices.',
-      'Product realism — photos, reviews, returns policy — converts better than clever branding.',
+      'Product realism - photos, reviews, returns policy - converts better than clever branding.',
       'Trust transfers from recognizable payment icons and familiar marketplace patterns.',
     ],
     patterns: [
@@ -65,14 +65,14 @@ const CATEGORY_KNOWLEDGE: Record<string, CategoryKnowledge> = {
       'Show stock levels and delivery estimates early to set expectations.',
     ],
     competitors: [
-      { name: 'Amazon', colors: 'Warm orange #FF9900 accent on white', approach: 'Frictionless buying — one-click checkout and ruthless consistency.' },
+      { name: 'Amazon', colors: 'Warm orange #FF9900 accent on white', approach: 'Frictionless buying - one-click checkout and ruthless consistency.' },
       { name: 'Shopify', colors: 'Commerce green #96BF48', approach: 'Merchant-first neutrality: the system stays quiet so stores shine.' },
       { name: 'Etsy', colors: 'Handmade coral-orange #F1641E', approach: 'Marketplace humanization through seller profiles and craft stories.' },
       { name: 'ASOS', colors: 'Black/white minimalism with fashion photography', approach: 'Content-commerce blend where product imagery is the interface.' },
     ],
     mistakes: [
       'Hidden shipping costs revealed at checkout.',
-      'Fake-looking stock photos — the fastest route to a "scam" perception.',
+      'Fake-looking stock photos - the fastest route to a "scam" perception.',
       'Aggressive popups and countdown timers that erode credibility.',
       'Forced account creation with no guest checkout.',
       'Cluttered trust badges that look bought rather than earned.',
@@ -98,11 +98,11 @@ const CATEGORY_KNOWLEDGE: Record<string, CategoryKnowledge> = {
       { name: 'Zocdoc', colors: 'Bright practical blue', approach: 'Reviews and insurance filters turn fear into logistics.' },
     ],
     mistakes: [
-      'Bright alarm-red error states for routine validation issues — heightens anxiety.',
+      'Bright alarm-red error states for routine validation issues - heightens anxiety.',
       'Airbrushed stock models that feel dishonest in health contexts.',
       'Privacy terms buried in legalese instead of plain-language summaries.',
       'Automated-only support with no human contact path.',
-      'Overclaiming results ("guaranteed cure") — destroys credibility instantly.',
+      'Overclaiming results ("guaranteed cure") - destroys credibility instantly.',
     ],
   },
   saas: {
@@ -113,30 +113,30 @@ const CATEGORY_KNOWLEDGE: Record<string, CategoryKnowledge> = {
     ],
     patterns: [
       'Show the real product: interactive demos and honest screenshots, no stock mockups.',
-      'Publish transparent pricing with a feature matrix — no "contact sales" gating on core tiers.',
+      'Publish transparent pricing with a feature matrix - no "contact sales" gating on core tiers.',
       'Put SOC 2 / GDPR / security documentation behind a visible Security link.',
       'Use customer logos and named case studies with concrete metrics.',
       'Design dense-but-scannable dashboards: consistent iconography and 8px grid discipline.',
     ],
     competitors: [
-      { name: 'Linear', colors: 'Near-black UI with violet accents', approach: 'Speed as brand — every interaction feels instant and precise.' },
+      { name: 'Linear', colors: 'Near-black UI with violet accents', approach: 'Speed as brand - every interaction feels instant and precise.' },
       { name: 'Notion', colors: 'Warm white and black', approach: 'Calm, chrome-less canvas where the workspace is the brand.' },
       { name: 'Stripe', colors: 'Blurple #635BFF', approach: 'Documentation-quality surfaces and meticulous microcopy.' },
       { name: 'Slack', colors: 'Aubergine #4A154B with playful accents', approach: 'Friendly enterprise: humor and a human voice in system copy.' },
     ],
     mistakes: [
       'Fake urgency or dark-pattern pricing (hidden annual defaults).',
-      'Screenshot-less landing pages — buyers assume the product is ugly.',
+      'Screenshot-less landing pages - buyers assume the product is ugly.',
       'Jargon-dense hero copy that never states what the product does.',
       'Inconsistent dashboard spacing and typography that reads as unpolished engineering.',
-      'No visible changelog or status page — signals slow, opaque development.',
+      'No visible changelog or status page - signals slow, opaque development.',
     ],
   },
   education: {
     psychology: [
       'Learners fear wasting time more than money; outcome clarity drives trust.',
       'Instructor credibility and visible curriculum depth beat production polish.',
-      'Progress mechanics must feel honest — fake gamification reads as manipulative.',
+      'Progress mechanics must feel honest - fake gamification reads as manipulative.',
     ],
     patterns: [
       'Show detailed syllabi with lesson durations before signup.',
@@ -163,7 +163,7 @@ const CATEGORY_KNOWLEDGE: Record<string, CategoryKnowledge> = {
     psychology: [
       'Users judge community health within seconds: is this active, kind, and real?',
       'Fear of harassment and doxxing shapes design expectations.',
-      'Emptiness is the ultimate trust killer — an empty feed reads as a dead product.',
+      'Emptiness is the ultimate trust killer - an empty feed reads as a dead product.',
     ],
     patterns: [
       'Seed content and moderate visibly; show honest "active now" signals.',
@@ -216,7 +216,7 @@ const CATEGORY_KNOWLEDGE: Record<string, CategoryKnowledge> = {
   realestate: {
     psychology: [
       'The largest financial decision of a lifetime: users fear hidden defects and scams.',
-      'Listing realism — photos, floor plans, disclosures — drives platform trust.',
+      'Listing realism - photos, floor plans, disclosures - drives platform trust.',
       'Agent identity matters: faces and licence numbers outperform brand logos.',
     ],
     patterns: [
@@ -260,7 +260,7 @@ const CATEGORY_KNOWLEDGE: Record<string, CategoryKnowledge> = {
       { name: 'Starbucks', colors: 'Ritual green #00704A', approach: 'Rewards designed around habitual trust.' },
     ],
     mistakes: [
-      'Menu photos that misrepresent portions — the expectation gap kills repeat orders.',
+      'Menu photos that misrepresent portions - the expectation gap kills repeat orders.',
       'Surge delivery fees revealed at the final step.',
       'Cartoonish food illustrations where real photos belong.',
       'No order-status feedback after payment.',
@@ -274,7 +274,7 @@ const CATEGORY_KNOWLEDGE: Record<string, CategoryKnowledge> = {
       'Clear, honest copy outperforms hype for audiences with no prior brand context.',
     ],
     patterns: [
-      'Show the real product working — honest screenshots and demos beat abstractions.',
+      'Show the real product working - honest screenshots and demos beat abstractions.',
       'Keep pricing transparent and reachable within one click.',
       'Use named testimonials with roles and photos.',
       'Maintain strict visual consistency: one accent color, one type pairing, one grid.',
@@ -299,15 +299,15 @@ const CATEGORY_KNOWLEDGE: Record<string, CategoryKnowledge> = {
 /** Trust-lever bullets keyed by how much the audience must trust the product. */
 const TRUST_BULLETS: Record<string, string[]> = {
   low: [
-    'Skip heavy compliance framing — over-securing a low-stakes product feels bureaucratic.',
+    'Skip heavy compliance framing - over-securing a low-stakes product feels bureaucratic.',
     'Trust comes from working software: prioritize speed, delight, and zero-bug basics.',
     'Use honest microcopy instead of badge walls.',
     'Light social proof (user counts, short quotes) is sufficient.',
-    'Avoid dark patterns — even casual audiences notice and bounce.',
+    'Avoid dark patterns - even casual audiences notice and bounce.',
   ],
   medium: [
     'State the value proposition concretely on the first screen.',
-    'Show real product screenshots early — polish signals competence.',
+    'Show real product screenshots early - polish signals competence.',
     'Use named testimonials with roles and photos.',
     'Keep pricing transparent and reachable in one click.',
     'Offer a visible, human support path.',
@@ -317,7 +317,7 @@ const TRUST_BULLETS: Record<string, string[]> = {
     'Display security cues (SSL, data encryption) on signup and payment screens.',
     'Publish clear privacy and data policies in plain language.',
     'Show third-party validation: certifications, press, verified reviews.',
-    'Keep copy precise and conservative — overclaiming raises perceived risk.',
+    'Keep copy precise and conservative - overclaiming raises perceived risk.',
     'Provide visible human support with response-time promises.',
     'Design for accountability: real names, real addresses, real screenshots.',
   ],
@@ -327,14 +327,14 @@ const TRUST_BULLETS: Record<string, string[]> = {
     'Show regulatory compliance (licences, KYC/AML) where applicable.',
     'Use escrow or documented dispute flows and explain them visually.',
     'Display the audit trail: receipts, confirmation emails, transaction history.',
-    'Keep every money moment calm and legible — no playful urgency near payments.',
+    'Keep every money moment calm and legible - no playful urgency near payments.',
   ],
 };
 
 /** Category-agnostic decision drivers appended to the psychology bullets. */
 const EXTRA_PSYCHOLOGY = [
   'First impressions form fast: credibility is judged from the hero screen before any feature is read.',
-  'Consistency is trust — every off-brand or unpolished screen taxes credibility.',
+  'Consistency is trust - every off-brand or unpolished screen taxes credibility.',
 ];
 
 interface HueGuidance {
@@ -348,7 +348,7 @@ function hueGuidance(hue: number): HueGuidance {
     return {
       family: 'red',
       harmony: 'warm neutrals and deep charcoal',
-      caution: 'restrict red to errors and destructive actions — it reads as urgency or loss in financial contexts (especially East Asian markets)',
+      caution: 'restrict red to errors and destructive actions - it reads as urgency or loss in financial contexts (especially East Asian markets)',
     };
   }
   if (hue < 45) {
@@ -362,41 +362,41 @@ function hueGuidance(hue: number): HueGuidance {
     return {
       family: 'yellow / gold',
       harmony: 'dark ink text on cool gray surfaces',
-      caution: 'yellow fails contrast on white — use it for accents and highlights, never body text',
+      caution: 'yellow fails contrast on white - use it for accents and highlights, never body text',
     };
   }
   if (hue < 165) {
     return {
       family: 'green',
       harmony: 'analogous teal and blue-green support',
-      caution: 'green reads as growth and "go" — keep the success color visually distinct from the brand green',
+      caution: 'green reads as growth and "go" - keep the success color visually distinct from the brand green',
     };
   }
   if (hue < 200) {
     return {
       family: 'teal / cyan',
       harmony: 'a warm complementary accent (amber or coral)',
-      caution: 'teal is calm and competent — avoid drifting into generic medical clichés',
+      caution: 'teal is calm and competent - avoid drifting into generic medical clichés',
     };
   }
   if (hue < 250) {
     return {
       family: 'blue',
       harmony: 'neutral grays plus one warm accent',
-      caution: 'blue is the default trust hue for finance and health — differentiate through typography and spacing, not by going darker',
+      caution: 'blue is the default trust hue for finance and health - differentiate through typography and spacing, not by going darker',
     };
   }
   if (hue < 290) {
     return {
       family: 'purple / violet',
       harmony: 'warm neutral surfaces to keep it human',
-      caution: 'violet signals premium and creative — overuse drifts toward generic startup styling',
+      caution: 'violet signals premium and creative - overuse drifts toward generic startup styling',
     };
   }
   return {
     family: 'magenta / pink',
     harmony: 'disciplined neutral surfaces and dark ink',
-    caution: 'pink and magenta read modern and energetic — anchor them with serious typography',
+    caution: 'pink and magenta read modern and energetic - anchor them with serious typography',
   };
 }
 
@@ -449,10 +449,10 @@ export function buildFallbackResearch(
     audiencePsychology: {
       title: 'Audience psychology',
       body:
-        `${audience.audienceDesc || `People evaluating a ${label} product`} — they decide within seconds ` +
+        `${audience.audienceDesc || `People evaluating a ${label} product`} - they decide within seconds ` +
         `whether a ${label} product feels trustworthy. ${knowledge.psychology[0]} ${knowledge.psychology[1] ?? ''} ` +
         `(Offline research fallback: the AI synthesis service was unavailable, so this report was compiled from ` +
-        `live web-search results and built-in ${label} design knowledge — edit freely before approving.)`.trim(),
+        `live web-search results and built-in ${label} design knowledge - edit freely before approving.)`.trim(),
       bullets: [...knowledge.psychology.slice(2), ...EXTRA_PSYCHOLOGY],
     },
     trustFactors: {
@@ -470,26 +470,26 @@ export function buildFallbackResearch(
     },
     competitorLogos: {
       title: 'Competitor logos',
-      body: `Real brands this audience already trusts in ${label} — study their restraint, consistency, and color discipline (differentiate, do not clone).`,
+      body: `Real brands this audience already trusts in ${label} - study their restraint, consistency, and color discipline (differentiate, do not clone).`,
       brands: knowledge.competitors,
     },
     colorTheory: {
       title: 'Color theory directions',
-      body: `The logo's primary ${primaryName} (${primaryHex}) sits in the ${guidance.family} family — viable for ${label} with the right support colors.`,
+      body: `The logo's primary ${primaryName} (${primaryHex}) sits in the ${guidance.family} family - viable for ${label} with the right support colors.`,
       bullets: [
         `Keep the 60-30-10 discipline: ~60% neutral surfaces, ~30% secondary, ~10% ${guidance.family} accent.`,
         `Harmony model for ${guidance.family}: pair it with ${guidance.harmony}.`,
         `Caution: ${guidance.caution}.`,
-        `Hold body-text contrast at WCAG AA (4.5:1) — verify ${primaryHex} against light and dark surfaces before committing.`,
+        `Hold body-text contrast at WCAG AA (4.5:1) - verify ${primaryHex} against light and dark surfaces before committing.`,
         'Check cultural connotations for your target markets before finalizing the palette.',
       ],
     },
     commonMistakes: {
       title: 'Common trust mistakes',
-      body: `Design mistakes that destroy trust in ${label} — treat these as guardrails for the design system.`,
+      body: `Design mistakes that destroy trust in ${label} - treat these as guardrails for the design system.`,
       bullets: [
         ...knowledge.mistakes,
-        'Inconsistent spacing and typography across screens — reads as careless engineering.',
+        'Inconsistent spacing and typography across screens - reads as careless engineering.',
       ].slice(0, 6),
     },
   };

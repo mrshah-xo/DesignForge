@@ -1,15 +1,15 @@
 import type { CursorPackValue } from '@/lib/types'
 
 /**
- * Cursor PACKS — replaceable system-cursor sets for the "Cursor styles"
+ * Cursor PACKS - replaceable system-cursor sets for the "Cursor styles"
  * feature toggle.
  *
  * A pack overrides the three classic cursor states across the whole
  * surface (exactly the Mouse / Link / Text grid from the OS cursor
  * reference):
- * - `base` — the mouse arrow shown on plain surfaces
- * - `link` — the pointer shown on links, buttons and other click targets
- * - `text` — the I-beam shown inside text fields
+ * - `base` - the mouse arrow shown on plain surfaces
+ * - `link` - the pointer shown on links, buttons and other click targets
+ * - `text` - the I-beam shown inside text fields
  *
  * Cursors are embedded as SVG data URIs so they ship with the design
  * tokens (no network requests, work in the dev environment preview). Vector
@@ -48,7 +48,7 @@ function svgCursor(svg: string, hotspotX: number, hotspotY: number, fallback: st
   return `url("data:image/svg+xml,${encoded}") ${hotspotX} ${hotspotY}, ${fallback}`
 }
 
-/** Render the Lucide arrow path filled — classic pointer look. */
+/** Render the Lucide arrow path filled - classic pointer look. */
 function arrowSvg(fill: string, stroke: string, strokeWidth: number): string {
   return `<svg xmlns='http://www.w3.org/2000/svg' width='22' height='22' viewBox='0 0 24 24'><path d='M4.037 4.688a.495.495 0 0 1 .651-.651l16 6.5a.5.5 0 0 1-.063.947l-6.124 1.58a2 2 0 0 0-1.438 1.435l-1.579 6.126a.5.5 0 0 1-.947.063z' fill='${fill}' stroke='${stroke}' stroke-width='${strokeWidth}' stroke-linejoin='round'/></svg>`
 }
@@ -90,7 +90,7 @@ export const CURSOR_PACKS: Record<CursorPackId, CursorPack> = {
   windows: {
     id: 'windows',
     label: 'Windows',
-    description: 'Classic white-filled arrow with a hard black outline, outline hand and I-beam — the Windows cursor language.',
+    description: 'Classic white-filled arrow with a hard black outline, outline hand and I-beam - the Windows cursor language.',
     base: svgCursor(arrowSvg('#ffffff', INK, 1.4), 4, 4, 'default'),
     link: svgCursor(handSvg(INK, 1.6, 3.4), 7, 2, 'pointer'),
     text: svgCursor(beamSvg(INK, 1.6, 3.2), 9, 9, 'text'),
@@ -98,7 +98,7 @@ export const CURSOR_PACKS: Record<CursorPackId, CursorPack> = {
   macos: {
     id: 'macos',
     label: 'macOS',
-    description: 'Black arrow with a white outline, rounder hand with knuckle creases and a slim I-beam — the macOS cursor language.',
+    description: 'Black arrow with a white outline, rounder hand with knuckle creases and a slim I-beam - the macOS cursor language.',
     base: svgCursor(arrowSvg(INK, '#ffffff', 1.2), 4, 4, 'default'),
     link: svgCursor(handSvg('#1d1d20', 1.7, 3.6, true), 7, 2, 'pointer'),
     text: svgCursor(beamSvg('#1d1d20', 1.8, 3.4), 9, 9, 'text'),
@@ -106,7 +106,7 @@ export const CURSOR_PACKS: Record<CursorPackId, CursorPack> = {
   dot: {
     id: 'dot',
     label: 'Modern dot',
-    description: 'A quiet minimal dot that grows into a ring over click targets and a slim capsule over text — the modern-site cursor trend.',
+    description: 'A quiet minimal dot that grows into a ring over click targets and a slim capsule over text - the modern-site cursor trend.',
     base: svgCursor(dotBaseSvg(), 5, 5, 'default'),
     link: svgCursor(dotLinkSvg(), 10, 10, 'pointer'),
     text: svgCursor(dotTextSvg(), 5, 9, 'text'),
@@ -114,7 +114,7 @@ export const CURSOR_PACKS: Record<CursorPackId, CursorPack> = {
   crosshair: {
     id: 'crosshair',
     label: 'Crosshair',
-    description: 'A precise custom crosshair everywhere, text fields keep the beam — built for creative and editing tools.',
+    description: 'A precise custom crosshair everywhere, text fields keep the beam - built for creative and editing tools.',
     base: svgCursor(crosshairSvg(), 9, 9, 'crosshair'),
     link: svgCursor(crosshairSvg(), 9, 9, 'pointer'),
     text: 'text',

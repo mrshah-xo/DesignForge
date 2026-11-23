@@ -1,13 +1,13 @@
 // ============================================================
-// "Want a prompt?" — agent brief helpers.
+// "Want a prompt?" - agent brief helpers.
 //
 // The home page can hand the user a prompt template they paste
 // into any AI assistant (ChatGPT, Claude, Gemini...). The agent
 // interviews them and prints a DESIGNFORGE_BRIEF block; the user
-// pastes that reply back into DesignForge and every required
+// pastes that reply back into MrDesign.md and every required
 // field is filled automatically.
 //
-// Pure functions only — safe for both client and server use.
+// Pure functions only - safe for both client and server use.
 // ============================================================
 
 import {
@@ -21,7 +21,7 @@ import {
 
 // ---------- The prompt template the user copies into their agent ----------
 
-export const BRIEF_PROMPT = `You are filling a design brief for DesignForge, a tool that turns a logo plus brand info into a complete design system. I am pasting this into you, my AI assistant, because you already know the product you are building for me.
+export const BRIEF_PROMPT = `You are filling a design brief for MrDesign.md, a tool that turns a logo plus brand info into a complete design system. I am pasting this into you, my AI assistant, because you already know the product you are building for me.
 
 Answer ALL 8 fields yourself in ONE single message. Do NOT interview me. Do NOT ask questions. Do NOT split the answer across messages. If my message includes project details, use them; otherwise infer everything from the project you know and decide a sensible value for every field.
 
@@ -201,7 +201,7 @@ export function normalizeCategory(raw: string): CategoryValue | null {
   for (const [value, words] of keywords) {
     if (words.some((w) => v.includes(w))) return value;
   }
-  // A category line existed but nothing matched — "Other" is the honest bucket.
+  // A category line existed but nothing matched - "Other" is the honest bucket.
   return 'other';
 }
 
@@ -325,7 +325,7 @@ export function parseBriefLocally(text: string): ParsedBrief {
         }
       }
     } catch {
-      // Not valid JSON — fall through to line scanning.
+      // Not valid JSON - fall through to line scanning.
     }
   }
 

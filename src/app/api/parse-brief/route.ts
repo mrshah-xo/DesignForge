@@ -1,5 +1,5 @@
 // ============================================================
-// POST /api/parse-brief — extract a design brief from free-form
+// POST /api/parse-brief - extract a design brief from free-form
 // text (usually an AI AI assistant's reply) when the tolerant
 // local parser finds nothing. LLM fallback for the "Want a
 // prompt?" flow on the landing page.
@@ -12,7 +12,7 @@ import { PARSE_BRIEF_MAX_CHARS, normalizeBriefRaw } from '@/lib/brief';
 export const runtime = 'nodejs';
 export const maxDuration = 120;
 
-const EXTRACTION_SYSTEM = `You are a precise data-extraction engine for DesignForge, a tool that turns a logo plus brand info into a design system.
+const EXTRACTION_SYSTEM = `You are a precise data-extraction engine for MrDesign.md, a tool that turns a logo plus brand info into a design system.
 
 From the user's text (usually an AI agent's reply describing a product), extract the design brief fields.
 Return ONLY a JSON object with exactly these keys (use null when the text does not clearly provide the value):
@@ -54,7 +54,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Visitor's own key (BYOK) — used for this request only.
+    // Visitor's own key (BYOK) - used for this request only.
     const userKey = userKeyFromRequest(req);
 
     const raw = await llmJson<unknown>(EXTRACTION_SYSTEM, text.slice(0, 8000), 2, 16000, userKey);

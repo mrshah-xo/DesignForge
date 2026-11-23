@@ -23,7 +23,7 @@ interface SecretsPostPayload {
  *         masked last-4 preview. Raw values never leave the server.
  * POST -> { values: { KEY: "value" | null } } writes to the git-ignored
  *         .env.local file. Disabled on production deployments (read-only,
- *         publicly reachable) — keys belong in the Vercel dashboard there.
+ *         publicly reachable) - keys belong in the Vercel dashboard there.
  */
 
 export async function GET() {
@@ -82,7 +82,7 @@ export async function POST(request: NextRequest) {
       'code' in err &&
       (err as { code?: string }).code === 'EROFS'
     return NextResponse.json(
-      { ok: false, error: ro ? 'Filesystem is read-only — set keys in your Vercel dashboard.' : message },
+      { ok: false, error: ro ? 'Filesystem is read-only - set keys in your Vercel dashboard.' : message },
       { status: 400 },
     )
   }

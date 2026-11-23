@@ -1,6 +1,6 @@
 // ============================================================
-// GET /api/projects/[id]/export?format=json — full export JSON
-// GET /api/projects/[id]/export (or ?format=zip) — .zip download
+// GET /api/projects/[id]/export?format=json - full export JSON
+// GET /api/projects/[id]/export (or ?format=zip) - .zip download
 // ============================================================
 
 import { NextRequest, NextResponse } from 'next/server';

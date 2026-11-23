@@ -1,7 +1,7 @@
 // ============================================================
-// POST /api/projects/[id]/design — start async design generation
-// GET  /api/projects/[id]/design?jobId= — poll job status
-// PUT  /api/projects/[id]/design — manual token/markdown edits
+// POST /api/projects/[id]/design - start async design generation
+// GET  /api/projects/[id]/design?jobId= - poll job status
+// PUT  /api/projects/[id]/design - manual token/markdown edits
 //
 // Generation takes 45-90s (tokens LLM + DESIGN.md LLM), which is
 // longer than the preview gateway allows a single request to run.
@@ -112,7 +112,7 @@ async function runDesignPipeline(id: string, jobId: string, userKey: string | nu
     const audience: AudienceData | null = project ? parseAudienceRow(project.audience) : null;
     const research: ResearchData | null = project ? parseResearchRow(project.research) : null;
     if (!project || !analysis || !audience || !research || research.status !== 'approved') {
-      throw new Error('Project prerequisites changed — complete research approval first');
+      throw new Error('Project prerequisites changed - complete research approval first');
     }
 
     // 1. Tokens + match analysis from the LLM. This step can no longer fail
@@ -138,7 +138,7 @@ async function runDesignPipeline(id: string, jobId: string, userKey: string | nu
       );
     } catch (tokensErr) {
       console.error(`Design tokens LLM failed for project ${id}; using deterministic palette fallback:`, tokensErr instanceof Error ? tokensErr.message : tokensErr);
-      setJobProgress(jobId, 'AI pass unavailable — building tokens from your logo palette…');
+      setJobProgress(jobId, 'AI pass unavailable - building tokens from your logo palette…');
     }
 
     // 2. Bulletproof normalization (also enforces the WCAG AA primary contrast).
@@ -159,11 +159,11 @@ async function runDesignPipeline(id: string, jobId: string, userKey: string | nu
     if (logoFeedback.verdict.trim()) {
       logoFeedback.verdict = logoFeedback.verdict.trim();
     } else if (!raw) {
-      logoFeedback.verdict = 'Built directly from your logo palette — run generation again for the full AI fit report.';
+      logoFeedback.verdict = 'Built directly from your logo palette - run generation again for the full AI fit report.';
     }
 
     // 4. DESIGN.md (raw markdown, never fails the request). Skipped to the
-    //    instant template when the time budget is nearly spent — a partial
+    //    instant template when the time budget is nearly spent - a partial
     //    pipeline that SAVES beats one that gets killed at the cap.
     let markdown = '';
     const remaining = PIPELINE_BUDGET_MS - (Date.now() - t0);
@@ -225,7 +225,7 @@ async function runDesignPipeline(id: string, jobId: string, userKey: string | nu
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params;
-    // Visitor's own key (BYOK) — captured here at request time and passed
+    // Visitor's own key (BYOK) - captured here at request time and passed
     // explicitly into the background pipeline (after() detaches context).
     const userKey = userKeyFromRequest(req);
     const project = await db.project.findUnique({
@@ -347,7 +347,7 @@ async function fallbackJobPayload(
 ): Promise<{ job: ReturnType<typeof publicJob>; design?: DesignData }> {
   const startTs = jobStartTs(jobId);
 
-  // 1. Durable job mirror — real status, progress and error across instances.
+  // 1. Durable job mirror - real status, progress and error across instances.
   const dbJob = await getDbJob(jobId);
   if (dbJob && dbJob.projectId === id) {
     if (dbJob.status === 'done') {
@@ -358,7 +358,7 @@ async function fallbackJobPayload(
         job: syntheticJob(jobId, 'design', id, 'error', dbJob.error ?? 'Design generation failed. Please run it again.'),
       };
     }
-    // Running — only trust it while the heartbeat is fresh.
+    // Running - only trust it while the heartbeat is fresh.
     if (Date.now() - dbJob.updatedAt.getTime() < JOB_HEARTBEAT_STALE_MS) {
       return {
         job: syntheticJob(jobId, 'design', id, 'running', null, dbJob.progress),
@@ -415,7 +415,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
     }
     if (!project.design) {
       return NextResponse.json(
-        { ok: false, error: 'Design spec not found — generate a design first' },
+        { ok: false, error: 'Design spec not found - generate a design first' },
         { status: 404 },
       );
     }

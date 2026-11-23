@@ -1,5 +1,5 @@
 // ============================================================
-// Background suggestion — derives the recommended page backdrop
+// Background suggestion - derives the recommended page backdrop
 // from the logo's extracted palette (deterministic, always
 // available even when the VLM call fails) and merges the VLM's
 // tone/reason opinion when present.
@@ -145,9 +145,9 @@ export function buildBackgroundSuggestion(
   if (vlmNormalized === 'light' || vlmNormalized === 'dark') {
     tone = vlmNormalized;
   } else if (lum < 0.42) {
-    tone = 'light'; // dark logo — needs a bright canvas
+    tone = 'light'; // dark logo - needs a bright canvas
   } else if (lum > 0.66 && satWeighted < 0.22) {
-    tone = 'dark'; // pale/white logo — vanishes on white
+    tone = 'dark'; // pale/white logo - vanishes on white
   } else {
     tone = 'light';
   }
@@ -169,7 +169,7 @@ export function buildBackgroundSuggestion(
     cleanReason(vlmReason) ??
     (tone === 'light'
       ? `${dominant.name} carries most of the logo's weight, so a near-white canvas tinted with the ${primary.name || 'brand'} hue keeps every mark high-contrast while quietly echoing its palette${mode === 'gradient' ? ` and easing toward ${secondary?.name || 'a second brand tone'}` : ''}.`
-      : `The logo reads light against deep surfaces — a dark ${primary.name || 'brand'}-tinted canvas makes it pop and gives the page a premium, focused mood${mode === 'gradient' ? ` with a ${secondary?.name || 'second tone'} glow rising behind it` : ''}.`);
+      : `The logo reads light against deep surfaces - a dark ${primary.name || 'brand'}-tinted canvas makes it pop and gives the page a premium, focused mood${mode === 'gradient' ? ` with a ${secondary?.name || 'second tone'} glow rising behind it` : ''}.`);
 
   return { tone, mode, from, to, reason };
 }

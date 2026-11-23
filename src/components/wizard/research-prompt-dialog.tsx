@@ -94,7 +94,7 @@ export function ResearchPromptDialog({
       }
       const labels = parsed.found.join(', ')
       toast.success('Research applied', {
-        description: `Updated: ${labels}. Review it below — applying also saves to your project.`,
+        description: `Updated: ${labels}. Review it below - applying also saves to your project.`,
       })
       onApply(parsed)
       onOpenChange(false)
@@ -113,7 +113,7 @@ export function ResearchPromptDialog({
           </DialogTitle>
           <DialogDescription>
             Reviewing every section by hand takes time. Copy this prompt into your AI assistant
-            (ChatGPT, Claude, Gemini, your IDE agent…) — it already knows your project, so it
+            (ChatGPT, Claude, Gemini, your IDE agent…) - it already knows your project, so it
             fixes the weak sections and answers with one block. Paste that reply back here and
             the report updates automatically, then saves to your project.
           </DialogDescription>
@@ -125,7 +125,7 @@ export function ResearchPromptDialog({
             <TabsTrigger value="paste">2 · Paste reply</TabsTrigger>
           </TabsList>
 
-          {/* Step 1 — copy the prompt into the AI assistant */}
+          {/* Step 1 - copy the prompt into the AI assistant */}
           <TabsContent value="copy" className="mt-3 space-y-3">
             <div className="space-y-1.5">
               <label htmlFor="research-fix-notes" className="text-xs font-medium text-gray-700 dark:text-gray-300">
@@ -133,7 +133,7 @@ export function ResearchPromptDialog({
               </label>
               <Textarea
                 id="research-fix-notes"
-                placeholder="e.g. The trust factors are too generic — our audience is clinic admins, not patients. Also add 2 competitors from the EU market…"
+                placeholder="e.g. The trust factors are too generic - our audience is clinic admins, not patients. Also add 2 competitors from the EU market…"
                 value={fixNotes}
                 onChange={(e) => setFixNotes(e.target.value)}
                 rows={2}
@@ -143,7 +143,7 @@ export function ResearchPromptDialog({
             <p className="text-xs text-muted-foreground">
               Paste this into your AI assistant. It critiques the current report and replies with
               the corrected <span className="font-mono text-[11px]">DESIGNFORGE_RESEARCH</span>{' '}
-              block in one message — no interview.
+              block in one message - no interview.
             </p>
             <Textarea
               readOnly
@@ -157,7 +157,7 @@ export function ResearchPromptDialog({
               {copied ? (
                 <>
                   <Check className="size-4 text-ink-600" />
-                  Copied — paste it into your agent
+                  Copied - paste it into your agent
                 </>
               ) : (
                 <>
@@ -168,10 +168,10 @@ export function ResearchPromptDialog({
             </Button>
           </TabsContent>
 
-          {/* Step 2 — paste the agent's reply back */}
+          {/* Step 2 - paste the agent's reply back */}
           <TabsContent value="paste" className="mt-3 space-y-3">
             <Textarea
-              placeholder="Paste your agent's one-shot reply here — the DESIGNFORGE_RESEARCH block updates the report instantly, even loose field lines work…"
+              placeholder="Paste your agent's one-shot reply here - the DESIGNFORGE_RESEARCH block updates the report instantly, even loose field lines work…"
               value={pasted}
               onChange={(e) => setPasted(e.target.value)}
               rows={9}
@@ -181,7 +181,7 @@ export function ResearchPromptDialog({
             <div className="flex items-start gap-2 rounded-lg border border-border bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
               <Info className="mt-0.5 size-3.5 shrink-0" />
               <span>
-                Only the sections your agent returns are replaced — everything else stays exactly
+                Only the sections your agent returns are replaced - everything else stays exactly
                 as it is. Applying also saves to your project.
               </span>
             </div>

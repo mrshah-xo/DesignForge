@@ -201,11 +201,11 @@ export function WizardShell() {
             setCurrentStep(4)
             setPendingAudience(null)
             void refreshProjects()
-            toast.success('Brief applied — ready for research', {
+            toast.success('Brief applied - ready for research', {
               description: 'Logo analysis and audience were filled from your agent brief. Run the research, review the report, then approve.',
             })
           } catch {
-            // Audience save failed (e.g. validation) — fall back to step 3 prefill.
+            // Audience save failed (e.g. validation) - fall back to step 3 prefill.
             setCurrentStep(3)
             toast.info('Audience prefilled from your brief', {
               description: 'Check the fields, then Save & continue.',
@@ -220,7 +220,7 @@ export function WizardShell() {
       } catch (err) {
         setCurrentStep(2)
         toast.error('AI analysis failed', {
-          description: `${errMsg(err)} — you can retry from step 2.`,
+          description: `${errMsg(err)} - you can retry from step 2.`,
         })
       } finally {
         setAnalyzing(false)

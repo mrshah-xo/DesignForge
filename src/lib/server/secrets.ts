@@ -2,16 +2,16 @@ import { promises as fs } from 'fs'
 import path from 'path'
 
 /**
- * Local secret store — the in-app way to paste API keys without ever
+ * Local secret store - the in-app way to paste API keys without ever
  * committing them.
  *
  * Values live in `.env.local` at the project root:
  *  - it is git-ignored (`.env*` rule) so it can never be pushed to GitHub
  *  - Next.js loads it into `process.env` automatically and hot-reloads it in dev
- *  - the raw values are never returned by any API — only a masked last-4
+ *  - the raw values are never returned by any API - only a masked last-4
  *
  * Writes are disabled in production builds (Vercel filesystems are
- * read-only anyway) — there, keys belong in the Vercel dashboard.
+ * read-only anyway) - there, keys belong in the Vercel dashboard.
  */
 
 export const SECRETS_FILE = '.env.local'
@@ -24,7 +24,7 @@ export interface SecretMeta {
   sensitive: boolean
 }
 
-/** Keys DesignForge actually reads (see src/lib/server/ai.ts). */
+/** Keys MrDesign.md actually reads (see src/lib/server/ai.ts). */
 export const MANAGED_SECRETS: SecretMeta[] = [
   {
     name: 'ZAI_API_KEY',
@@ -41,7 +41,7 @@ export const MANAGED_SECRETS: SecretMeta[] = [
   {
     name: 'ZAI_TEXT_MODEL',
     label: 'Text model',
-    description: 'Override the text model — glm-4.5-flash is free on the Z.AI Open Platform.',
+    description: 'Override the text model - glm-4.5-flash is free on the Z.AI Open Platform.',
     sensitive: false,
   },
   {
@@ -118,7 +118,7 @@ export async function readSecretStatuses(): Promise<SecretStatus[]> {
   try {
     fileMap = parseEnvFile(await fs.readFile(secretsFilePath(), 'utf8'))
   } catch {
-    // No .env.local yet — everything is simply "not set" locally.
+    // No .env.local yet - everything is simply "not set" locally.
   }
 
   const managedNames = new Set(MANAGED_SECRETS.map((s) => s.name))
@@ -128,7 +128,7 @@ export async function readSecretStatuses(): Promise<SecretStatus[]> {
     const inEnv = process.env[meta.name]
     const inEnvSet = typeof inEnv === 'string' && inEnv.length > 0
     // Next.js gives precedence to real (shell-exported) environment variables
-    // over .env files — but it also merges .env.local into process.env after a
+    // over .env files - but it also merges .env.local into process.env after a
     // hot reload, so an env value identical to the file value still counts as
     // file-origin. Only a *differing* env value truly shadows the file.
     const winningValue = inEnvSet ? inEnv : inFileSet ? inFile : undefined
@@ -165,7 +165,7 @@ export async function readSecretStatuses(): Promise<SecretStatus[]> {
       // The loop iterates file entries, so file-origin is the default;
       // only a differing shell-exported value makes it 'environment'.
       source: shadowed ? 'environment' : 'local-file',
-      masked: undefined, // custom keys are treated as sensitive — no preview
+      masked: undefined, // custom keys are treated as sensitive - no preview
       shadowed,
     })
   }
@@ -182,7 +182,7 @@ export async function upsertSecrets(
 ): Promise<void> {
   for (const [name, value] of Object.entries(values)) {
     if (!KEY_PATTERN.test(name)) {
-      throw new Error(`Invalid key name "${name}" — use UPPER_SNAKE_CASE.`)
+      throw new Error(`Invalid key name "${name}" - use UPPER_SNAKE_CASE.`)
     }
     if (value !== null && value.includes('\n')) {
       throw new Error(`Value for ${name} must be a single line.`)
@@ -196,7 +196,7 @@ export async function upsertSecrets(
   try {
     content = await fs.readFile(secretsFilePath(), 'utf8')
   } catch {
-    content = '# Added by DesignForge — local secrets, git-ignored, never commit.\n'
+    content = '# Added by MrDesign.md - local secrets, git-ignored, never commit.\n'
   }
 
   const lines = content.split('\n')

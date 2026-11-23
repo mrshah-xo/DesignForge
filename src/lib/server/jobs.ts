@@ -2,12 +2,12 @@
 // Job registry for long-running AI pipelines (analyze / research
 // / design / themes). Generation endpoints return a job id
 // immediately so no HTTP request stays open long enough to be
-// cut by the preview gateway (~60s limit) — the frontend polls a
+// cut by the preview gateway (~60s limit) - the frontend polls a
 // short GET until the job reaches done/error.
 //
 // Two layers:
-//   1. In-memory Map — primary, fast, per-instance.
-//   2. GenerationJob DB table — durable mirror. Progress writes
+//   1. In-memory Map - primary, fast, per-instance.
+//   2. GenerationJob DB table - durable mirror. Progress writes
 //      double as heartbeats, so polls that land on another
 //      serverless instance (or after a server restart) report the
 //      REAL status, latest progress step and error instead of
@@ -54,7 +54,7 @@ export const STALE_JOB_MS = 5 * 60 * 1000;
  * interrupted immediately instead of stringing the user along.
  *
  * Sized to comfortably cover one LLM attempt (capped at 75s in ai.ts)
- * plus provider latency — long silent stretches cannot occur because the
+ * plus provider latency - long silent stretches cannot occur because the
  * attempt hooks in ai.ts fire a progress write per try.
  */
 export const JOB_HEARTBEAT_STALE_MS = 100 * 1000;
@@ -95,7 +95,7 @@ function prune(): void {
   }
 }
 
-// ---------- Durable DB mirror (best-effort — never throws) ----------
+// ---------- Durable DB mirror (best-effort - never throws) ----------
 
 /** Cut the job table down: drop rows older than the in-memory TTL. */
 function pruneDbJobs(): void {
@@ -158,7 +158,7 @@ export async function getDbJob(
 }
 
 /**
- * Find a fresh 'running' DB job of this kind for the project — used by POST
+ * Find a fresh 'running' DB job of this kind for the project - used by POST
  * handlers to dedupe/rejoin across instances (and after server restarts):
  * the client gets the ORIGINAL job id back so its polls pick up the live
  * progress mirror instead of stacking a duplicate pipeline.
@@ -218,7 +218,7 @@ export function setJobProgress(id: string, message: string): void {
     job.progress = message;
     job.updatedAt = Date.now();
   }
-  // Heartbeat for the durable mirror — other instances (and polls after a
+  // Heartbeat for the durable mirror - other instances (and polls after a
   // restart) rely on this to tell "working" from "dead". Fire-and-forget.
   void db.generationJob
     .updateMany({ where: { id }, data: { progress: message } })

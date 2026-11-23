@@ -1,7 +1,7 @@
 import type { DesignStyleFlags } from '@/lib/types'
 
 /**
- * Style FEATURES — toggleable effect layers for the design system.
+ * Style FEATURES - toggleable effect layers for the design system.
  *
  * Unlike the old "apply a whole prebuilt theme" flow, each feature is a
  * SWITCH that layers one effect on top of the CURRENT theme (colors,
@@ -15,7 +15,7 @@ import type { DesignStyleFlags } from '@/lib/types'
  *   real backdrop blur over a brand-tinted gradient canvas).
  * - Google RGB glow: the animated conic-gradient border Google uses on
  *   its AI action elements (the Gemini ask button / response containers
- *   while generating) — applied ONLY to selected components, never
+ *   while generating) - applied ONLY to selected components, never
  *   globally.
  * - Gradient hero: Stripe-style tinted hero wash.
  * - Soft ambient: Apple HIG-style soft continuous shadows.
@@ -42,21 +42,21 @@ export const STYLE_FEATURES: StyleFeature[] = [
     name: 'Liquid Glass',
     tagline: 'Frosted translucent surfaces with real backdrop blur (glassyui)',
     description:
-      'Turns your cards, navbar and inputs into translucent frosted panes floating over a brand-tinted gradient canvas. Hairline borders and glowy depth shadows — no colors are changed.',
+      'Turns your cards, navbar and inputs into translucent frosted panes floating over a brand-tinted gradient canvas. Hairline borders and glowy depth shadows - no colors are changed.',
   },
   {
     id: 'glow',
     name: 'Google RGB glow',
     tagline: 'Animated multicolor edge on selected components only (Gemini-style)',
     description:
-      'The animated RGB gradient border Google uses on Gemini AI action elements — a rotating conic glow around primary CTAs and the focused input. Selected components only, never the whole page.',
+      'The animated RGB gradient border Google uses on Gemini AI action elements - a rotating conic glow around primary CTAs and the focused input. Selected components only, never the whole page.',
   },
   {
     id: 'gradientHero',
     name: 'Gradient hero wash',
     tagline: 'Stripe-style brand-tinted hero gradient',
     description:
-      'Paints a soft brand-colored gradient wash behind the hero section that fades into the page — the Stripe landing-page playbook, built from your own colors.',
+      'Paints a soft brand-colored gradient wash behind the hero section that fades into the page - the Stripe landing-page playbook, built from your own colors.',
   },
   {
     id: 'softAmbient',
@@ -68,7 +68,7 @@ export const STYLE_FEATURES: StyleFeature[] = [
   {
     id: 'buttonPreset',
     name: 'Pill buttons',
-    tagline: 'Vision Pictures button pack — plastic or venom, recolored to your brand',
+    tagline: 'Vision Pictures button pack - plastic or venom, recolored to your brand',
     description:
       'Your uploaded Vision Pictures button pack, adapted as CSS and recolored to the brand: "Plastic" is the inflated foil pill with a top gloss, "Venom" the matte black pill with a brand under-glow and springy press. Applies to primary CTAs.',
     hasPreset: true,
@@ -80,7 +80,7 @@ export const STYLE_FEATURES: StyleFeature[] = [
   {
     id: 'cursorPack',
     name: 'Cursor styles',
-    tagline: 'Replace the system cursor everywhere — Windows, macOS, modern dot or crosshair',
+    tagline: 'Replace the system cursor everywhere - Windows, macOS, modern dot or crosshair',
     description:
       'Swaps the browser default arrow, hand and text beam for a full custom pack across your whole surface: "Windows" and "macOS" recreate the OS cursor language (mouse, link and text states), "Modern dot" is the minimal dot-to-ring trend, "Crosshair" targets creative tools. The preview adds a Mouse / Link / Text demo strip so you can feel every state.',
     hasPreset: true,

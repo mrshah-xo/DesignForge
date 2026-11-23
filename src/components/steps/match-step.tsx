@@ -139,7 +139,7 @@ export function MatchStep({ design, onContinue }: MatchStepProps) {
       )}
 
       <p className="rounded-lg border border-border bg-muted/60 px-4 py-3 text-xs text-muted-foreground">
-        Suggestions are advisory — the generated palette already adapts your logo&apos;s DNA to this
+        Suggestions are advisory - the generated palette already adapts your logo&apos;s DNA to this
         audience.
       </p>
 

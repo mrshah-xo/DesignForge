@@ -19,7 +19,7 @@ interface UploadStepProps {
 
 /**
  * Step 1 (reachable only when a project exists): review the current logo
- * and optionally replace it — which restarts the whole pipeline.
+ * and optionally replace it - which restarts the whole pipeline.
  */
 export function UploadStep({ project, busy, onReplace }: UploadStepProps) {
   const [file, setFile] = useState<File | null>(null)

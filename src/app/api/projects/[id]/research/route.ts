@@ -1,7 +1,7 @@
 // ============================================================
-// POST /api/projects/[id]/research — start async research job
-// GET  /api/projects/[id]/research?jobId= — poll job status
-// PUT  /api/projects/[id]/research — user review (edit/approve)
+// POST /api/projects/[id]/research - start async research job
+// GET  /api/projects/[id]/research?jobId= - poll job status
+// PUT  /api/projects/[id]/research - user review (edit/approve)
 //
 // Real web search + LLM synthesis can take 20-90s, longer than
 // the preview gateway allows a single request to run. POST
@@ -76,7 +76,7 @@ async function runResearchPipeline(id: string, jobId: string, userKey: string | 
     const analysis: AnalysisData | null = project ? parseAnalysisRow(project.analysis) : null;
     const audience: AudienceData | null = project ? parseAudienceRow(project.audience) : null;
     if (!project || !analysis || !audience) {
-      throw new Error('Project prerequisites changed — complete analysis and audience steps first');
+      throw new Error('Project prerequisites changed - complete analysis and audience steps first');
     }
 
     // 1. Real internet research: 3 parallel queries, dedupe, cap 15.
@@ -112,12 +112,12 @@ async function runResearchPipeline(id: string, jobId: string, userKey: string | 
       if (searchResults.length >= MAX_SEARCH_RESULTS) break;
     }
 
-    // 2. LLM research synthesis — with an offline fallback when the AI
+    // 2. LLM research synthesis - with an offline fallback when the AI
     //    service is unavailable (empty responses, rate limits, quota) or the
     //    time budget is spent, so step 4 never dead-ends.
     setJobProgress(
       jobId,
-      `Found ${searchResults.length} sources — synthesizing your research report…`,
+      `Found ${searchResults.length} sources - synthesizing your research report…`,
     );
     let raw: Record<string, unknown>;
     const budgetLeft = PIPELINE_BUDGET_MS - (Date.now() - t0);
@@ -189,7 +189,7 @@ async function runResearchPipeline(id: string, jobId: string, userKey: string | 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params;
-    // Visitor's own key (BYOK) — captured here at request time and passed
+    // Visitor's own key (BYOK) - captured here at request time and passed
     // explicitly into the background pipeline (after() detaches context).
     const userKey = userKeyFromRequest(req);
     const project = await db.project.findUnique({
@@ -217,7 +217,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     // another instance is already running the pipeline. Return the ORIGINAL
     // job id so the client's polls pick up the live progress mirror. The old
     // ResearchReport 'generating' marker is deliberately NOT used for dedupe
-    // here — after a restart it would block re-runs for up to 4 minutes even
+    // here - after a restart it would block re-runs for up to 4 minutes even
     // though no runner is alive; the mirror's heartbeat cannot lie.
     const dbRunning = await findFreshDbRunningJob(id, 'research');
     if (dbRunning) {
@@ -317,7 +317,7 @@ async function fallbackJobPayload(
   const project = await db.project.findUnique({ where: { id }, include: { research: true } });
   const row = project?.research ?? null;
 
-  // 1. Durable job mirror — the source of truth across instances/restarts.
+  // 1. Durable job mirror - the source of truth across instances/restarts.
   const dbJob = await getDbJob(jobId);
   if (dbJob && dbJob.projectId === id) {
     if (dbJob.status === 'done') {
@@ -330,7 +330,7 @@ async function fallbackJobPayload(
         job: syntheticJob(jobId, 'research', id, 'error', dbJob.error ?? 'Research generation failed. Run it again.'),
       };
     } else {
-      // Running — but only trust it while the heartbeat is fresh.
+      // Running - but only trust it while the heartbeat is fresh.
       if (Date.now() - dbJob.updatedAt.getTime() < JOB_HEARTBEAT_STALE_MS) {
         return {
           job: syntheticJob(jobId, 'research', id, 'running', null, dbJob.progress),
@@ -342,7 +342,7 @@ async function fallbackJobPayload(
           'research',
           id,
           'error',
-          'Research was interrupted before it finished (often a deployment time limit). Run it again — it usually completes on the first try now.',
+          'Research was interrupted before it finished (often a deployment time limit). Run it again - it usually completes on the first try now.',
         ),
       };
     }
@@ -397,7 +397,7 @@ async function fallbackJobPayload(
   return { job: syntheticJob(jobId, 'research', id, 'running') };
 }
 
-// ---------- PUT: user review — edit sections/sources, approve ----------
+// ---------- PUT: user review - edit sections/sources, approve ----------
 
 export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {

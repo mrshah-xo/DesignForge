@@ -1,5 +1,5 @@
 // ============================================================
-// POST /api/projects/[id]/audience — save audience profile.
+// POST /api/projects/[id]/audience - save audience profile.
 // Deletes derived ResearchReport + DesignSpec (inputs changed).
 // ============================================================
 

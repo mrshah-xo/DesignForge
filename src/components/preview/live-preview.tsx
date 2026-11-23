@@ -118,13 +118,13 @@ const FALLBACK_SHADOWS = {
  * nothing leaks into the surrounding app shell.
  *
  * - RGB glow: the animated conic-gradient border Google uses on its Gemini
- *   AI action elements — implemented with @property + conic-gradient so the
+ *   AI action elements - implemented with @property + conic-gradient so the
  *   color rotation travels around the component, with a blurred halo layer
  *   behind a crisp masked ring. Reduced-motion users get a static gradient.
- * - Pill buttons: CSS adaptations of the uploaded Vision Pictures pack —
+ * - Pill buttons: CSS adaptations of the uploaded Vision Pictures pack -
  *   "Plastic" (inflated foil pill, gloss top, press depth) recolored to the
  *   brand primary via CSS vars, and "Venom" (matte black pill with a brand
- *   under-glow and springy press). © Vision Pictures LLC — license permits
+ *   under-glow and springy press). © Vision Pictures LLC - license permits
  *   use/modification inside the licensee's own projects.
  */
 const PREVIEW_EFFECT_CSS = `
@@ -199,7 +199,7 @@ function bumpRadius(value: string, extra: number): string {
 
 /**
  * Scoped cursor CSS for the "Cursor styles" feature. Renders the pack's
- * three states — base arrow on everything, link pointer on interactive
+ * three states - base arrow on everything, link pointer on interactive
  * targets, text beam on fields (and `.df-cursor-text` demo zones). All
  * rules carry `!important` so Tailwind's `cursor-pointer` buttons and the
  * UA stylesheet can't leak the system cursor back in.
@@ -255,7 +255,7 @@ export function LivePreview({ tokens }: LivePreviewProps) {
   const cursorPack = getCursorPack(styleFlags.cursorPack)
   const accent = color('accent')
 
-  // Soft ambient (Apple HIG-style) depth — layered over the token shadows.
+  // Soft ambient (Apple HIG-style) depth - layered over the token shadows.
   const ambientCardShadow = '0 2px 6px rgba(15, 23, 42, 0.05), 0 12px 34px rgba(15, 23, 42, 0.10), 0 32px 80px rgba(15, 23, 42, 0.06)'
   const ambientBtnShadow = '0 1px 2px rgba(15, 23, 42, 0.05), 0 10px 26px rgba(15, 23, 42, 0.12)'
   const cardRadius = softAmbient ? bumpRadius(radius.lg, 6) : radius.lg
@@ -277,7 +277,7 @@ export function LivePreview({ tokens }: LivePreviewProps) {
       child
     )
 
-  /** The primary CTA — rendered with the pill preset or the token style. */
+  /** The primary CTA - rendered with the pill preset or the token style. */
   const primaryButton = (label: string, opts?: { width?: string }) => {
     const inner = buttonPreset ? (
       <button
@@ -401,9 +401,9 @@ export function LivePreview({ tokens }: LivePreviewProps) {
     >
       {/* Scoped effect CSS for the style feature toggles */}
       <style>{PREVIEW_EFFECT_CSS}</style>
-      {/* Scoped cursor CSS — only when a cursor pack is switched on */}
+      {/* Scoped cursor CSS - only when a cursor pack is switched on */}
       {cursorPack && <style>{cursorScopeCss(cursorPack)}</style>}
-      {/* Token-styled canvas — everything below derives from tokens */}
+      {/* Token-styled canvas - everything below derives from tokens */}
       <div
         style={{
           background: glass
@@ -945,7 +945,7 @@ export function LivePreview({ tokens }: LivePreviewProps) {
           </div>
         </Section>
 
-        {/* (k2) Cursor demo strip — lets you feel every state of the active cursor pack */}
+        {/* (k2) Cursor demo strip - lets you feel every state of the active cursor pack */}
         {cursorPack && (
           <Section pad="24px" label="Cursor">
             <div
@@ -955,7 +955,7 @@ export function LivePreview({ tokens }: LivePreviewProps) {
                 gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))',
               }}
             >
-              {/* Mouse state — base arrow on plain surfaces */}
+              {/* Mouse state - base arrow on plain surfaces */}
               <div
                 style={{
                   border: `1px solid ${border}`,
@@ -976,10 +976,10 @@ export function LivePreview({ tokens }: LivePreviewProps) {
                   Mouse
                 </span>
                 <p style={{ margin: '6px 0 0', fontSize: scale.caption, color: foreground }}>
-                  Hover this panel — the base cursor takes over the whole surface.
+                  Hover this panel - the base cursor takes over the whole surface.
                 </p>
               </div>
-              {/* Link state — pointer on click targets */}
+              {/* Link state - pointer on click targets */}
               <div
                 style={{
                   border: `1px solid ${border}`,
@@ -1008,7 +1008,7 @@ export function LivePreview({ tokens }: LivePreviewProps) {
                   </span>
                 </p>
               </div>
-              {/* Text state — beam inside text fields */}
+              {/* Text state - beam inside text fields */}
               <div
                 style={{
                   border: `1px solid ${border}`,
@@ -1032,12 +1032,12 @@ export function LivePreview({ tokens }: LivePreviewProps) {
                   className="df-cursor-text"
                   style={{ margin: '6px 0 0', fontSize: scale.caption, color: foreground }}
                 >
-                  Hover this paragraph — the text beam appears. Try selecting me.
+                  Hover this paragraph - the text beam appears. Try selecting me.
                 </p>
               </div>
             </div>
             <p style={{ margin: '10px 0 0', fontSize: scale.caption, color: mutedForeground }}>
-              {cursorPack.label} cursor pack — mouse, link and text states replace the system cursor across your whole site.
+              {cursorPack.label} cursor pack - mouse, link and text states replace the system cursor across your whole site.
             </p>
           </Section>
         )}

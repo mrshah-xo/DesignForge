@@ -1,9 +1,9 @@
 // ============================================================
 // Self-healing schema baseline.
 //
-// DesignForge ships schema changes (new models/tables) together with
+// MrDesign.md ships schema changes (new models/tables) together with
 // code, but `prisma db push` is a manual step that is easy to forget
-// for the production database — exactly what happened when the
+// for the production database - exactly what happened when the
 // `DesignTheme` table was added: deploys started 500-ing with
 // "The table `public.DesignTheme` does not exist in the current
 // database" while the local SQLite file was fine.
@@ -17,7 +17,7 @@
 // The DDL is Postgres-flavored yet also valid on SQLite:
 //   - TEXT / INTEGER exist on both
 //   - TIMESTAMP(3) is native on Postgres and accepted by SQLite
-//     (NUMERIC affinity — Prisma still stores DateTime as ISO text)
+//     (NUMERIC affinity - Prisma still stores DateTime as ISO text)
 //   - quoted identifiers, table constraints, and
 //     CREATE INDEX IF NOT EXISTS work on both engines
 // ============================================================
@@ -108,7 +108,7 @@ const DDL: string[] = [
   `CREATE INDEX IF NOT EXISTS "GenerationJob_projectId_kind_idx" ON "GenerationJob"("projectId", "kind")`,
 ];
 
-// Column migrations — `CREATE TABLE IF NOT EXISTS` cannot add columns to
+// Column migrations - `CREATE TABLE IF NOT EXISTS` cannot add columns to
 // tables that already exist, so any column added to a shipped model after
 // the first deploy needs an explicit additive ALTER here. Exactly what
 // happened when `LogoAnalysis.backgroundSuggestion` shipped: older DBs
@@ -151,7 +151,7 @@ async function columnExists(table: string, column: string): Promise<boolean> {
     );
     return rows.some((r) => r.name === column);
   } catch {
-    // Not SQLite (or SQLite probe failed transiently) — try the
+    // Not SQLite (or SQLite probe failed transiently) - try the
     // Postgres catalog. If this also fails the error propagates and
     // the memo reset in ensureSchema lets a later call retry.
     const rows = await db.$queryRawUnsafe<Array<{ column_name: string }>>(

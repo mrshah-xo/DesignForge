@@ -98,7 +98,7 @@ export function AudienceStep({ project, saving, prefill, onSave }: AudienceStepP
     if (MONEY_MONETIZATION.includes(value) && trustNeed !== 'critical') {
       setTrustNeed('critical')
       toast.info('Trust need set to Critical', {
-        description: 'Money changes hands here — users must trust you before they pay.',
+        description: 'Money changes hands here - users must trust you before they pay.',
       })
     }
   }
@@ -136,12 +136,12 @@ export function AudienceStep({ project, saving, prefill, onSave }: AudienceStepP
           <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-50">Who will use it?</h2>
         </div>
         <p className="text-sm text-muted-foreground">
-          Research quality depends on this — the more specific, the better.
+          Research quality depends on this - the more specific, the better.
         </p>
         {prefillApplied && (
           <div className="mt-3 flex items-center gap-2 rounded-lg border border-ink-200 bg-ink-50 px-3 py-2 text-xs font-medium text-ink-700 dark:border-ink-500/30 dark:bg-ink-500/10 dark:text-ink-300">
             <Sparkles className="size-3.5 shrink-0" />
-            Prefilled from your AI assistant brief — review everything, then save.
+            Prefilled from your AI assistant brief - review everything, then save.
           </div>
         )}
 

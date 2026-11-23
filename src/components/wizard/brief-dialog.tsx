@@ -62,7 +62,7 @@ export function BriefDialog({ open, onOpenChange, onApply }: BriefDialogProps) {
   const apply = (brief: ParsedBrief) => {
     const labels = brief.found.map((f) => FIELD_LABELS[f] ?? f).join(', ')
     toast.success('Brief applied', {
-      description: `Filled: ${labels}. Now drop your logo — we jump straight to Research review.`,
+      description: `Filled: ${labels}. Now drop your logo - we jump straight to Research review.`,
     })
     onApply(brief)
     onOpenChange(false)
@@ -101,7 +101,7 @@ export function BriefDialog({ open, onOpenChange, onApply }: BriefDialogProps) {
       } else if (/credential|z-ai-config|ZAI_BASE_URL/i.test(msg)) {
         toast.error('AI extraction is unavailable', {
           description:
-            'Paste the full DESIGNFORGE_BRIEF block from your agent instead — it fills every field instantly, no AI needed on this side.',
+            'Paste the full DESIGNFORGE_BRIEF block from your agent instead - it fills every field instantly, no AI needed on this side.',
         })
       } else {
         toast.error('Could not read the brief', { description: msg })
@@ -122,7 +122,7 @@ export function BriefDialog({ open, onOpenChange, onApply }: BriefDialogProps) {
           <DialogDescription>
             Skip typing every time: copy this prompt into your AI assistant (ChatGPT, Claude,
             Gemini, your IDE agent…). It already knows your product, so it answers all 8 fields
-            in one message — paste that reply back here and every field fills in automatically,
+            in one message - paste that reply back here and every field fills in automatically,
             then we jump straight to Research review.
           </DialogDescription>
         </DialogHeader>
@@ -133,12 +133,12 @@ export function BriefDialog({ open, onOpenChange, onApply }: BriefDialogProps) {
             <TabsTrigger value="paste">2 · Paste reply</TabsTrigger>
           </TabsList>
 
-          {/* Step 1 — copy the prompt into the AI assistant */}
+          {/* Step 1 - copy the prompt into the AI assistant */}
           <TabsContent value="copy" className="mt-3 space-y-3">
             <p className="text-xs text-muted-foreground">
               Paste this into your AI assistant. It replies with the filled{' '}
               <span className="font-mono text-[11px]">DESIGNFORGE_BRIEF</span> block in one
-              message — no interview.
+              message - no interview.
             </p>
             <Textarea
               readOnly
@@ -152,7 +152,7 @@ export function BriefDialog({ open, onOpenChange, onApply }: BriefDialogProps) {
               {copied ? (
                 <>
                   <Check className="size-4 text-ink-600" />
-                  Copied — paste it into your agent
+                  Copied - paste it into your agent
                 </>
               ) : (
                 <>
@@ -163,10 +163,10 @@ export function BriefDialog({ open, onOpenChange, onApply }: BriefDialogProps) {
             </Button>
           </TabsContent>
 
-          {/* Step 2 — paste the agent's reply back */}
+          {/* Step 2 - paste the agent's reply back */}
           <TabsContent value="paste" className="mt-3 space-y-3">
             <Textarea
-              placeholder="Paste your agent's one-shot reply here — the DESIGNFORGE_BRIEF block fills everything instantly, even free-form text works…"
+              placeholder="Paste your agent's one-shot reply here - the DESIGNFORGE_BRIEF block fills everything instantly, even free-form text works…"
               value={pasted}
               onChange={(e) => setPasted(e.target.value)}
               rows={9}
@@ -176,7 +176,7 @@ export function BriefDialog({ open, onOpenChange, onApply }: BriefDialogProps) {
             <div className="flex items-start gap-2 rounded-lg border border-border bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
               <Info className="mt-0.5 size-3.5 shrink-0" />
               <span>
-                Your logo file is still uploaded on this page — the brief fills every text
+                Your logo file is still uploaded on this page - the brief fills every text
                 field, and we jump straight to Research review (step 4).
               </span>
             </div>

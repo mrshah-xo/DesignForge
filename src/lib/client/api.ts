@@ -1,5 +1,5 @@
 // ============================================================
-// Typed API client for DesignForge frontend.
+// Typed API client for MrDesign.md frontend.
 // Every endpoint answers the standard envelope:
 //   { ok: true, data } | { ok: false, error }
 // All requests use relative paths only (the reverse proxy gateway friendly).
@@ -36,7 +36,7 @@ const USER_KEY_STORAGE = 'df_user_api_key'
 /** Emitted when the server reports a request needs the visitor's API key. */
 export const MISSING_KEY_EVENT = 'df:missing-key'
 
-/** The visitor's own Z.AI key — lives ONLY in this browser's localStorage. */
+/** The visitor's own Z.AI key - lives ONLY in this browser's localStorage. */
 export function getUserApiKey(): string {
   try {
     return (localStorage.getItem(USER_KEY_STORAGE) ?? '').trim()
@@ -49,7 +49,7 @@ export function setUserApiKey(key: string): void {
   try {
     localStorage.setItem(USER_KEY_STORAGE, key.trim())
   } catch {
-    /* storage unavailable (private mode) — key simply won't persist */
+    /* storage unavailable (private mode) - key simply won't persist */
   }
 }
 
@@ -72,13 +72,13 @@ export async function request<T>(url: string, init?: RequestInit): Promise<T> {
   let res: Response
   try {
     // Attach the visitor's own key to every request when present. The key is
-    // used for this request's AI calls only — never persisted server-side.
+    // used for this request's AI calls only - never persisted server-side.
     const userKey = getUserApiKey()
     const headers = new Headers(init?.headers)
     if (userKey) headers.set('x-user-key', userKey)
     res = await fetch(url, { ...init, headers })
   } catch {
-    throw new Error('Network error — could not reach the server.')
+    throw new Error('Network error - could not reach the server.')
   }
 
   let json: unknown = null
@@ -178,9 +178,9 @@ async function runJob<T>(
     emit(data.job?.progress)
     if (status === 'done') return extract(data)
     if (status === 'error') throw new Error(data.job?.error || 'Generation failed')
-    // still running — keep polling
+    // still running - keep polling
   }
-  throw new Error(`${startedLabel} timed out — please try again.`)
+  throw new Error(`${startedLabel} timed out - please try again.`)
 }
 
 // ---------- API functions ----------

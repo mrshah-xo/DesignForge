@@ -1,11 +1,11 @@
 // ============================================================
-// POST /api/projects/[id]/design/themes — start async AI theme
+// POST /api/projects/[id]/design/themes - start async AI theme
 //   variant generation (3 research-grounded alternatives)
-// GET  ?jobId= — poll the job status
-// GET  (no jobId) — list the stored theme variants
+// GET  ?jobId= - poll the job status
+// GET  (no jobId) - list the stored theme variants
 //
 // The LLM returns a COMPACT direction spec per theme (name, reason,
-// score, primary hex, surface mode, fonts, shape) — NOT full token
+// score, primary hex, surface mode, fonts, shape) - NOT full token
 // JSON. Requesting full DesignTokens blew past the model's output
 // limit, truncated mid-JSON, and failed every retry ("Unbalanced
 // JSON"), leaving the user staring at skeletons for minutes. The
@@ -257,7 +257,7 @@ function buildThemeTokens(
  * retries (empty/filtered responses, unparseable output, provider outages).
  * Derived from the applied design's tokens (or the logo palette) so the
  * user still gets three usable, WCAG-checked directions instead of a
- * dead end — each one is normalized through the same pipeline as the
+ * dead end - each one is normalized through the same pipeline as the
  * LLM output, so switching to it in the preview is always safe.
  */
 function fallbackVariants(
@@ -289,7 +289,7 @@ function fallbackVariants(
       {
         name: 'Signature',
         reason:
-          'Faithful to your approved logo palette and the applied design — the safe, research-aligned baseline. (Deterministic fallback: the AI theme service was unavailable, so this direction was derived locally from your design tokens.)',
+          'Faithful to your approved logo palette and the applied design - the safe, research-aligned baseline. (Deterministic fallback: the AI theme service was unavailable, so this direction was derived locally from your design tokens.)',
         score: 90,
         shape: 'soft',
       },
@@ -303,7 +303,7 @@ function fallbackVariants(
       {
         name: 'Deep Contrast',
         reason:
-          'Darker, higher-contrast direction: a deepened primary for gravitas with a serif display pairing — aligns with trust-heavy research findings. (Deterministic fallback derived from your palette.)',
+          'Darker, higher-contrast direction: a deepened primary for gravitas with a serif display pairing - aligns with trust-heavy research findings. (Deterministic fallback derived from your palette.)',
         score: 84,
         surface: 'dark',
         heading: 'Playfair Display',
@@ -320,7 +320,7 @@ function fallbackVariants(
       {
         name: 'Soft Air',
         reason:
-          'Lighter, friendlier direction: a softened primary with generous radii — built for approachable, low-anxiety interfaces per the audience research. (Deterministic fallback derived from your palette.)',
+          'Lighter, friendlier direction: a softened primary with generous radii - built for approachable, low-anxiety interfaces per the audience research. (Deterministic fallback derived from your palette.)',
         score: 78,
         surface: 'light',
         heading: 'Manrope',
@@ -349,13 +349,13 @@ async function runThemesPipeline(id: string, jobId: string, userKey: string | nu
     const audience: AudienceData | null = project ? parseAudienceRow(project.audience) : null;
     const research: ResearchData | null = project ? parseResearchRow(project.research) : null;
     if (!project || !analysis || !audience || !research || research.status !== 'approved') {
-      throw new Error('Project prerequisites changed — complete research approval first');
+      throw new Error('Project prerequisites changed - complete research approval first');
     }
     const currentTokens: DesignTokens | null = project.design
       ? safeJsonParse<DesignTokens | null>(project.design.tokens, null)
       : null;
 
-    // 1. Compact direction specs from the LLM (one call, ~2k budget — a
+    // 1. Compact direction specs from the LLM (one call, ~2k budget - a
     //    reply this small cannot hit the output ceiling, so retries are
     //    rare and the whole job finishes in seconds, not minutes).
     //    If the LLM still fails after all retries (empty/filtered
@@ -386,10 +386,10 @@ async function runThemesPipeline(id: string, jobId: string, userKey: string | nu
       if (directions.length === 0) throw new Error('Model returned no theme directions');
     } catch (llmErr) {
       console.error(
-        `themes pipeline: LLM failed after retries for project ${id} — using deterministic fallback variants:`,
+        `themes pipeline: LLM failed after retries for project ${id} - using deterministic fallback variants:`,
         llmErr instanceof Error ? llmErr.message : llmErr,
       );
-      setJobProgress(jobId, 'AI unavailable — building fallback directions…');
+      setJobProgress(jobId, 'AI unavailable - building fallback directions…');
       const fallbacks = fallbackVariants(currentTokens, analysis);
       directions = fallbacks.map((f) => f.dir);
       fallbackTokens = new Map(fallbacks.map((f) => [f.dir.name, f.tokens]));
@@ -449,7 +449,7 @@ async function runThemesPipeline(id: string, jobId: string, userKey: string | nu
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params;
-    // Visitor's own key (BYOK) — captured here at request time and passed
+    // Visitor's own key (BYOK) - captured here at request time and passed
     // explicitly into the background pipeline (after() detaches context).
     const userKey = userKeyFromRequest(req);
     const project = await db.project.findUnique({

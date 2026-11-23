@@ -47,7 +47,7 @@ function InfoCard({
         {icon}
         {label}
       </div>
-      <p className="mt-1.5 text-sm font-medium text-gray-800 dark:text-gray-200">{value || '—'}</p>
+      <p className="mt-1.5 text-sm font-medium text-gray-800 dark:text-gray-200">{value || '-'}</p>
     </div>
   )
 }
@@ -121,7 +121,7 @@ export function AnalysisStep({ project, analyzing, onRunAnalysis, onContinue }: 
     if (analyzing) {
       return (
         <div className="rounded-lg border border-border bg-card shadow-sm">
-          <DesignGenerating messages={ANALYSIS_MESSAGES} subtext="Our vision model is reading your logo — this can take up to 40 seconds." />
+          <DesignGenerating messages={ANALYSIS_MESSAGES} subtext="Our vision model is reading your logo - this can take up to 40 seconds." />
         </div>
       )
     }

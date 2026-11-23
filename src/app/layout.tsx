@@ -6,7 +6,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { GOOGLE_FONTS_HREF } from "@/lib/types";
 
 // mrdesign.md typography (from the project's own DESIGN.md): Inter carries
-// everything — headings 700, body 400/500. The Google Fonts stylesheet below
+// everything - headings 700, body 400/500. The Google Fonts stylesheet below
 // additionally serves the live-preview font options (Manrope, Poppins, Sora,
 // ...) used by generated previews.
 const inter = Inter({
@@ -23,7 +23,7 @@ export const metadata: Metadata = {
   title: "Design Forge",
   description:
     "Turn your logo into an agent-ready design system: AI logo analysis, audience psychology research, color palettes, live component preview.",
-  // Favicon/tab icon comes from src/app/icon.png (file convention).
+  // Favicon/tab icon comes from src/app/icon.ico (file convention).
 };
 
 export default function RootLayout({

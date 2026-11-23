@@ -1,6 +1,6 @@
 // ============================================================
-// POST /api/projects/[id]/analyze — start async VLM analysis job
-// GET  /api/projects/[id]/analyze?jobId= — poll job status
+// POST /api/projects/[id]/analyze - start async VLM analysis job
+// GET  /api/projects/[id]/analyze?jobId= - poll job status
 //
 // Vision analysis (VLM + pixel palette merge) can take 15-60s+.
 // POST returns a job id immediately while the pipeline runs in
@@ -189,7 +189,7 @@ async function runAnalysisPipeline(id: string, jobId: string, userKey: string | 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params;
-    // Visitor's own key (BYOK) — captured here at request time and passed
+    // Visitor's own key (BYOK) - captured here at request time and passed
     // explicitly into the background pipeline (after() detaches context).
     const userKey = userKeyFromRequest(req);
     const exists = await db.project.findUnique({ where: { id }, select: { id: true } });

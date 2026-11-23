@@ -47,7 +47,7 @@ export class MissingUserKeyError extends Error {
   readonly requiresUserKey = true as const;
   constructor() {
     super(
-      'This site runs on bring-your-own keys. Click "API keys" in the header and paste your own Z.AI key — generate one free at ' +
+      'This site runs on bring-your-own keys. Click "API keys" in the header and paste your own Z.AI key - generate one free at ' +
         ZAI_KEY_URL +
         '. Your key is stored only in your browser and is used just for your own generations.',
     );
@@ -62,7 +62,7 @@ export function isMissingUserKey(err: unknown): boolean {
 
 /**
  * Extract the visitor's BYOK key from the x-user-key request header.
- * Returns null when absent/invalid. The value is used per-request only —
+ * Returns null when absent/invalid. The value is used per-request only -
  * it is never persisted, logged, or echoed back.
  */
 export function userKeyFromRequest(req: Request): string | null {
@@ -96,7 +96,7 @@ export function resetZAI(): void {
 
 /**
  * Whether the site owner's own credentials may serve AI requests.
- * Local dev: always. Production (Vercel): opt-in via ZAI_ALLOW_OWNER_KEY=1 —
+ * Local dev: always. Production (Vercel): opt-in via ZAI_ALLOW_OWNER_KEY=1 -
  * by default public visitors must bring their own key so the owner's
  * credits are never spent by strangers.
  */
@@ -139,7 +139,7 @@ function createZAI(): Promise<ZAI> {
     throw new Error(
       'AI service is not configured on this deployment (missing ZAI_BASE_URL / ZAI_API_KEY). ' +
         'The site owner must add these environment variables. Meanwhile, everything still works ' +
-        'for free through the "Want a prompt?" flow — copy the prompt, let your agent fill it in, ' +
+        'for free through the "Want a prompt?" flow - copy the prompt, let your agent fill it in, ' +
         'and paste the result back. Original error: ' + detail
     );
   });
@@ -184,7 +184,7 @@ function createUserClient(userKey: string): Promise<ZAI> {
 
 /**
  * Create (once) and return the ZAI SDK instance for this request.
- * - A visitor key (BYOK) gets its own cached client — the owner's
+ * - A visitor key (BYOK) gets its own cached client - the owner's
  *   credentials are never touched for those calls.
  * - Without a key, the owner's credentials are used only where allowed
  *   (local dev, or production with ZAI_ALLOW_OWNER_KEY=1); otherwise the
@@ -212,13 +212,13 @@ export async function getZAI(userKey?: string | null): Promise<ZAI> {
   // Owner-credential path (local dev or explicit opt-in on production).
   if (!ownerKeyAllowed()) {
     // Production without opt-in: never spend the owner's credits on
-    // anonymous traffic — visitors must bring their own key.
+    // anonymous traffic - visitors must bring their own key.
     throw new MissingUserKeyError();
   }
   if (!zaiPromise || Date.now() - zaiCreatedAt > ZAI_TTL_MS) {
     zaiCreatedAt = Date.now();
     zaiPromise = createZAI().catch((err) => {
-      // Do not cache failures — allow the next call to create a fresh instance.
+      // Do not cache failures - allow the next call to create a fresh instance.
       zaiPromise = null;
       throw err;
     });
@@ -276,8 +276,8 @@ function stripTrailingCommas(text: string): string {
 /**
  * Salvage near-JSON model output. Strategies, tried in order:
  *  1. strip trailing commas (e.g. `[1,2,3,]`) and parse;
- *  2. prose glued after the JSON block — cut at the last balanced close;
- *  3. truncated output (finish_reason=length) — repeatedly cut back to the
+ *  2. prose glued after the JSON block - cut at the last balanced close;
+ *  3. truncated output (finish_reason=length) - repeatedly cut back to the
  *     last complete element, close the open strings/brackets and parse.
  * Returns null when nothing parses. The themes/design pipelines always
  * re-normalize the result, so a partially-repaired payload is still safe.
@@ -364,7 +364,7 @@ export function extractJson<T = unknown>(text: string): T {
     try {
       return JSON.parse(balanced) as T;
     } catch {
-      // Not valid as-is — let the repair pass take over below.
+      // Not valid as-is - let the repair pass take over below.
     }
   }
 
@@ -418,7 +418,7 @@ function joinContentParts(content: unknown): string {
  *  - reasoning models that leave `content` empty and put the answer in
  *    `reasoning_content`.
  * Empty text signals a provider-side problem (content filter, exhausted
- * quota, model unavailable) — callers treat it as a retryable failure.
+ * quota, model unavailable) - callers treat it as a retryable failure.
  */
 export function messageText(res: unknown): { text: string; finishReason: string; model: string } {
   const r = (res ?? {}) as RawChatResponse;
@@ -453,7 +453,7 @@ export function providerErrorHint(res: unknown): string {
 
 /**
  * Raised when the gateway answers 200 but the model content is empty.
- * Retryable — retryDelayMs() gives it a longer, rate-limit-aware schedule
+ * Retryable - retryDelayMs() gives it a longer, rate-limit-aware schedule
  * because these failures usually come in bursts (a bad window, not one blip).
  */
 export class EmptyResponseError extends Error {
@@ -472,7 +472,7 @@ export class EmptyResponseError extends Error {
 }
 
 const RETRY_NOTE_BASE =
-  'Your previous response was not valid JSON. Respond AGAIN with ONLY the raw JSON object — start with { and end with }. No prose, no explanations, no markdown fences, no code block.';
+  'Your previous response was not valid JSON. Respond AGAIN with ONLY the raw JSON object - start with { and end with }. No prose, no explanations, no markdown fences, no code block.';
 
 /** Retry note that tells the model WHY its last output failed, so it can self-correct. */
 function retryNote(lastReason: string): string {
@@ -488,7 +488,7 @@ function backoffMs(attempt: number): number {
  * Hard wall-clock cap for a single LLM/search attempt. Without it a hung
  * gateway socket would eat the whole pipeline budget; with it the retry
  * loop (and the job heartbeat) keeps moving. The losing promise is left
- * to settle unobserved — harmless — while the caller proceeds.
+ * to settle unobserved - harmless - while the caller proceeds.
  */
 async function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise<T> {
   let timer: ReturnType<typeof setTimeout> | undefined;
@@ -512,7 +512,7 @@ const AUTH_BACKOFF_MS = 6000;
 
 /** Wall-clock cap for one chat-completion attempt (text JSON + markdown). */
 const CHAT_TIMEOUT_MS = 75 * 1000;
-/** Wall-clock cap for one vision (logo analysis) attempt — image upload is slower. */
+/** Wall-clock cap for one vision (logo analysis) attempt - image upload is slower. */
 const VISION_TIMEOUT_MS = 90 * 1000;
 /** Wall-clock cap for one web-search attempt. */
 const SEARCH_TIMEOUT_MS = 30 * 1000;
@@ -520,7 +520,7 @@ const SEARCH_TIMEOUT_MS = 30 * 1000;
 function retryDelayMs(err: unknown, attempt: number): number {
   if (isAuthError(err)) return AUTH_BACKOFF_MS * (attempt + 1);
   // Empty/filtered responses arrive in bursts (rate-limit windows, provider
-  // hiccups) — wait long enough to land outside the same bad window without
+  // hiccups) - wait long enough to land outside the same bad window without
   // stalling the pipeline for minutes (the old 3s/8s/13s schedule made a
   // single call with retries take 25s+ of pure waiting).
   if (err instanceof EmptyResponseError) return 1500 + 2500 * attempt; // 1.5s, 4s, 6.5s
@@ -536,13 +536,13 @@ function finalError(label: string, attempts: number, err: unknown, lastRaw = '',
   if (isAuthError(err)) {
     if (userKey) {
       return new Error(
-        'Your Z.AI API key was rejected (auth error). Open the "API keys" panel and check the key — generate a fresh one at ' +
+        'Your Z.AI API key was rejected (auth error). Open the "API keys" panel and check the key - generate a fresh one at ' +
           ZAI_KEY_URL + '. Make sure the key has available credit/quota.',
       );
     }
     return new Error(
       'AI credentials were just rotated and the request was rejected. '
-      + 'Please try again in a few seconds — retries now wait out credential rotations automatically.',
+      + 'Please try again in a few seconds - retries now wait out credential rotations automatically.',
     );
   }
   const reason = err instanceof Error ? err.message : String(err);
@@ -554,9 +554,9 @@ function finalError(label: string, attempts: number, err: unknown, lastRaw = '',
 
 /**
  * Model overrides via env, so deployments can pick free-tier models:
- *   ZAI_TEXT_MODEL         (e.g. glm-4.5-flash — free on the Z.AI Open Platform)
- *   ZAI_TEXT_MODEL_FALLBACK (optional — second model for late retry attempts)
- *   ZAI_VISION_MODEL       (e.g. glm-4.6v — used for logo analysis)
+ *   ZAI_TEXT_MODEL         (e.g. glm-4.5-flash - free on the Z.AI Open Platform)
+ *   ZAI_TEXT_MODEL_FALLBACK (optional - second model for late retry attempts)
+ *   ZAI_VISION_MODEL       (e.g. glm-4.6v - used for logo analysis)
  * Unset ZAI_TEXT_MODEL keeps the gateway's default text model.
  */
 const TEXT_MODEL = process.env.ZAI_TEXT_MODEL || undefined;
@@ -567,7 +567,7 @@ const VISION_MODEL = process.env.ZAI_VISION_MODEL || 'glm-4.6v';
  * or rate-limited primary model cannot sink every attempt in a row (the
  * "LLM JSON generation failed after 4 attempts: empty response" failure
  * mode). Default: glm-4.5-flash (free) unless the primary already is that
- * model — then the gateway default is used instead.
+ * model - then the gateway default is used instead.
  */
 function fallbackTextModel(): string | undefined {
   const explicit = process.env.ZAI_TEXT_MODEL_FALLBACK?.trim();
@@ -586,7 +586,7 @@ function modelForAttempt(attempt: number): string | undefined {
 /**
  * One chat-completion attempt, shared by llmJson and llmText. Throws
  * EmptyResponseError (retryable, rate-limit-aware) when the model returns
- * no usable text — provider rate limits, overload, or quota events that
+ * no usable text - provider rate limits, overload, or quota events that
  * some gateways deliver as HTTP 200 with an empty/error payload.
  * Every attempt is wall-clock capped (CHAT_TIMEOUT_MS) so a hung socket
  * cannot stall the pipeline.
@@ -624,7 +624,7 @@ export type AttemptHook = (attempt: number, attempts: number) => void;
 /**
  * Text LLM call parsed as JSON, with retries + exponential backoff.
  * maxTokens defaults high (16k) because model-side defaults truncate around
- * 4k tokens — long JSON payloads (research reports, design tokens) get cut
+ * 4k tokens - long JSON payloads (research reports, design tokens) get cut
  * mid-structure and parse as "unbalanced JSON" on every retry.
  */
 export async function llmJson<T>(
@@ -975,7 +975,7 @@ function fontWeights(v: unknown, fallback: number[]): number[] {
 
 /**
  * Deep-merge a (possibly partial/garbage) tokens object over safe defaults.
- * Guarantees a complete, valid DesignTokens object — the frontend never
+ * Guarantees a complete, valid DesignTokens object - the frontend never
  * crashes on LLM output. Also enforces the WCAG AA primary/primaryForeground
  * contrast invariant (re-picks bestTextColor when contrast < 4.5).
  */

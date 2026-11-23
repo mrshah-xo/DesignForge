@@ -131,7 +131,7 @@ export function DesignStep({
   // activeThemeId selects: 'original' | 'light' | 'dark' | a ThemeVariant id
   const [activeThemeId, setActiveThemeId] = useState<string>('original')
   const [applyingTheme, setApplyingTheme] = useState(false)
-  // Style feature toggles (Liquid Glass, Google RGB glow, …) — each one
+  // Style feature toggles (Liquid Glass, Google RGB glow, …) - each one
   // layers an effect onto the current theme without touching colors/type.
   const [savingFeature, setSavingFeature] = useState<StyleFeature['id'] | null>(null)
 
@@ -156,7 +156,7 @@ export function DesignStep({
   if (!tokens || !serverDesign) {
     return (
       <p className="rounded-lg border border-border bg-card p-8 text-center text-sm text-muted-foreground shadow-sm">
-        No design system generated yet — approve the research in step 4 first.
+        No design system generated yet - approve the research in step 4 first.
       </p>
     )
   }
@@ -200,7 +200,7 @@ export function DesignStep({
         setTokens(theme.tokens)
         setActiveThemeId('original')
         toast.success(`Theme "${theme.name}" applied`, {
-          description: 'DESIGN.md still describes the previous direction — use Regenerate with AI (Visual editor tab) or edit it to refresh the copy.',
+          description: 'DESIGN.md still describes the previous direction - use Regenerate with AI (Visual editor tab) or edit it to refresh the copy.',
         })
       })
       .catch(() => {
@@ -220,7 +220,7 @@ export function DesignStep({
         setTokens(next)
         setActiveThemeId('original')
         toast.success(`${label} theme applied`, {
-          description: 'Same brand colors, remapped surfaces. DESIGN.md still describes the previous direction — regenerate it to refresh the copy.',
+          description: 'Same brand colors, remapped surfaces. DESIGN.md still describes the previous direction - regenerate it to refresh the copy.',
         })
       })
       .catch(() => {
@@ -243,7 +243,7 @@ export function DesignStep({
         setTokens(next)
         toast.success(`${label} ${on ? 'enabled' : 'disabled'}`, {
           description: on
-            ? 'The effect layer is baked into your design tokens — combine it freely with the other features.'
+            ? 'The effect layer is baked into your design tokens - combine it freely with the other features.'
             : 'The effect layer was removed from your design tokens.',
         })
       })
@@ -330,7 +330,7 @@ export function DesignStep({
 
       {/* ---------------- Live preview ---------------- */}
       <TabsContent value="preview" className="mt-2 space-y-3">
-        {/* AI theme directions — switch themes live, apply the best outcome */}
+        {/* AI theme directions - switch themes live, apply the best outcome */}
         <div className="rounded-lg border border-border bg-card p-4 shadow-sm">
           <div className="mb-3 flex flex-wrap items-start justify-between gap-2">
             <div className="min-w-0">
@@ -443,11 +443,11 @@ export function DesignStep({
             </div>
           )}
 
-          {/* Style features — toggleable effect layers on top of any theme */}
+          {/* Style features - toggleable effect layers on top of any theme */}
           <div className="mt-3 border-t border-border pt-3">
             <p className="mb-2 text-xs font-semibold text-gray-900 dark:text-gray-50">
               Style features
-              <span className="ml-2 font-normal text-muted-foreground">toggle effects onto your current theme — colors and type stay untouched, combine freely</span>
+              <span className="ml-2 font-normal text-muted-foreground">toggle effects onto your current theme - colors and type stay untouched, combine freely</span>
             </p>
             <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
               {STYLE_FEATURES.map((feature) => {
@@ -501,7 +501,7 @@ export function DesignStep({
 
           {themes.length === 0 && !themesLoading && (
             <p className="mt-2 text-xs text-muted-foreground">
-              No AI suggestions yet — generate to get 3 research-backed directions with the best outcome marked. Light and Dark are always available above.
+              No AI suggestions yet - generate to get 3 research-backed directions with the best outcome marked. Light and Dark are always available above.
             </p>
           )}
 
@@ -555,8 +555,8 @@ export function DesignStep({
                   </span>
                   <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
                     {activePreset === 'light'
-                      ? 'Derived automatically from your applied design — same brand colors on bright neutral surfaces.'
-                      : 'Derived automatically from your applied design — same brand colors on deep dark surfaces.'}
+                      ? 'Derived automatically from your applied design - same brand colors on bright neutral surfaces.'
+                      : 'Derived automatically from your applied design - same brand colors on deep dark surfaces.'}
                   </p>
                 </div>
                 <div className="flex shrink-0 items-center gap-2">
@@ -661,7 +661,7 @@ export function DesignStep({
                     <div className="min-w-0 flex-1">
                       <Label className="text-xs font-medium">{roleLabel(role)}</Label>
                       <p className="truncate text-xs text-muted-foreground">
-                        {tokens.colors?.[role]?.usage ?? '—'}
+                        {tokens.colors?.[role]?.usage ?? '-'}
                       </p>
                     </div>
                     <input
