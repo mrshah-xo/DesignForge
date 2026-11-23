@@ -27,6 +27,10 @@ import {
   rgbDistance,
 } from '@/lib/server/logo-image';
 import {
+  buildBackgroundSuggestion,
+  parseBackgroundSuggestion,
+} from '@/lib/server/background-suggestion';
+import {
   createJob,
   finishJob,
   findRunningJob,
@@ -125,6 +129,18 @@ async function runAnalysisPipeline(id: string, jobId: string, userKey: string | 
       ? rawTemperature!
       : 'neutral';
 
+    // Recommended page backdrop: deterministic palette derivation, with the
+    // VLM's tone/reason merged in when it returned a usable one.
+    const rawVlmBackground =
+      vlm.background && typeof vlm.background === 'object' && !Array.isArray(vlm.background)
+        ? (vlm.background as Record<string, unknown>)
+        : {};
+    const background = buildBackgroundSuggestion(
+      analysisPaletteForBackground(palette),
+      typeof rawVlmBackground.tone === 'string' ? rawVlmBackground.tone : null,
+      typeof rawVlmBackground.reason === 'string' ? rawVlmBackground.reason : null,
+    );
+
     const analysis = {
       palette: palette.length
         ? palette
@@ -136,6 +152,7 @@ async function runAnalysisPipeline(id: string, jobId: string, userKey: string | 
       audienceGuess: str(vlm.audienceGuess) ?? 'General audience',
       trustSignals,
       description: str(vlm.description) ?? '',
+      background,
     };
 
     // 6. Upsert analysis + invalidate derived design + advance status.
@@ -148,6 +165,7 @@ async function runAnalysisPipeline(id: string, jobId: string, userKey: string | 
       audienceGuess: analysis.audienceGuess,
       trustSignals: JSON.stringify(analysis.trustSignals),
       description: analysis.description,
+      backgroundSuggestion: JSON.stringify(analysis.background),
     };
     await db.$transaction([
       db.logoAnalysis.upsert({
@@ -256,8 +274,16 @@ async function donePayload(
       audienceGuess: project.analysis.audienceGuess,
       trustSignals: JSON.parse(project.analysis.trustSignals) as string[],
       description: project.analysis.description,
+      ...(parseBackgroundSuggestion(project.analysis.backgroundSuggestion)
+        ? { background: parseBackgroundSuggestion(project.analysis.backgroundSuggestion) }
+        : {}),
     },
   };
+}
+
+/** Palette rows are already weight-sorted; plain copy for the builder. */
+function analysisPaletteForBackground(palette: PaletteColor[]): PaletteColor[] {
+  return palette.map((c) => ({ hex: c.hex, name: c.name, weight: c.weight }));
 }
 
 /**

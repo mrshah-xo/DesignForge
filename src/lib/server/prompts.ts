@@ -33,6 +33,7 @@ function compactAnalysis(analysis: AnalysisData): Record<string, unknown> {
     industry: analysis.industry,
     audienceGuess: analysis.audienceGuess,
     trustSignals: analysis.trustSignals,
+    backgroundSuggestion: analysis.background ?? null,
   };
 }
 
@@ -87,6 +88,7 @@ export function buildAnalysisPrompt(projectName: string, description?: string | 
   "industry": "most likely industry",
   "audienceGuess": "who this logo likely targets",
   "trustSignals": ["3-5 elements in the logo that build or undermine trust"],
+  "background": { "tone": "light|dark", "reason": "1-2 sentences on which page backdrop (light canvas vs dark canvas) keeps THIS logo most legible and why — contrast, mood and industry" },
   "description": "3-4 sentence objective description of shapes, typography, spacing, symbolism"
 }`;
 }
@@ -200,6 +202,7 @@ ${DESIGN_TOKENS_SCHEMA}
 Token rules:
 - Derive the primary color from the logo palette when it serves the field's psychology.
 - If the logo color conflicts with what the audience's psychology demands, shift the primary toward the appropriate hue while keeping the logo's DNA (saturation/lightness family) and explain the shift in matchAnalysis.verdict.
+- colors.background MUST honor the logo's backgroundSuggestion (tone + gradient) from the analysis: tone "light" = a bright near-white canvas tinted by the dominant logo hue (use the suggested gradient's 'from'/'to' hexes when mode is "gradient"); tone "dark" = a deep tinted canvas that keeps the light-colored logo legible. Keep body text at WCAG AA against it and say why it suits the logo in matchAnalysis.verdict.
 - primary/primaryForeground must meet WCAG AA (contrastRatio >= 4.5 — the system ensures backend re-checks this).
 - Typography heading+body families MUST be chosen from this exact list: Inter, Manrope, Poppins, Space Grotesk, Sora, Outfit, IBM Plex Sans, Playfair Display, DM Serif Display, Lora, Merriweather, JetBrains Mono (prefer a heading/body pairing that matches the field, e.g. serif headings for luxury/law/finance gravitas, geometric sans for tech).
 - radius/shadows must match the logo styleTags (${analysis.styleTags.join(', ') || 'unknown'}): sharp geometric logo → smaller radius; friendly rounded logo → larger radius.
@@ -263,7 +266,7 @@ PROJECT: "${project.name}" — ${project.description || 'no description provided
 
 AUDIENCE: ${JSON.stringify(compactAudience(audience))}
 
-LOGO PALETTE: ${JSON.stringify(analysis.palette.map((c) => ({ hex: c.hex, name: c.name })))} | styleTags: ${analysis.styleTags.join(', ') || 'unknown'} | mood: ${analysis.mood}
+LOGO PALETTE: ${JSON.stringify(analysis.palette.map((c) => ({ hex: c.hex, name: c.name })))} | styleTags: ${analysis.styleTags.join(', ') || 'unknown'} | mood: ${analysis.mood} | suggested page backdrop: ${analysis.background ? `${analysis.background.tone} ${analysis.background.mode}` : 'unknown'}
 
 RESEARCH DIGEST (reviewed findings — every theme MUST apply these):
 ${digestResearch(research)}
@@ -306,6 +309,7 @@ LOGO ANALYSIS (for logo usage notes): ${JSON.stringify({
     mood: analysis.mood,
     trustSignals: analysis.trustSignals,
     description: analysis.description,
+    backgroundSuggestion: analysis.background ?? null,
   })}
 
 LOGO FIT REPORT: ${JSON.stringify(matchAnalysis)}
@@ -335,7 +339,9 @@ Write DESIGN.md for the project following the corpus categories EXACTLY. Require
 
 - ## Voice, Motion & Imagery — tone from brand.voice; CTA style with 3 examples pulled from tokens.previewCopy (heroHeadline, primaryCta, secondaryCta) + why they fit the audience; error-message tone with 2 examples; motion spec (durations 150-300ms, easing, what may animate, prefers-reduced-motion); icon style + stroke width, illustration direction, photo treatment.
 
-- ## Logo Usage — clear space, minimum sizes, approved backgrounds from the actual logo palette, and a do/don't pair derived from the analysis + LOGO FIT REPORT suggestions.
+- ## Logo Usage — clear space, minimum sizes, approved backgrounds from the actual logo palette (the suggested page backdrop: ${analysis.background ? `${analysis.background.tone} ${analysis.background.mode} ${analysis.background.from}→${analysis.background.to}` : 'use palette judgment'}), and a do/don't pair derived from the analysis + LOGO FIT REPORT suggestions.
+
+- ## Style Features — read tokens.style and describe ONLY the enabled flags as implementable specs: glass = frosted translucent surfaces with backdrop-blur; glow = animated RGB conic-gradient border on primary CTAs and the focused input only (Google Gemini-style, ~3.6s rotation); gradientHero = brand-tinted hero wash; softAmbient = Apple-style airy ambient shadows; buttonPreset "plastic" = inflated glossy pill button in the brand gradient; "venom" = matte black pill with brand under-glow and springy press. If none are enabled write a one-line note that no optional effect layers are active.
 
 - ## Do's and Don'ts — corpus C9: ### Do (6-8 token-referencing bullets) / ### Don't (6-8 bullets protecting the system's discipline).
 

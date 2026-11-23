@@ -1098,6 +1098,11 @@ export const normalizeTokens = (raw: unknown, fallbackPrimary?: string, fallback
       glass: rawStyle.glass === true,
       glow: rawStyle.glow === true,
       gradientHero: rawStyle.gradientHero === true,
+      softAmbient: rawStyle.softAmbient === true,
+      buttonPreset:
+        rawStyle.buttonPreset === 'plastic' || rawStyle.buttonPreset === 'venom'
+          ? rawStyle.buttonPreset
+          : '',
     },
   };
 

@@ -10,6 +10,20 @@ export interface PaletteColor {
   weight: number; // 0-100 dominance score
 }
 
+/** Where the logo should live: the recommended page backdrop derived from the logo itself. */
+export interface BackgroundSuggestion {
+  /** Light backdrops for dark/colored logos, dark backdrops for light/white logos. */
+  tone: 'light' | 'dark';
+  /** Gradient when the palette carries two distinct hues, solid otherwise. */
+  mode: 'solid' | 'gradient';
+  /** First (dominant) surface hex. */
+  from: string;
+  /** Second surface hex for gradients — equals `from` when mode is solid. */
+  to: string;
+  /** Human-readable why: contrast, mood and industry reasoning. */
+  reason: string;
+}
+
 export interface AnalysisData {
   palette: PaletteColor[];
   styleTags: string[];
@@ -19,6 +33,8 @@ export interface AnalysisData {
   audienceGuess: string;
   trustSignals: string[];
   description: string;
+  /** Recommended page backdrop (may be missing on analyses created before this field existed). */
+  background?: BackgroundSuggestion;
 }
 
 // ---------- Audience ----------
@@ -138,10 +154,14 @@ export interface PaletteStep {
 export interface DesignStyleFlags {
   /** Liquid-glass surfaces: translucent cards/nav/inputs + backdrop blur over a gradient canvas. */
   glass?: boolean;
-  /** Google-style glowing edges on SELECTED components (primary buttons + focused inputs). */
+  /** Google Gemini-style animated RGB glow edge on SELECTED components (primary buttons + focused input). */
   glow?: boolean;
   /** Stripe-style tinted gradient wash behind the hero section. */
   gradientHero?: boolean;
+  /** Apple-style soft ambient finish: airy continuous-corner shadows and gently larger radii. */
+  softAmbient?: boolean;
+  /** Vision Pictures pill-button pack applied to primary CTAs ('plastic' or 'venom'), empty/undefined = off. */
+  buttonPreset?: 'plastic' | 'venom' | '';
 }
 
 export interface DesignTokens {

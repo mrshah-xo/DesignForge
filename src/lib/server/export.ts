@@ -34,6 +34,7 @@ import type {
 } from '@/lib/types';
 import type { PaletteStep } from '@/lib/types';
 import { normalizeTokens } from '@/lib/server/ai';
+import { parseBackgroundSuggestion } from '@/lib/server/background-suggestion';
 import {
   contrastRatio,
   lightenHex,
@@ -177,6 +178,7 @@ export function parseAnalysisRow(row: AnalysisRow | null): AnalysisData | null {
   const palette = (safeJsonParse<unknown>(row.palette, []) as unknown[]).filter(
     (c): c is PaletteColor => isPlainObject(c) && typeof c.hex === 'string' && /^#[0-9A-Fa-f]{6}$/.test(c.hex),
   );
+  const background = parseBackgroundSuggestion(row.backgroundSuggestion);
   return {
     palette,
     styleTags: stringList(safeJsonParse<unknown>(row.styleTags, []), 8),
@@ -186,6 +188,7 @@ export function parseAnalysisRow(row: AnalysisRow | null): AnalysisData | null {
     audienceGuess: row.audienceGuess ?? '',
     trustSignals: stringList(safeJsonParse<unknown>(row.trustSignals, []), 6),
     description: row.description ?? '',
+    ...(background ? { background } : {}),
   };
 }
 

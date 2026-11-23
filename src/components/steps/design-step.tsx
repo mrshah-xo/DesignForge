@@ -43,7 +43,8 @@ import {
 } from '@/components/ui/alert-dialog'
 import { LivePreview, FALLBACK_HEX, isHex } from '@/components/preview/live-preview'
 import { themeSwatches, themeTokens } from '@/lib/preview-themes'
-import { PREBUILT_STYLES, applyPrebuiltStyle, findPrebuiltStyle } from '@/lib/style-themes'
+import { STYLE_FEATURES, isFeatureOn, toggleStyleFeature, type StyleFeature } from '@/lib/style-themes'
+import { Switch } from '@/components/ui/switch'
 import { DesignGenerating, type LiveProgress } from '@/components/wizard/design-generating'
 import { InlineProgress } from '@/components/wizard/inline-progress'
 import { DESIGN_MESSAGES } from '@/components/wizard/progress-messages'
@@ -130,9 +131,9 @@ export function DesignStep({
   // activeThemeId selects: 'original' | 'light' | 'dark' | a ThemeVariant id
   const [activeThemeId, setActiveThemeId] = useState<string>('original')
   const [applyingTheme, setApplyingTheme] = useState(false)
-  // Prebuilt style layered on the applied design (Apple, Liquid Glass, …).
-  const [activeStyleId, setActiveStyleId] = useState<string | null>(null)
-  const [applyingStyle, setApplyingStyle] = useState(false)
+  // Style feature toggles (Liquid Glass, Google RGB glow, …) — each one
+  // layers an effect onto the current theme without touching colors/type.
+  const [savingFeature, setSavingFeature] = useState<StyleFeature['id'] | null>(null)
 
   // Editors are initialized once at mount; the shell remounts this step
   // (keyed by project id + design nonce) when the design is regenerated,
@@ -175,16 +176,11 @@ export function DesignStep({
   const activeTheme = activeThemeId === 'original' || activePreset
     ? null
     : themes.find((t) => t.id === activeThemeId) ?? null
-  const activeStyle = findPrebuiltStyle(activeStyleId)
   const baseTokens = activeTheme
     ? activeTheme.tokens
     : activePreset
       ? themeTokens(tokens, activePreset, null)
       : tokens
-  // Prebuilt styles layer over the applied design (not over AI/preset previews).
-  const previewTokens = !activeTheme && !activePreset && activeStyle
-    ? applyPrebuiltStyle(tokens, activeStyleId)
-    : baseTokens
 
   const handleGenerateThemes = () => {
     setThemesLoading(true)
@@ -233,25 +229,47 @@ export function DesignStep({
       .finally(() => setApplyingTheme(false))
   }
 
-  /** Apply a prebuilt style (Apple, Liquid Glass, …): persists tokens + style flags. */
-  const applyStyle = () => {
-    if (!activeStyle || !tokens) return
-    const label = activeStyle.name
-    const next = applyPrebuiltStyle(tokens, activeStyle.id)
-    setApplyingStyle(true)
+  /** Toggle a style feature (Liquid Glass, RGB glow, …): persists the flags. */
+  const toggleFeature = (feature: StyleFeature, on: boolean, preset: 'plastic' | 'venom' = 'plastic') => {
+    if (!tokens) return
+    const label = feature.name
+    const next: DesignTokens = {
+      ...tokens,
+      style: toggleStyleFeature(tokens.style, feature.id, on, preset),
+    }
+    setSavingFeature(feature.id)
     Promise.resolve(onSaveTokens(next))
       .then(() => {
         setTokens(next)
-        setActiveStyleId(null)
-        setActiveThemeId('original')
-        toast.success(`${label} style applied`, {
-          description: 'The style is baked into your design tokens. DESIGN.md still describes the previous direction — regenerate it to refresh the copy.',
+        toast.success(`${label} ${on ? 'enabled' : 'disabled'}`, {
+          description: on
+            ? 'The effect layer is baked into your design tokens — combine it freely with the other features.'
+            : 'The effect layer was removed from your design tokens.',
         })
       })
       .catch(() => {
         /* error already surfaced by the shell toast */
       })
-      .finally(() => setApplyingStyle(false))
+      .finally(() => setSavingFeature(null))
+  }
+
+  /** Switch the pill-button preset while the feature stays on. */
+  const changePillPreset = (preset: 'plastic' | 'venom') => {
+    if (!tokens) return
+    const next: DesignTokens = {
+      ...tokens,
+      style: toggleStyleFeature(tokens.style, 'buttonPreset', true, preset),
+    }
+    setSavingFeature('buttonPreset')
+    Promise.resolve(onSaveTokens(next))
+      .then(() => {
+        setTokens(next)
+        toast.success(`${preset === 'plastic' ? 'Plastic' : 'Venom'} pill preset selected`)
+      })
+      .catch(() => {
+        /* error already surfaced by the shell toast */
+      })
+      .finally(() => setSavingFeature(null))
   }
 
   const previewPill = (active: boolean) =>
@@ -379,12 +397,9 @@ export function DesignStep({
             <div className="flex flex-wrap gap-2">
               <button
                 type="button"
-                className={previewPill(activeThemeId === 'original' && !activeStyle)}
-                onClick={() => {
-                  setActiveThemeId('original')
-                  setActiveStyleId(null)
-                }}
-                aria-pressed={activeThemeId === 'original' && !activeStyle}
+                className={previewPill(activeThemeId === 'original')}
+                onClick={() => setActiveThemeId('original')}
+                aria-pressed={activeThemeId === 'original'}
               >
                 Applied design
               </button>
@@ -395,10 +410,7 @@ export function DesignStep({
                     key={preset}
                     type="button"
                     className={previewPill(activeThemeId === preset)}
-                    onClick={() => {
-                      setActiveThemeId(preset)
-                      setActiveStyleId(null)
-                    }}
+                    onClick={() => setActiveThemeId(preset)}
                     aria-pressed={activeThemeId === preset}
                   >
                     <span
@@ -417,10 +429,7 @@ export function DesignStep({
                   key={t.id}
                   type="button"
                   className={previewPill(activeThemeId === t.id)}
-                  onClick={() => {
-                    setActiveThemeId(t.id)
-                    setActiveStyleId(null)
-                  }}
+                  onClick={() => setActiveThemeId(t.id)}
                   aria-pressed={activeThemeId === t.id}
                 >
                   {t.id === bestThemeId && <Sparkles className="size-3 text-ember-500" />}
@@ -433,39 +442,57 @@ export function DesignStep({
             </div>
           )}
 
-          {/* Prebuilt styles — popular design languages, one click, zero AI wait */}
+          {/* Style features — toggleable effect layers on top of any theme */}
           <div className="mt-3 border-t border-border pt-3">
             <p className="mb-2 text-xs font-semibold text-gray-900 dark:text-gray-50">
-              Prebuilt styles
-              <span className="ml-2 font-normal text-muted-foreground">instant, inspired by official design systems</span>
+              Style features
+              <span className="ml-2 font-normal text-muted-foreground">toggle effects onto your current theme — colors and type stay untouched, combine freely</span>
             </p>
-            <div className="flex flex-wrap gap-2">
-              {PREBUILT_STYLES.map((style) => {
-                const sample = tokens ? applyPrebuiltStyle(tokens, style.id) : null
-                const bgHex = sample?.colors?.background?.hex ?? '#ffffff'
-                const fgHex = sample?.colors?.primary?.hex ?? '#0f766e'
+            <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+              {STYLE_FEATURES.map((feature) => {
+                const on = isFeatureOn(tokens?.style, feature.id)
+                const busy = savingFeature === feature.id
                 return (
-                  <button
-                    key={style.id}
-                    type="button"
-                    className={previewPill(activeStyleId === style.id)}
-                    onClick={() => {
-                      setActiveStyleId(activeStyleId === style.id ? null : style.id)
-                      setActiveThemeId('original')
-                    }}
-                    aria-pressed={activeStyleId === style.id}
-                    title={style.description}
+                  <div
+                    key={feature.id}
+                    className={`flex items-start justify-between gap-3 rounded-lg border p-3 shadow-sm transition-colors ${
+                      on
+                        ? 'border-ember-200 bg-ember-50/60 dark:border-ember-500/30 dark:bg-ember-500/5'
+                        : 'border-border bg-card'
+                    }`}
+                    title={feature.description}
                   >
-                    <span
-                      className="inline-flex size-3.5 shrink-0 overflow-hidden rounded-full border border-border"
-                      aria-hidden
-                    >
-                      <span className="h-full w-1/2" style={{ background: bgHex }} />
-                      <span className="h-full w-1/2" style={{ background: fgHex }} />
-                    </span>
-                    {style.name}
-                    <span className="text-[10px] font-normal text-muted-foreground">{style.tagline}</span>
-                  </button>
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium text-gray-800 dark:text-gray-200">{feature.name}</p>
+                      <p className="mt-0.5 text-xs leading-relaxed text-muted-foreground">{feature.tagline}</p>
+                      {feature.hasPreset && on && (
+                        <div className="mt-2 flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
+                          {feature.presets?.map((preset) => (
+                            <button
+                              key={preset.value}
+                              type="button"
+                              disabled={busy || saving}
+                              onClick={() => changePillPreset(preset.value)}
+                              aria-pressed={tokens?.style?.buttonPreset === preset.value}
+                              className={`rounded-full border px-2.5 py-1 text-[11px] font-medium transition-colors disabled:opacity-60 ${
+                                tokens?.style?.buttonPreset === preset.value
+                                  ? 'border-ember-300 bg-ember-100 text-ember-800 dark:border-ember-500/40 dark:bg-ember-500/15 dark:text-ember-300'
+                                  : 'border-border bg-transparent text-muted-foreground hover:bg-muted/60'
+                              }`}
+                            >
+                              {preset.label}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                    <Switch
+                      checked={on}
+                      disabled={busy || saving}
+                      onCheckedChange={(value) => void toggleFeature(feature, value)}
+                      aria-label={`${feature.name} feature`}
+                    />
+                  </div>
                 )
               })}
             </div>
@@ -518,7 +545,7 @@ export function DesignStep({
             </div>
           )}
 
-          {activePreset && !activeTheme && !activeStyle && (
+          {activePreset && !activeTheme && (
             <div className="mt-3 rounded-md border border-border bg-muted/40 p-3">
               <div className="flex flex-wrap items-start justify-between gap-2">
                 <div className="min-w-0 flex-1">
@@ -554,48 +581,9 @@ export function DesignStep({
             </div>
           )}
 
-          {activeStyle && !activeTheme && !activePreset && (
-            <div className="mt-3 rounded-md border border-ember-200 bg-ember-50/60 p-3 dark:border-ember-500/30 dark:bg-ember-500/5">
-              <div className="flex flex-wrap items-start justify-between gap-2">
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm font-semibold text-ember-800 dark:text-ember-300">
-                      {activeStyle.name}
-                    </span>
-                    <Badge
-                      variant="outline"
-                      className="border-ember-200 bg-transparent text-ember-700 dark:border-ember-500/40 dark:text-ember-300"
-                    >
-                      Preview — not applied yet
-                    </Badge>
-                  </div>
-                  <p className="mt-1 text-xs leading-relaxed text-muted-foreground">{activeStyle.description}</p>
-                </div>
-                <div className="flex shrink-0 items-center gap-2">
-                  <Button
-                    size="sm"
-                    onClick={applyStyle}
-                    disabled={applyingStyle || saving}
-                    className="bg-primary text-primary-foreground hover:bg-ember-600"
-                  >
-                    {applyingStyle ? <Loader2 className="size-3.5 animate-spin" /> : <Check className="size-3.5" />}
-                    Apply to design
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={() => setActiveStyleId(null)}
-                    disabled={applyingStyle}
-                  >
-                    Back to applied
-                  </Button>
-                </div>
-              </div>
-            </div>
-          )}
         </div>
 
-        <LivePreview tokens={previewTokens} />
+        <LivePreview tokens={baseTokens} />
       </TabsContent>
 
       {/* ---------------- Visual editor ---------------- */}

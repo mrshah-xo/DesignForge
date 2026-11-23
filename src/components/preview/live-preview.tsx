@@ -112,6 +112,91 @@ const FALLBACK_SHADOWS = {
 }
 
 /**
+ * Scoped effect CSS for the style feature toggles (Google RGB glow, the
+ * Vision Pictures pill buttons). Rendered once inside the preview root so
+ * nothing leaks into the surrounding app shell.
+ *
+ * - RGB glow: the animated conic-gradient border Google uses on its Gemini
+ *   AI action elements — implemented with @property + conic-gradient so the
+ *   color rotation travels around the component, with a blurred halo layer
+ *   behind a crisp masked ring. Reduced-motion users get a static gradient.
+ * - Pill buttons: CSS adaptations of the uploaded Vision Pictures pack —
+ *   "Plastic" (inflated foil pill, gloss top, press depth) recolored to the
+ *   brand primary via CSS vars, and "Venom" (matte black pill with a brand
+ *   under-glow and springy press). © Vision Pictures LLC — license permits
+ *   use/modification inside the licensee's own projects.
+ */
+const PREVIEW_EFFECT_CSS = `
+@property --df-rgb-angle { syntax: '<angle>'; inherits: false; initial-value: 0deg; }
+@keyframes df-rgb-spin { to { --df-rgb-angle: 360deg; } }
+.df-preview .df-rgb { position: relative; isolation: isolate; }
+.df-preview .df-rgb::before {
+  content: ''; position: absolute; inset: -4px;
+  border-radius: calc(var(--df-r, 12px) + 4px);
+  background: conic-gradient(from var(--df-rgb-angle) at 50% 50%, #ea4335, #fbbc04, #34a853, #4285f4, #ea4335);
+  filter: blur(9px); opacity: .5; z-index: -1;
+  animation: df-rgb-spin 3.6s linear infinite;
+  pointer-events: none;
+}
+.df-preview .df-rgb::after {
+  content: ''; position: absolute; inset: -1.5px; padding: 1.5px;
+  border-radius: calc(var(--df-r, 12px) + 1.5px);
+  background: conic-gradient(from var(--df-rgb-angle) at 50% 50%, #ea4335, #fbbc04, #34a853, #4285f4, #ea4335);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
+  z-index: 1;
+  animation: df-rgb-spin 3.6s linear infinite;
+  pointer-events: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .df-preview .df-rgb::before, .df-preview .df-rgb::after { animation: none; }
+}
+.df-preview .df-btn-plastic {
+  position: relative; isolation: isolate; display: inline-flex; align-items: center; justify-content: center;
+  border: 0; padding: 11px 22px; border-radius: 999px; cursor: pointer;
+  font-weight: 600; line-height: 1; white-space: nowrap;
+  color: var(--df-pt, #fff); text-shadow: 0 1px 2px rgba(0, 0, 0, .35);
+  filter: drop-shadow(0 7px 10px rgba(0, 0, 0, .25));
+  background: transparent;
+  transition: transform .18s ease, filter .18s ease;
+}
+.df-preview .df-btn-plastic::before {
+  content: ''; position: absolute; inset: 0; border-radius: 999px; z-index: 0;
+  background: radial-gradient(120% 95% at 50% 0%, var(--df-p1, #ff8a65) 0%, var(--df-p2, #d8261a) 38%, var(--df-p3, #8f1010) 75%, var(--df-p4, #3a0505) 100%);
+  box-shadow: inset 0 0 0 2px rgba(0, 0, 0, .45);
+}
+.df-preview .df-btn-plastic::after {
+  content: ''; position: absolute; inset: 0; border-radius: 999px; z-index: 1; pointer-events: none;
+  background: linear-gradient(180deg, rgba(255,255,255,.5) 0%, rgba(255,255,255,.16) 20%, rgba(255,255,255,0) 46%, rgba(0,0,0,.12) 72%, rgba(0,0,0,.32) 100%);
+}
+.df-preview .df-btn-plastic > span { position: relative; z-index: 2; }
+.df-preview .df-btn-plastic:hover { filter: drop-shadow(0 9px 13px rgba(0, 0, 0, .3)) brightness(1.05); transform: translateY(-1px); }
+.df-preview .df-btn-plastic:active { transform: translateY(0) scale(.985); filter: drop-shadow(0 4px 6px rgba(0, 0, 0, .28)) brightness(.94); }
+.df-preview .df-btn-plastic:focus-visible { outline: 2px solid var(--df-p1, #ffb8a8); outline-offset: 4px; }
+.df-preview .df-btn-venom {
+  position: relative; isolation: isolate; display: inline-flex; align-items: center; justify-content: center;
+  border: 0; padding: 11px 26px; border-radius: 999px; cursor: pointer;
+  font-weight: 700; line-height: 1; white-space: nowrap; color: #fff;
+  background: radial-gradient(130% 100% at 50% 0%, #3b3b3b 0%, #161616 38%, #060606 72%, #000 100%);
+  box-shadow: 0 14px 22px -10px rgba(0, 0, 0, .55), 0 3px 4px -1px rgba(0, 0, 0, .35), 0 8px 30px -8px var(--df-vg, rgba(0, 0, 0, .4));
+  transition: transform .45s cubic-bezier(.3, 1.6, .45, 1);
+}
+.df-preview .df-btn-venom > span { position: relative; z-index: 1; text-shadow: 0 1px 2px rgba(0, 0, 0, .8); }
+.df-preview .df-btn-venom:hover { transform: scale(1.03); }
+.df-preview .df-btn-venom:active { transform: scale(.96); transition-duration: .12s; }
+.df-preview .df-btn-venom:focus-visible { outline: 2px solid #9a9a9a; outline-offset: 5px; }
+`
+
+/** Bump a "12px" radius string by a few pixels (pill radii pass through). */
+function bumpRadius(value: string, extra: number): string {
+  if (/^9{3,}px$/.test(value.trim())) return value
+  const m = /^(\d+(?:\.\d+)?)px$/.exec(value.trim())
+  if (!m) return value
+  return `${Math.round(parseFloat(m[1])) + extra}px`
+}
+
+/**
  * A self-contained brand gallery rendered purely from design tokens.
  * Every color, font, radius and shadow derives from the token object.
  */
@@ -141,16 +226,82 @@ export function LivePreview({ tokens }: LivePreviewProps) {
   const radius = { ...FALLBACK_RADIUS, ...(tokens.radius ?? {}) }
   const shadows = { ...FALLBACK_SHADOWS, ...(tokens.shadows ?? {}) }
 
-  // ---------- Prebuilt style effects (Liquid Glass / Google glow / gradient hero) ----------
+  // ---------- Style feature toggles (Liquid Glass / Google RGB glow / …) ----------
   const styleFlags = tokens.style ?? {}
   const glass = styleFlags.glass === true
   const glow = styleFlags.glow === true
   const gradientHero = styleFlags.gradientHero === true
+  const softAmbient = styleFlags.softAmbient === true
+  const buttonPreset =
+    styleFlags.buttonPreset === 'plastic' || styleFlags.buttonPreset === 'venom'
+      ? styleFlags.buttonPreset
+      : null
   const accent = color('accent')
 
-  // Google-style glowing edge — a soft colored halo applied ONLY to the
-  // selected components: primary buttons and the focused input.
-  const glowRing = `0 0 0 3px ${withAlpha(primary, 0.22)}, 0 0 18px ${withAlpha(primary, 0.5)}`
+  // Soft ambient (Apple HIG-style) depth — layered over the token shadows.
+  const ambientCardShadow = '0 2px 6px rgba(15, 23, 42, 0.05), 0 12px 34px rgba(15, 23, 42, 0.10), 0 32px 80px rgba(15, 23, 42, 0.06)'
+  const ambientBtnShadow = '0 1px 2px rgba(15, 23, 42, 0.05), 0 10px 26px rgba(15, 23, 42, 0.12)'
+  const cardRadius = softAmbient ? bumpRadius(radius.lg, 6) : radius.lg
+  const btnRadius = softAmbient ? bumpRadius(radius.md, 4) : radius.md
+
+  /** Wrap a selected component in the animated Google-style RGB glow ring. */
+  const rgbGlow = (child: ReactNode, radiusForRing: string, block = false): ReactNode =>
+    glow ? (
+      <span
+        className="df-rgb"
+        style={{
+          ...(block ? { display: 'block' } : { display: 'inline-flex' }),
+          '--df-r': radiusForRing,
+        } as unknown as CSSProperties}
+      >
+        {child}
+      </span>
+    ) : (
+      child
+    )
+
+  /** The primary CTA — rendered with the pill preset or the token style. */
+  const primaryButton = (label: string, opts?: { width?: string }) => {
+    const inner = buttonPreset ? (
+      <button
+        type="button"
+        className={buttonPreset === 'plastic' ? 'df-btn-plastic' : 'df-btn-venom'}
+        style={
+          {
+            fontFamily: bodyFamily,
+            fontSize: scale.small,
+            ...(opts?.width ? { width: opts.width } : {}),
+            ...(buttonPreset === 'plastic'
+              ? {
+                  '--df-p1': mixHex(primary, '#ffffff', 0.45),
+                  '--df-p2': primary,
+                  '--df-p3': mixHex(primary, '#000000', 0.52),
+                  '--df-p4': mixHex(primary, '#000000', 0.78),
+                  '--df-pt': readableOn(mixHex(primary, '#000000', 0.52)),
+                }
+              : { '--df-vg': withAlpha(primary, 0.4) }),
+          } as CSSProperties
+        }
+      >
+        <span>{label}</span>
+      </button>
+    ) : (
+      <button
+        type="button"
+        style={{
+          ...btnBase,
+          borderRadius: btnRadius,
+          background: primary,
+          color: primaryForeground,
+          boxShadow: glow ? undefined : softAmbient ? ambientBtnShadow : shadows.md,
+          ...(opts?.width ? { width: opts.width } : {}),
+        }}
+      >
+        {label}
+      </button>
+    )
+    return rgbGlow(inner, buttonPreset ? '999px' : btnRadius, Boolean(opts?.width))
+  }
 
   // Liquid-glass surfaces: translucent white (or dark) panes with real
   // backdrop blur, floating over a brand-tinted gradient canvas.
@@ -193,7 +344,7 @@ export function LivePreview({ tokens }: LivePreviewProps) {
     justifyContent: 'center',
     gap: 8,
     padding: '10px 18px',
-    borderRadius: radius.md,
+    borderRadius: btnRadius,
     fontSize: scale.small,
     fontWeight: 600,
     lineHeight: 1,
@@ -204,8 +355,8 @@ export function LivePreview({ tokens }: LivePreviewProps) {
   const cardBase: CSSProperties = {
     background: glass ? glassSurface : background,
     border: `1px solid ${glass ? glassBorder : border}`,
-    borderRadius: radius.lg,
-    boxShadow: glass ? '0 8px 32px rgba(15, 23, 42, 0.12)' : shadows.sm,
+    borderRadius: cardRadius,
+    boxShadow: glass ? '0 8px 32px rgba(15, 23, 42, 0.12)' : softAmbient ? ambientCardShadow : shadows.sm,
     ...(glass ? { backdropFilter: glassBlur, WebkitBackdropFilter: glassBlur } : {}),
   }
   const inputBase: CSSProperties = {
@@ -226,11 +377,13 @@ export function LivePreview({ tokens }: LivePreviewProps) {
 
   return (
     <div
-      className="max-h-[720px] overflow-y-auto rounded-lg border df-scroll"
+      className="df-preview max-h-[720px] overflow-y-auto rounded-lg border df-scroll"
       style={{ borderColor: border }}
       role="region"
       aria-label="Live component preview built from design tokens"
     >
+      {/* Scoped effect CSS for the style feature toggles */}
+      <style>{PREVIEW_EFFECT_CSS}</style>
       {/* Token-styled canvas — everything below derives from tokens */}
       <div
         style={{
@@ -299,9 +452,7 @@ export function LivePreview({ tokens }: LivePreviewProps) {
                 </span>
               ))}
             </div>
-            <button type="button" style={{ ...btnBase, background: primary, color: primaryForeground, ...(glow ? { boxShadow: glowRing } : {}) }}>
-              {copy_.navCta}
-            </button>
+            {primaryButton(copy_.navCta)}
           </nav>
         </header>
 
@@ -352,9 +503,7 @@ export function LivePreview({ tokens }: LivePreviewProps) {
               marginBottom: 20,
             }}
           >
-            <button type="button" style={{ ...btnBase, background: primary, color: primaryForeground, boxShadow: glow ? glowRing : shadows.md }}>
-              {copy_.primaryCta}
-            </button>
+            {primaryButton(copy_.primaryCta)}
             <button
               type="button"
               style={{ ...btnBase, border: `1px solid ${border}`, color: foreground, background: 'transparent' }}
@@ -389,9 +538,7 @@ export function LivePreview({ tokens }: LivePreviewProps) {
         {/* (c) Buttons */}
         <Section pad="24px" label="Buttons">
           <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'center' }}>
-            <button type="button" style={{ ...btnBase, background: primary, color: primaryForeground, ...(glow ? { boxShadow: glowRing } : {}) }}>
-              Primary
-            </button>
+            {primaryButton('Primary')}
             <button type="button" style={{ ...btnBase, background: secondary, color: foreground }}>
               Secondary
             </button>
@@ -487,18 +634,28 @@ export function LivePreview({ tokens }: LivePreviewProps) {
               </label>
               <label style={{ display: 'grid', gap: 6, fontSize: scale.small, fontWeight: 600 }}>
                 Work email
-                <input
-                  type="text"
-                  readOnly
-                  value="jane@company.com"
-                  aria-label="Work email (focused state)"
-                  style={{
-                    ...inputBase,
-                    ...(glow
-                      ? { borderColor: primary, boxShadow: glowRing }
-                      : {}),
-                  }}
-                />
+                {glow ? (
+                  <span
+                    className="df-rgb"
+                    style={{ display: 'block', '--df-r': radius.md } as unknown as CSSProperties}
+                  >
+                    <input
+                      type="text"
+                      readOnly
+                      value="jane@company.com"
+                      aria-label="Work email (focused state)"
+                      style={{ ...inputBase, borderColor: primary }}
+                    />
+                  </span>
+                ) : (
+                  <input
+                    type="text"
+                    readOnly
+                    value="jane@company.com"
+                    aria-label="Work email (focused state)"
+                    style={inputBase}
+                  />
+                )}
               </label>
               <label style={{ display: 'grid', gap: 6, fontSize: scale.small, fontWeight: 600 }}>
                 Anything we should know?
@@ -522,18 +679,21 @@ export function LivePreview({ tokens }: LivePreviewProps) {
                 <input type="checkbox" defaultChecked readOnly style={{ accentColor: primary, width: 15, height: 15 }} />
                 Email me product updates
               </label>
-              <button
-                type="button"
-                style={{
-                  ...btnBase,
-                  background: primary,
-                  color: primaryForeground,
-                  width: '100%',
-                  ...(glow ? { boxShadow: glowRing } : {}),
-                }}
-              >
-                Create account
-              </button>
+              {rgbGlow(
+                <button
+                  type="button"
+                  style={{
+                    ...btnBase,
+                    background: primary,
+                    color: primaryForeground,
+                    width: '100%',
+                  }}
+                >
+                  Create account
+                </button>,
+                btnRadius,
+                true,
+              )}
             </div>
           </div>
         </Section>
@@ -612,18 +772,7 @@ export function LivePreview({ tokens }: LivePreviewProps) {
                 </li>
               ))}
             </ul>
-            <button
-              type="button"
-              style={{
-                ...btnBase,
-                background: primary,
-                color: primaryForeground,
-                width: '100%',
-                ...(glow ? { boxShadow: glowRing } : {}),
-              }}
-            >
-              Choose Growth
-            </button>
+            {primaryButton('Choose Growth', { width: '100%' })}
           </div>
         </Section>
 

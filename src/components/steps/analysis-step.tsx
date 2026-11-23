@@ -2,14 +2,14 @@
 
 import type { ReactNode } from 'react'
 import { motion } from 'framer-motion'
-import { ArrowRight, ScanSearch, ShieldCheck, Smile, Sun } from 'lucide-react'
+import { ArrowRight, Copy, Layers2, ScanSearch, ShieldCheck, Smile, Sun, Wallpaper } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { DesignGenerating } from '@/components/wizard/design-generating'
 import { ANALYSIS_MESSAGES } from '@/components/wizard/progress-messages'
 import { copyToClipboard } from '@/lib/client/api'
-import type { AnalysisData, ProjectDetail } from '@/lib/types'
+import type { AnalysisData, BackgroundSuggestion, ProjectDetail } from '@/lib/types'
 
 interface AnalysisStepProps {
   project: ProjectDetail
@@ -49,6 +49,69 @@ function InfoCard({
       </div>
       <p className="mt-1.5 text-sm font-medium text-gray-800 dark:text-gray-200">{value || '—'}</p>
     </div>
+  )
+}
+
+/** Showcases the recommended page backdrop derived from the logo. */
+function BackgroundCard({ background }: { background: BackgroundSuggestion }) {
+  const isGradient = background.mode === 'gradient' && background.to !== background.from
+  const css = isGradient
+    ? { backgroundImage: `linear-gradient(165deg, ${background.from} 0%, ${background.to} 100%)` }
+    : { backgroundColor: background.from }
+  const copyHex = (hex: string, label: string) => {
+    void copyToClipboard(hex)
+      .then(() => toast.success(`Copied ${hex}`, { description: label }))
+      .catch(() => toast.error('Could not copy to clipboard'))
+  }
+  return (
+    <section aria-labelledby="bg-heading">
+      <div className="mb-3 flex items-baseline justify-between">
+        <h2 id="bg-heading" className="text-lg font-semibold text-gray-900 dark:text-gray-50">
+          Suggested page background
+        </h2>
+        <span className="text-xs text-muted-foreground">auto-applied when your design is generated</span>
+      </div>
+      <div className="overflow-hidden rounded-lg border border-border bg-card shadow-sm">
+        <div
+          className="flex h-28 items-end justify-between p-4"
+          style={css}
+          role="img"
+          aria-label={`${background.tone} ${background.mode} page background preview: ${background.from}${isGradient ? ` to ${background.to}` : ''}`}
+        >
+          <span
+            className={`rounded-full px-2.5 py-1 text-[11px] font-semibold capitalize ${
+              background.tone === 'light' ? 'bg-black/10 text-black/70' : 'bg-white/10 text-white/80'
+            }`}
+          >
+            {background.tone} canvas · {background.mode}
+          </span>
+          <span className="flex gap-1.5">
+            {([background.from, isGradient ? background.to : null] as const)
+              .filter((hex): hex is string => Boolean(hex))
+              .map((hex, i) => (
+                <button
+                  key={`${hex}-${i}`}
+                  type="button"
+                  onClick={() => copyHex(hex, i === 0 ? 'Surface start' : 'Surface end')}
+                  className="rounded-md bg-black/10 px-2 py-1 font-mono text-[10px] text-black/70 backdrop-blur-sm transition-colors hover:bg-black/20 dark:bg-white/10 dark:text-white/80 dark:hover:bg-white/20"
+                  aria-label={`Copy ${hex}`}
+                >
+                  <Copy className="mr-1 inline size-3" aria-hidden />
+                  {hex}
+                </button>
+              ))}
+          </span>
+        </div>
+        <div className="flex items-start gap-2.5 p-4">
+          {isGradient ? (
+            <Layers2 className="mt-0.5 size-4 shrink-0 text-ember-600 dark:text-ember-400" aria-hidden />
+          ) : (
+            <Wallpaper className="mt-0.5 size-4 shrink-0 text-ember-600 dark:text-ember-400" aria-hidden />
+          )}
+          <p className="text-sm leading-relaxed text-gray-700 dark:text-gray-300">{background.reason}</p>
+        </div>
+      </div>
+    </section>
   )
 }
 
@@ -135,6 +198,9 @@ export function AnalysisStep({ project, analyzing, onRunAnalysis, onContinue }: 
           ))}
         </div>
       </section>
+
+      {/* Suggested page background (derived from the logo) */}
+      {analysis.background && <BackgroundCard background={analysis.background} />}
 
       {/* Style tags */}
       {analysis.styleTags.length > 0 && (

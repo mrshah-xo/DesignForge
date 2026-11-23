@@ -42,6 +42,8 @@ model LogoAnalysis {
   // JSON: string[]
   trustSignals  String
   description   String
+  // JSON: BackgroundSuggestion { tone, mode, from, to, reason } — recommended page backdrop
+  backgroundSuggestion String?
   createdAt     DateTime @default(now())
 }
 
