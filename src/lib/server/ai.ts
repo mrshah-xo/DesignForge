@@ -433,6 +433,44 @@ export function messageText(res: unknown): { text: string; finishReason: string;
   };
 }
 
+/**
+ * Some gateways deliver provider-side problems (rate limits, overload, quota,
+ * content filters) as HTTP 200 with an empty/error payload instead of an HTTP
+ * error the SDK would throw. Dig a human-readable hint out of that payload so
+ * the "empty response" error says WHY, not just that it happened.
+ */
+export function providerErrorHint(res: unknown): string {
+  if (typeof res !== 'object' || res === null) return '';
+  const r = res as { error?: unknown; message?: unknown };
+  if (typeof r.error === 'string' && r.error.trim()) return r.error.trim();
+  if (typeof r.message === 'string' && r.message.trim()) return r.message.trim();
+  if (typeof r.error === 'object' && r.error !== null) {
+    const inner = (r.error as { message?: unknown }).message;
+    if (typeof inner === 'string' && inner.trim()) return inner.trim();
+  }
+  return '';
+}
+
+/**
+ * Raised when the gateway answers 200 but the model content is empty.
+ * Retryable — retryDelayMs() gives it a longer, rate-limit-aware schedule
+ * because these failures usually come in bursts (a bad window, not one blip).
+ */
+export class EmptyResponseError extends Error {
+  readonly finishReason: string;
+  readonly modelName: string;
+  constructor(finishReason: string, modelName: string, hint: string) {
+    super(
+      `Model returned an empty response (finish_reason=${finishReason}${modelName ? `, model=${modelName}` : ''})` +
+        (hint ? `. Provider said: "${hint}"` : '') +
+        '. This usually means the provider rate-limited the request, the model is temporarily unavailable, or the quota is exhausted.',
+    );
+    this.name = 'EmptyResponseError';
+    this.finishReason = finishReason;
+    this.modelName = modelName;
+  }
+}
+
 const RETRY_NOTE_BASE =
   'Your previous response was not valid JSON. Respond AGAIN with ONLY the raw JSON object — start with { and end with }. No prose, no explanations, no markdown fences, no code block.';
 
@@ -455,7 +493,11 @@ function backoffMs(attempt: number): number {
 const AUTH_BACKOFF_MS = 6000;
 
 function retryDelayMs(err: unknown, attempt: number): number {
-  return isAuthError(err) ? AUTH_BACKOFF_MS * (attempt + 1) : backoffMs(attempt);
+  if (isAuthError(err)) return AUTH_BACKOFF_MS * (attempt + 1);
+  // Empty/filtered responses arrive in bursts (rate-limit windows, provider
+  // hiccups) — wait longer so retries land outside the same bad window.
+  if (err instanceof EmptyResponseError) return 3000 + 5000 * attempt; // 3s, 8s, 13s
+  return backoffMs(attempt);
 }
 
 async function waitOut(ms: number): Promise<void> {
@@ -485,12 +527,63 @@ function finalError(label: string, attempts: number, err: unknown, lastRaw = '',
 
 /**
  * Model overrides via env, so deployments can pick free-tier models:
- *   ZAI_TEXT_MODEL   (e.g. glm-4.5-flash — free on the Z.AI Open Platform)
- *   ZAI_VISION_MODEL (e.g. glm-4.6v — used for logo analysis)
+ *   ZAI_TEXT_MODEL         (e.g. glm-4.5-flash — free on the Z.AI Open Platform)
+ *   ZAI_TEXT_MODEL_FALLBACK (optional — second model for late retry attempts)
+ *   ZAI_VISION_MODEL       (e.g. glm-4.6v — used for logo analysis)
  * Unset ZAI_TEXT_MODEL keeps the gateway's default text model.
  */
 const TEXT_MODEL = process.env.ZAI_TEXT_MODEL || undefined;
 const VISION_MODEL = process.env.ZAI_VISION_MODEL || 'glm-4.6v';
+
+/**
+ * Retry attempts 2+ rotate to a second model, so a temporarily unavailable
+ * or rate-limited primary model cannot sink every attempt in a row (the
+ * "LLM JSON generation failed after 4 attempts: empty response" failure
+ * mode). Default: glm-4.5-flash (free) unless the primary already is that
+ * model — then the gateway default is used instead.
+ */
+function fallbackTextModel(): string | undefined {
+  const explicit = process.env.ZAI_TEXT_MODEL_FALLBACK?.trim();
+  if (explicit) return explicit;
+  const primary = TEXT_MODEL?.trim().toLowerCase() ?? '';
+  return primary === 'glm-4.5-flash' ? undefined : 'glm-4.5-flash';
+}
+
+/** Which model a given attempt uses: late attempts rotate to the fallback. */
+function modelForAttempt(attempt: number): string | undefined {
+  const fallback = fallbackTextModel();
+  if (attempt >= 2 && fallback && fallback !== TEXT_MODEL) return fallback;
+  return TEXT_MODEL;
+}
+
+/**
+ * One chat-completion attempt, shared by llmJson and llmText. Throws
+ * EmptyResponseError (retryable, rate-limit-aware) when the model returns
+ * no usable text — provider rate limits, overload, or quota events that
+ * some gateways deliver as HTTP 200 with an empty/error payload.
+ */
+async function chatTextOnce(
+  zai: ZAI,
+  messages: Array<{ role: 'assistant' | 'user'; content: string }>,
+  modelOverride: string | undefined,
+  maxTokens: number,
+): Promise<string> {
+  const res = await zai.chat.completions.create({
+    ...(modelOverride ? { model: modelOverride } : {}),
+    messages,
+    thinking: { type: 'disabled' },
+    max_tokens: maxTokens,
+  });
+  const { text, finishReason, model } = messageText(res);
+  if (!text.trim()) {
+    console.error(
+      `chatTextOnce: empty response (finish_reason=${finishReason}, model=${model || modelOverride || 'default'}):`,
+      JSON.stringify(res ?? {}).slice(0, 300),
+    );
+    throw new EmptyResponseError(finishReason, model || modelOverride || 'default', providerErrorHint(res));
+  }
+  return text;
+}
 
 /**
  * Text LLM call parsed as JSON, with retries + exponential backoff.
@@ -518,20 +611,8 @@ export async function llmJson<T>(
         const reason = lastError instanceof Error ? lastError.message : '';
         messages.push({ role: 'user', content: retryNote(reason) });
       }
-      const res = await zai.chat.completions.create({
-        ...(TEXT_MODEL ? { model: TEXT_MODEL } : {}),
-        messages,
-        thinking: { type: 'disabled' },
-        max_tokens: maxTokens,
-      });
-      const { text, finishReason, model } = messageText(res);
+      const text = await chatTextOnce(zai, messages, modelForAttempt(attempt), maxTokens);
       lastRaw = text;
-      if (!text.trim()) {
-        throw new Error(
-          `Model returned an empty response (finish_reason=${finishReason}${model ? `, model=${model}` : ''}). ` +
-            'This usually means the provider filtered the request, the model is unavailable, or the quota is exhausted.',
-        );
-      }
       try {
         return extractJson<T>(text);
       } catch (parseErr) {
@@ -579,9 +660,7 @@ export async function visionJson<T>(prompt: string, base64Png: string, attempts 
       const { text, finishReason, model } = messageText(res);
       lastRaw = text;
       if (!text.trim()) {
-        throw new Error(
-          `Model returned an empty response (finish_reason=${finishReason}${model ? `, model=${model}` : ''}).`,
-        );
+        throw new EmptyResponseError(finishReason, model || VISION_MODEL, providerErrorHint(res));
       }
       return extractJson<T>(text);
     } catch (err) {
@@ -614,18 +693,15 @@ export async function llmText(
   let lastError: unknown = null;
   for (let attempt = 0; attempt < attempts; attempt++) {
     try {
-      const res = await zai.chat.completions.create({
-        ...(TEXT_MODEL ? { model: TEXT_MODEL } : {}),
-        messages: [
+      return await chatTextOnce(
+        zai,
+        [
           { role: 'assistant', content: system },
           { role: 'user', content: user },
         ],
-        thinking: { type: 'disabled' },
-        max_tokens: maxTokens,
-      });
-      const text: string = res?.choices?.[0]?.message?.content ?? '';
-      if (!text.trim()) throw new Error('Model returned an empty response.');
-      return text;
+        modelForAttempt(attempt),
+        maxTokens,
+      );
     } catch (err) {
       lastError = err;
       console.error(`llmText attempt ${attempt + 1}/${attempts} failed:`, err instanceof Error ? err.message : err);

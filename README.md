@@ -1,12 +1,9 @@
 <div align="center">
 
-<img src="assets/DFF.png" alt="DesignForge" width="200" />
-
-# MrDesign.md
+<img src="assets/MrDesign.md Signature Logo.png" alt="DesignForge" width="1000" />
 
 **Generate a complete design system from a logo.**
 
-Upload a logo, describe the audience, and DesignForge produces a `DESIGN.md`, design tokens, a live component preview and an export package. Palette decisions come from the logo's actual pixels and from audience research, not from defaults.
 
 <br />
 

@@ -52,15 +52,15 @@ export function Header({ projects, loadingProjects, onOpenProject, onNewProject 
         <div className="flex min-w-0 items-center gap-2.5">
           <span
             aria-hidden="true"
-            className="flex h-11 shrink-0 items-center rounded-lg bg-white px-2.5 shadow-sm ring-1 ring-border"
+            className="flex h-11 shrink-0 items-center rounded-lg bg-black px-3 shadow-sm ring-1 ring-border"
           >
             <Image
-              src="/dfl-logo.png"
+              src="/mr-logo.png"
               alt=""
-              width={980}
-              height={475}
+              width={809}
+              height={405}
               priority
-              className="h-8 w-auto"
+              className="h-7 w-auto"
             />
           </span>
           <span className="sr-only">DesignForge</span>

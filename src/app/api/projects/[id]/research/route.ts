@@ -21,6 +21,7 @@ import {
   webSearch,
 } from '@/lib/server/ai';
 import { RESEARCH_SYSTEM, buildResearchPrompt } from '@/lib/server/prompts';
+import { buildFallbackResearch } from '@/lib/server/research-fallback';
 import {
   normalizeResearchSections,
   normalizeSources,
@@ -72,7 +73,12 @@ async function runResearchPipeline(id: string, jobId: string, userKey: string | 
       `color psychology trust ${audience.trustNeed} need digital products`,
     ];
     const settled = await Promise.allSettled(
-      queries.map((query) => webSearch(query, 5, userKey)),
+      queries.map(async (query, index) => {
+        // Small stagger avoids tripping per-second gateway rate limits
+        // (429s) that three identical parallel calls can trigger.
+        if (index > 0) await new Promise((resolve) => setTimeout(resolve, index * 300));
+        return webSearch(query, 5, userKey);
+      }),
     );
     const searchResults: Array<{ name: string; url: string; snippet: string }> = [];
     const seenUrls = new Set<string>();
@@ -91,14 +97,22 @@ async function runResearchPipeline(id: string, jobId: string, userKey: string | 
       if (searchResults.length >= MAX_SEARCH_RESULTS) break;
     }
 
-    // 2. LLM research synthesis.
-    const raw = await llmJson<Record<string, unknown>>(
-      RESEARCH_SYSTEM,
-      buildResearchPrompt(project, audience, analysis, searchResults),
-      4,
-      16000,
-      userKey,
-    );
+    // 2. LLM research synthesis — with an offline fallback when the AI
+    //    service is unavailable (empty responses, rate limits, quota) so
+    //    step 4 never dead-ends.
+    let raw: Record<string, unknown>;
+    try {
+      raw = await llmJson<Record<string, unknown>>(
+        RESEARCH_SYSTEM,
+        buildResearchPrompt(project, audience, analysis, searchResults),
+        4,
+        16000,
+        userKey,
+      );
+    } catch (llmErr) {
+      console.error(`Research LLM synthesis failed for ${id}; using offline research fallback:`, llmErr);
+      raw = buildFallbackResearch(audience, analysis, searchResults) as Record<string, unknown>;
+    }
 
     // 3. Fill missing sections/sources with safe fallbacks.
     const rawSections = (raw.sections && typeof raw.sections === 'object' ? raw.sections : raw) as unknown;

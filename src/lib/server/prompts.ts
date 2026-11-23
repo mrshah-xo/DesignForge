@@ -108,7 +108,13 @@ AUDIENCE: ${JSON.stringify(compactAudience(audience))}
 LOGO ANALYSIS: ${JSON.stringify(compactAnalysis(analysis))}
 
 WEB SEARCH RESULTS (real internet sources):
-${JSON.stringify(searchResults.map((r) => ({ name: r.name, url: r.url, snippet: r.snippet })), null, 1)}
+${JSON.stringify(
+  searchResults.map((r) => ({
+    name: r.name,
+    url: r.url,
+    snippet: r.snippet.replace(/\s+/g, ' ').trim().slice(0, 280),
+  })),
+)}
 
 Return JSON with EXACTLY these keys:
 {
