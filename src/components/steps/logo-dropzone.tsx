@@ -116,14 +116,14 @@ export function LogoDropzone({ file, onFile, disabled = false, compact = false }
             'flex w-full flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed text-center transition-colors',
             compact ? 'p-6' : 'p-8',
             dragging
-              ? 'border-ember-500 bg-ember-50/60 dark:bg-ember-500/10'
-              : 'border-border bg-card hover:border-ember-400 hover:bg-ember-50/40 dark:hover:border-ember-500/60 dark:hover:bg-ember-500/5',
+              ? 'border-ink-500 bg-ink-50/60 dark:bg-ink-500/10'
+              : 'border-border bg-card hover:border-ink-400 hover:bg-ink-50/40 dark:hover:border-ink-500/60 dark:hover:bg-ink-500/5',
             disabled && 'cursor-not-allowed opacity-60',
           )}
         >
           <span
             className={cn(
-              'flex items-center justify-center rounded-lg bg-ember-50 text-ember-600 dark:bg-ember-500/10 dark:text-ember-400',
+              'flex items-center justify-center rounded-lg bg-ink-50 text-ink-600 dark:bg-ink-500/10 dark:text-ink-300',
               compact ? 'size-9' : 'size-12',
             )}
           >

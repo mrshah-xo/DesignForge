@@ -108,6 +108,60 @@ const DDL: string[] = [
   `CREATE INDEX IF NOT EXISTS "GenerationJob_projectId_kind_idx" ON "GenerationJob"("projectId", "kind")`,
 ];
 
+// Column migrations — `CREATE TABLE IF NOT EXISTS` cannot add columns to
+// tables that already exist, so any column added to a shipped model after
+// the first deploy needs an explicit additive ALTER here. Exactly what
+// happened when `LogoAnalysis.backgroundSuggestion` shipped: older DBs
+// kept the old shape and every project open 500-ed with P2022 ("The
+// column `LogoAnalysis.backgroundSuggestion` does not exist in the
+// current database").
+const COLUMN_MIGRATIONS: Array<{ table: string; column: string; ddl: string }> = [
+  {
+    table: 'LogoAnalysis',
+    column: 'backgroundSuggestion',
+    // Nullable TEXT, matching `String?` in schema.prisma. Valid DDL on
+    // both SQLite and Postgres.
+    ddl: `ALTER TABLE "LogoAnalysis" ADD COLUMN "backgroundSuggestion" TEXT`,
+  },
+];
+
+// ---------- Dialect awareness ----------
+//
+// The baseline ships to two engines: local/dev runs SQLite
+// (DATABASE_URL=file:...) and production runs Postgres. Column
+// introspection is engine-specific:
+//   - SQLite exposes table info through the pragma_table_info
+//     table-valued function (SQLite-only).
+//   - Postgres exposes it through information_schema.columns.
+// Try the SQLite probe first; when it errors (on Postgres: SQLSTATE
+// 42883, "function pragma_table_info(unknown) does not exist") fall
+// through to information_schema. No dialect memoization: ensureSchema
+// runs once per server instance, and a transient probe failure must
+// never poison a cached wrong dialect.
+
+/**
+ * True when `column` exists in `table` on the active engine.
+ * Identifiers are interpolated from our own COLUMN_MIGRATIONS
+ * constants (never user input), so quoting inline is safe.
+ */
+async function columnExists(table: string, column: string): Promise<boolean> {
+  try {
+    const rows = await db.$queryRawUnsafe<Array<{ name: string }>>(
+      `SELECT name FROM pragma_table_info('${table}')`,
+    );
+    return rows.some((r) => r.name === column);
+  } catch {
+    // Not SQLite (or SQLite probe failed transiently) — try the
+    // Postgres catalog. If this also fails the error propagates and
+    // the memo reset in ensureSchema lets a later call retry.
+    const rows = await db.$queryRawUnsafe<Array<{ column_name: string }>>(
+      `SELECT column_name FROM information_schema.columns
+       WHERE table_schema = current_schema() AND table_name = '${table}' AND column_name = '${column}'`,
+    );
+    return rows.length > 0;
+  }
+}
+
 let schemaPromise: Promise<void> | null = null;
 
 /**
@@ -119,6 +173,11 @@ export function ensureSchema(): Promise<void> {
     schemaPromise = (async () => {
       for (const stmt of DDL) {
         await db.$executeRawUnsafe(stmt);
+      }
+      // Additive column migrations: skip the ones already applied.
+      for (const mig of COLUMN_MIGRATIONS) {
+        if (await columnExists(mig.table, mig.column)) continue;
+        await db.$executeRawUnsafe(mig.ddl);
       }
     })().catch((err) => {
       schemaPromise = null;
@@ -135,16 +194,23 @@ export function isMissingTableError(err: unknown): boolean {
   );
 }
 
+/** Prisma error code P2022 = "column does not exist in the current database". */
+export function isMissingColumnError(err: unknown): boolean {
+  return (
+    err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2022'
+  );
+}
+
 /**
- * Run a Prisma query; if the database predates one of our tables
- * (fresh provider DB, forgotten `db push`), apply the baseline schema
- * and replay the query once before giving up.
+ * Run a Prisma query; if the database predates one of our tables or
+ * columns (fresh provider DB, forgotten `db push`), apply the baseline
+ * schema and replay the query once before giving up.
  */
 export async function withSchemaRetry<T>(fn: () => Promise<T>): Promise<T> {
   try {
     return await fn();
   } catch (err) {
-    if (isMissingTableError(err)) {
+    if (isMissingTableError(err) || isMissingColumnError(err)) {
       await ensureSchema();
       return await fn();
     }

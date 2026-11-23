@@ -1,20 +1,16 @@
 import type { Metadata } from "next";
-import { Geist_Mono, Inter, Space_Grotesk } from "next/font/google";
+import { Geist_Mono, Inter } from "next/font/google";
 import { ThemeProvider } from "next-themes";
 import "./globals.css";
 import { Toaster } from "@/components/ui/sonner";
 import { GOOGLE_FONTS_HREF } from "@/lib/types";
 
-// Design Forge typography: Space Grotesk headings (600+ only), Inter body.
-// The Google Fonts stylesheet below additionally serves the live-preview
-// font options (Manrope, Poppins, Sora, ...) used by generated previews.
+// mrdesign.md typography (from the project's own DESIGN.md): Inter carries
+// everything — headings 700, body 400/500. The Google Fonts stylesheet below
+// additionally serves the live-preview font options (Manrope, Poppins, Sora,
+// ...) used by generated previews.
 const inter = Inter({
   variable: "--font-inter",
-  subsets: ["latin"],
-});
-
-const spaceGrotesk = Space_Grotesk({
-  variable: "--font-space-grotesk",
   subsets: ["latin"],
 });
 
@@ -41,7 +37,7 @@ export default function RootLayout({
         <link rel="stylesheet" href={GOOGLE_FONTS_HREF} />
       </head>
       <body
-        className={`${inter.variable} ${spaceGrotesk.variable} ${geistMono.variable} antialiased bg-background text-foreground`}
+        className={`${inter.variable} ${geistMono.variable} antialiased bg-background text-foreground`}
       >
         <ThemeProvider
           attribute="class"

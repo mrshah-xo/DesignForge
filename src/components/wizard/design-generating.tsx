@@ -124,7 +124,7 @@ export function DesignGenerating({ messages, subtext = DEFAULT_SUBTEXT, live }: 
         {[0, 1, 2].map((i) => (
           <motion.span
             key={i}
-            className="size-1.5 rounded-full bg-ember-500"
+            className="size-1.5 rounded-full bg-ink-500"
             animate={{ y: [0, -4, 0], opacity: [0.5, 1, 0.5] }}
             transition={{ duration: 0.9, repeat: Infinity, delay: i * 0.15, ease: 'easeInOut' }}
           />

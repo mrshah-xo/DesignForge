@@ -40,13 +40,13 @@ export function Stepper({ currentStep, stepState, onSelect }: StepperProps) {
                 'flex shrink-0 items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition-colors',
                 st === 'locked' && 'cursor-not-allowed border-border text-gray-300 dark:text-gray-600',
                 st !== 'locked' && isCurrent(step.id) &&
-                  'border-ember-600 bg-ember-50 text-ember-700 dark:border-ember-500 dark:bg-ember-500/10 dark:text-ember-400',
+                  'border-ink-600 bg-ink-50 text-ink-700 dark:border-ink-500 dark:bg-ink-500/10 dark:text-ink-300',
                 st === 'done' && !isCurrent(step.id) &&
-                  'border-border bg-card text-gray-700 hover:border-ember-300 hover:text-ember-700 dark:text-gray-300 dark:hover:border-ember-500/50',
+                  'border-border bg-card text-gray-700 hover:border-ink-300 hover:text-ink-700 dark:text-gray-300 dark:hover:border-ink-500/50',
               )}
             >
               {st === 'done' && !isCurrent(step.id) ? (
-                <span className="flex size-4 items-center justify-center rounded-full bg-ember-600 text-white">
+                <span className="flex size-4 items-center justify-center rounded-full bg-ink-600 text-white">
                   <Check className="size-2.5" aria-hidden="true" />
                 </span>
               ) : (
@@ -74,7 +74,7 @@ export function Stepper({ currentStep, stepState, onSelect }: StepperProps) {
                   'group flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm transition-colors',
                   st === 'locked' && 'cursor-not-allowed text-gray-300 dark:text-gray-600',
                   st !== 'locked' && current &&
-                    'bg-ember-50 font-semibold text-ember-800 ring-1 ring-ember-600/60 dark:bg-ember-500/10 dark:text-ember-300 dark:ring-ember-500/60',
+                    'bg-ink-50 font-semibold text-ink-800 ring-1 ring-ink-600/60 dark:bg-ink-500/10 dark:text-ink-300 dark:ring-ink-500/60',
                   st === 'done' && !current &&
                     'text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800/60',
                   st !== 'locked' && !current && st !== 'done' &&
@@ -84,8 +84,8 @@ export function Stepper({ currentStep, stepState, onSelect }: StepperProps) {
                 <span
                   className={cn(
                     'flex size-7 shrink-0 items-center justify-center rounded-full border',
-                    st === 'done' && 'border-ember-600 bg-ember-600 text-white',
-                    st === 'current' && 'border-ember-600 bg-card text-ember-700 dark:text-ember-400',
+                    st === 'done' && 'border-ink-600 bg-ink-600 text-white',
+                    st === 'current' && 'border-ink-600 bg-card text-ink-700 dark:text-ink-300',
                     st === 'locked' && 'border-border text-gray-300 dark:text-gray-600',
                     st !== 'locked' && st !== 'done' && st !== 'current' && 'border-gray-300 text-gray-500 dark:border-gray-700',
                   )}

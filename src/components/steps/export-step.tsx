@@ -116,7 +116,7 @@ export function ExportStep({ project, onStartNew }: ExportStepProps) {
         className="rounded-lg border border-border bg-card p-6 shadow-sm"
       >
         <div className="flex items-center gap-2">
-          <span className="flex size-9 items-center justify-center rounded-lg bg-ember-50 text-ember-600 dark:bg-ember-500/10 dark:text-ember-400">
+          <span className="flex size-9 items-center justify-center rounded-lg bg-ink-50 text-ink-600 dark:bg-ink-500/10 dark:text-ink-300">
             <PackageCheck className="size-4.5" />
           </span>
           <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-50">
@@ -188,7 +188,7 @@ export function ExportStep({ project, onStartNew }: ExportStepProps) {
         <Button
           onClick={() => void run('zip', () => api.downloadZip(project.id, project.name))}
           disabled={busy !== null}
-          className="h-10 w-full bg-primary text-primary-foreground hover:bg-ember-600 sm:w-auto"
+          className="h-10 w-full bg-primary text-primary-foreground hover:bg-ink-600 sm:w-auto"
         >
           {busy === 'zip' ? <Loader2 className="size-4 animate-spin" /> : <Download className="size-4" />}
           Download full package (.zip)
@@ -236,7 +236,7 @@ export function ExportStep({ project, onStartNew }: ExportStepProps) {
         <ol className="space-y-3">
           {AGENT_TIPS.map((tip, i) => (
             <li key={tip} className="flex items-start gap-3">
-              <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-ember-600 text-xs font-semibold text-white">
+              <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-ink-600 text-xs font-semibold text-white">
                 {i + 1}
               </span>
               <p className="text-sm text-gray-600 dark:text-gray-300">{tip}</p>
@@ -249,7 +249,7 @@ export function ExportStep({ project, onStartNew }: ExportStepProps) {
         <Button
           onClick={onStartNew}
           variant="outline"
-          className="border-ember-600 text-ember-700 hover:bg-ember-50 hover:text-ember-800 dark:border-ember-500 dark:text-ember-400 dark:hover:bg-ember-500/10"
+          className="border-ink-600 text-ink-700 hover:bg-ink-50 hover:text-ink-800 dark:border-ink-500 dark:text-ink-300 dark:hover:bg-ink-500/10"
         >
           <Plus className="size-4" />
           Start a new project

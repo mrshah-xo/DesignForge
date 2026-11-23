@@ -47,7 +47,7 @@ export function Header({ projects, loadingProjects, onOpenProject, onNewProject 
   const themeLabel = isDark ? 'Switch to light mode' : 'Switch to dark mode'
 
   return (
-    <header className="sticky top-0 z-40 border-b border-border bg-background/80 backdrop-blur">
+    <header className="df-glass sticky top-0 z-40 border-b border-border/80">
       <div className="mx-auto flex h-16 w-full max-w-7xl items-center justify-between gap-3 px-4">
         <div className="flex min-w-0 items-center gap-2.5">
           <span
@@ -66,7 +66,7 @@ export function Header({ projects, loadingProjects, onOpenProject, onNewProject 
           <span className="sr-only">DesignForge</span>
           <Badge
             variant="outline"
-            className="hidden shrink-0 border-ember-200 bg-ember-50 text-ember-700 sm:inline-flex dark:border-ember-500/30 dark:bg-ember-500/10 dark:text-ember-400"
+            className="hidden shrink-0 border-ink-100 bg-ink-50 text-ink-700 sm:inline-flex dark:border-ink-500/30 dark:bg-ink-500/10 dark:text-ink-300"
           >
             Logo → DESIGN.md
           </Badge>
@@ -149,7 +149,7 @@ export function Header({ projects, loadingProjects, onOpenProject, onNewProject 
           <Button
             size="sm"
             onClick={onNewProject}
-            className="bg-primary text-primary-foreground hover:bg-ember-600"
+            className="bg-primary text-primary-foreground hover:bg-ink-600"
           >
             <Plus className="size-4" />
             New project

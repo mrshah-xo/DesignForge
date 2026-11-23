@@ -104,9 +104,9 @@ function BackgroundCard({ background }: { background: BackgroundSuggestion }) {
         </div>
         <div className="flex items-start gap-2.5 p-4">
           {isGradient ? (
-            <Layers2 className="mt-0.5 size-4 shrink-0 text-ember-600 dark:text-ember-400" aria-hidden />
+            <Layers2 className="mt-0.5 size-4 shrink-0 text-ink-600 dark:text-ink-300" aria-hidden />
           ) : (
-            <Wallpaper className="mt-0.5 size-4 shrink-0 text-ember-600 dark:text-ember-400" aria-hidden />
+            <Wallpaper className="mt-0.5 size-4 shrink-0 text-ink-600 dark:text-ink-300" aria-hidden />
           )}
           <p className="text-sm leading-relaxed text-gray-700 dark:text-gray-300">{background.reason}</p>
         </div>
@@ -127,7 +127,7 @@ export function AnalysisStep({ project, analyzing, onRunAnalysis, onContinue }: 
     }
     return (
       <section className="rounded-lg border border-border bg-card p-8 text-center shadow-sm">
-        <div className="mx-auto flex size-12 items-center justify-center rounded-lg bg-ember-50 text-ember-600 dark:bg-ember-500/10 dark:text-ember-400">
+        <div className="mx-auto flex size-12 items-center justify-center rounded-lg bg-ink-50 text-ink-600 dark:bg-ink-500/10 dark:text-ink-300">
           <ScanSearch className="size-5" />
         </div>
         <h2 className="mt-4 text-lg font-semibold text-gray-900 dark:text-gray-50">Run AI analysis</h2>
@@ -137,7 +137,7 @@ export function AnalysisStep({ project, analyzing, onRunAnalysis, onContinue }: 
         </p>
         <Button
           onClick={() => void onRunAnalysis()}
-          className="mt-6 bg-primary text-primary-foreground hover:bg-ember-600"
+          className="mt-6 bg-primary text-primary-foreground hover:bg-ink-600"
         >
           <ScanSearch className="size-4" />
           Run AI analysis
@@ -213,7 +213,7 @@ export function AnalysisStep({ project, analyzing, onRunAnalysis, onContinue }: 
               <Badge
                 key={tag}
                 variant="outline"
-                className="border-ember-200 bg-ember-50 text-ember-700 dark:border-ember-500/30 dark:bg-ember-500/10 dark:text-ember-400"
+                className="border-ink-200 bg-ink-50 text-ink-700 dark:border-ink-500/30 dark:bg-ink-500/10 dark:text-ink-300"
               >
                 {tag}
               </Badge>
@@ -225,22 +225,22 @@ export function AnalysisStep({ project, analyzing, onRunAnalysis, onContinue }: 
       {/* Mood / temperature / industry / audience guess */}
       <section className="grid gap-4 sm:grid-cols-2">
         <InfoCard
-          icon={<Smile className="size-3.5 text-ember-600 dark:text-ember-400" />}
+          icon={<Smile className="size-3.5 text-ink-600 dark:text-ink-300" />}
           label="Mood"
           value={analysis.mood}
         />
         <InfoCard
-          icon={<Sun className="size-3.5 text-ember-600 dark:text-ember-400" />}
+          icon={<Sun className="size-3.5 text-ink-600 dark:text-ink-300" />}
           label="Temperature"
           value={analysis.temperature}
         />
         <InfoCard
-          icon={<ScanSearch className="size-3.5 text-ember-600 dark:text-ember-400" />}
+          icon={<ScanSearch className="size-3.5 text-ink-600 dark:text-ink-300" />}
           label="Industry guess"
           value={analysis.industry}
         />
         <InfoCard
-          icon={<ShieldCheck className="size-3.5 text-ember-600 dark:text-ember-400" />}
+          icon={<ShieldCheck className="size-3.5 text-ink-600 dark:text-ink-300" />}
           label="Audience guess"
           value={analysis.audienceGuess}
         />
@@ -258,7 +258,7 @@ export function AnalysisStep({ project, analyzing, onRunAnalysis, onContinue }: 
                 key={signal}
                 className="flex items-start gap-2.5 rounded-lg border border-border bg-card p-3 text-sm text-gray-700 shadow-sm dark:text-gray-300"
               >
-                <ShieldCheck className="mt-0.5 size-4 shrink-0 text-ember-600 dark:text-ember-400" />
+                <ShieldCheck className="mt-0.5 size-4 shrink-0 text-ink-600 dark:text-ink-300" />
                 {signal}
               </li>
             ))}
@@ -279,7 +279,7 @@ export function AnalysisStep({ project, analyzing, onRunAnalysis, onContinue }: 
       <div className="flex justify-end">
         <Button
           onClick={onContinue}
-          className="bg-primary text-primary-foreground hover:bg-ember-600"
+          className="bg-primary text-primary-foreground hover:bg-ink-600"
         >
           Continue → Who will use it
           <ArrowRight className="size-4" />

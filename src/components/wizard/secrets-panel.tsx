@@ -266,7 +266,7 @@ export function SecretsPanel() {
       <SheetContent side="right" className="flex w-full flex-col gap-0 sm:max-w-md p-0">
         <SheetHeader className="border-b border-border px-4 py-4">
           <SheetTitle className="flex items-center gap-2 text-base">
-            <KeyRound className="size-4 text-ember-500" />
+            <KeyRound className="size-4 text-ink-500" />
             API keys &amp; secrets
           </SheetTitle>
           <SheetDescription className="text-xs leading-relaxed">
@@ -279,9 +279,9 @@ export function SecretsPanel() {
 
         <div className="df-scroll min-h-0 flex-1 overflow-y-auto px-4 py-4">
           {/* ---------------- Your key (this browser, BYOK) ---------------- */}
-          <div className="mb-5 rounded-lg border border-ember-200 bg-ember-50/60 p-4 shadow-sm dark:border-ember-500/30 dark:bg-ember-500/5">
+          <div className="mb-5 rounded-lg border border-ink-200 bg-ink-50/60 p-4 shadow-sm dark:border-ink-500/30 dark:bg-ink-500/5">
             <div className="mb-1 flex flex-wrap items-center gap-2">
-              <span className="text-sm font-semibold text-ember-800 dark:text-ember-300">
+              <span className="text-sm font-semibold text-ink-800 dark:text-ink-300">
                 Your API key (this browser)
               </span>
               {browserKey ? (
@@ -312,7 +312,7 @@ export function SecretsPanel() {
               href={ZAI_KEY_URL}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 rounded-md bg-white px-2 py-1.5 text-xs font-medium text-ember-700 ring-1 ring-ember-200 transition-colors hover:bg-ember-50 dark:bg-card dark:text-ember-400 dark:ring-ember-500/30 dark:hover:bg-ember-500/10"
+              className="inline-flex items-center gap-1.5 rounded-md bg-white px-2 py-1.5 text-xs font-medium text-ink-700 ring-1 ring-ink-200 transition-colors hover:bg-ink-50 dark:bg-card dark:text-ink-300 dark:ring-ink-500/30 dark:hover:bg-ink-500/10"
             >
               <ExternalLink className="size-3.5" />
               Generate your free Z.AI API key
@@ -347,7 +347,7 @@ export function SecretsPanel() {
               </div>
               <Button
                 size="sm"
-                className="h-9 shrink-0 bg-primary text-primary-foreground hover:bg-ember-600"
+                className="h-9 shrink-0 bg-primary text-primary-foreground hover:bg-ink-600"
                 onClick={saveBrowserKey}
                 disabled={!browserKeyDraft.trim()}
               >
@@ -426,7 +426,7 @@ export function SecretsPanel() {
                     </div>
                     <Button
                       size="sm"
-                      className="h-9 shrink-0 bg-primary text-primary-foreground hover:bg-ember-600"
+                      className="h-9 shrink-0 bg-primary text-primary-foreground hover:bg-ink-600"
                       onClick={() => void save(s.name)}
                       disabled={savingKeys[s.name] || !(drafts[s.name] ?? '').trim()}
                     >
@@ -454,7 +454,7 @@ export function SecretsPanel() {
               {/* Custom keys */}
               <div className="rounded-lg border border-dashed border-border p-4">
                 <h3 className="mb-1 flex items-center gap-1.5 text-sm font-semibold">
-                  <Plus className="size-3.5 text-ember-500" />
+                  <Plus className="size-3.5 text-ink-500" />
                   Add a custom key
                 </h3>
                 <p className="mb-3 text-xs text-muted-foreground">

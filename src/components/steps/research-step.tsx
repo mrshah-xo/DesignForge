@@ -230,7 +230,7 @@ export function ResearchStep({
     }
     return (
       <section className="rounded-lg border border-border bg-card p-8 text-center shadow-sm">
-        <div className="mx-auto flex size-12 items-center justify-center rounded-lg bg-ember-50 text-ember-600 dark:bg-ember-500/10 dark:text-ember-400">
+        <div className="mx-auto flex size-12 items-center justify-center rounded-lg bg-ink-50 text-ink-600 dark:bg-ink-500/10 dark:text-ink-300">
           <BookOpenCheck className="size-5" />
         </div>
         <h2 className="mt-4 text-lg font-semibold text-gray-900 dark:text-gray-50">
@@ -244,7 +244,7 @@ export function ResearchStep({
         <div>
           <Button
             onClick={() => void onRunResearch()}
-            className="mt-6 bg-primary text-primary-foreground hover:bg-ember-600"
+            className="mt-6 bg-primary text-primary-foreground hover:bg-ink-600"
           >
             <Sparkles className="size-4" />
             Run automatic research
@@ -484,7 +484,7 @@ export function ResearchStep({
                       key={`${key}-bullet-${i}`}
                       className="flex items-start gap-2 text-sm text-gray-600 dark:text-gray-300"
                     >
-                      <span className="mt-[7px] size-1.5 shrink-0 rounded-full bg-ember-500" aria-hidden="true" />
+                      <span className="mt-[7px] size-1.5 shrink-0 rounded-full bg-ink-500" aria-hidden="true" />
                       {b}
                     </li>
                   ))}
@@ -566,7 +566,7 @@ export function ResearchStep({
                   target="_blank"
                   rel="noreferrer"
                   aria-label={`Open source: ${source.name}`}
-                  className="flex size-8 shrink-0 items-center justify-center rounded-lg text-gray-400 transition-colors hover:bg-gray-100 hover:text-ember-700 dark:hover:bg-gray-800 dark:hover:text-ember-400"
+                  className="flex size-8 shrink-0 items-center justify-center rounded-lg text-gray-400 transition-colors hover:bg-gray-100 hover:text-ink-700 dark:hover:bg-gray-800 dark:hover:text-ink-400"
                 >
                   <ExternalLink className="size-4" />
                 </a>
@@ -595,7 +595,7 @@ export function ResearchStep({
           <Button
             onClick={() => void onGenerateDesign()}
             disabled={approving || generating || savingEdits}
-            className="bg-primary text-primary-foreground hover:bg-ember-600"
+            className="bg-primary text-primary-foreground hover:bg-ink-600"
           >
             {approving ? <Loader2 className="size-4 animate-spin" /> : <Sparkles className="size-4" />}
             Generate design
@@ -604,7 +604,7 @@ export function ResearchStep({
           <Button
             onClick={() => void onApproveAndGenerate(payload)}
             disabled={approving || generating || savingEdits}
-            className="bg-primary text-primary-foreground hover:bg-ember-600"
+            className="bg-primary text-primary-foreground hover:bg-ink-600"
           >
             {approving ? <Loader2 className="size-4 animate-spin" /> : <CheckCircle2 className="size-4" />}
             Approve research & generate design

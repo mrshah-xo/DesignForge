@@ -275,7 +275,7 @@ export function DesignStep({
   const previewPill = (active: boolean) =>
     `inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition-colors disabled:opacity-60 ${
       active
-        ? 'border-ember-300 bg-ember-50 text-ember-800 dark:border-ember-500/40 dark:bg-ember-500/10 dark:text-ember-300'
+        ? 'border-ink-300 bg-ink-50 text-ink-800 dark:border-ink-500/40 dark:bg-ink-500/10 dark:text-ink-300'
         : 'border-border bg-transparent text-muted-foreground hover:bg-muted/60'
     }`
 
@@ -368,7 +368,7 @@ export function DesignStep({
                 <AlertDialogFooter>
                   <AlertDialogCancel>Cancel</AlertDialogCancel>
                   <AlertDialogAction
-                    className="bg-primary text-primary-foreground hover:bg-ember-600"
+                    className="bg-primary text-primary-foreground hover:bg-ink-600"
                     onClick={handleGenerateThemes}
                   >
                     Generate
@@ -432,7 +432,7 @@ export function DesignStep({
                   onClick={() => setActiveThemeId(t.id)}
                   aria-pressed={activeThemeId === t.id}
                 >
-                  {t.id === bestThemeId && <Sparkles className="size-3 text-ember-500" />}
+                  {t.id === bestThemeId && <Sparkles className="size-3 text-ink-500" />}
                   {t.name}
                   <span className="rounded-full bg-muted px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground">
                     {t.score}
@@ -457,7 +457,7 @@ export function DesignStep({
                     key={feature.id}
                     className={`flex items-start justify-between gap-3 rounded-lg border p-3 shadow-sm transition-colors ${
                       on
-                        ? 'border-ember-200 bg-ember-50/60 dark:border-ember-500/30 dark:bg-ember-500/5'
+                        ? 'border-ink-200 bg-ink-50/60 dark:border-ink-500/30 dark:bg-ink-500/5'
                         : 'border-border bg-card'
                     }`}
                     title={feature.description}
@@ -476,7 +476,7 @@ export function DesignStep({
                               aria-pressed={tokens?.style?.buttonPreset === preset.value}
                               className={`rounded-full border px-2.5 py-1 text-[11px] font-medium transition-colors disabled:opacity-60 ${
                                 tokens?.style?.buttonPreset === preset.value
-                                  ? 'border-ember-300 bg-ember-100 text-ember-800 dark:border-ember-500/40 dark:bg-ember-500/15 dark:text-ember-300'
+                                  ? 'border-ink-300 bg-ink-100 text-ink-800 dark:border-ink-500/40 dark:bg-ink-500/15 dark:text-ink-300'
                                   : 'border-border bg-transparent text-muted-foreground hover:bg-muted/60'
                               }`}
                             >
@@ -505,15 +505,15 @@ export function DesignStep({
           )}
 
           {activeTheme && (
-            <div className="mt-3 rounded-md border border-ember-200 bg-ember-50/60 p-3 dark:border-ember-500/30 dark:bg-ember-500/5">
+            <div className="mt-3 rounded-md border border-ink-200 bg-ink-50/60 p-3 dark:border-ink-500/30 dark:bg-ink-500/5">
               <div className="flex flex-wrap items-start justify-between gap-2">
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">
-                    <span className="text-sm font-semibold text-ember-800 dark:text-ember-300">
+                    <span className="text-sm font-semibold text-ink-800 dark:text-ink-300">
                       {activeTheme.name}
                     </span>
                     {activeTheme.id === bestThemeId && (
-                      <Badge className="border-ember-200 bg-ember-100 text-ember-800 dark:border-ember-500/40 dark:bg-ember-500/15 dark:text-ember-300">
+                      <Badge className="border-ink-200 bg-ink-100 text-ink-800 dark:border-ink-500/40 dark:bg-ink-500/15 dark:text-ink-300">
                         <Sparkles className="size-3" />
                         Best match
                       </Badge>
@@ -527,7 +527,7 @@ export function DesignStep({
                     size="sm"
                     onClick={() => applyTheme(activeTheme)}
                     disabled={applyingTheme || saving}
-                    className="bg-primary text-primary-foreground hover:bg-ember-600"
+                    className="bg-primary text-primary-foreground hover:bg-ink-600"
                   >
                     {applyingTheme ? <Loader2 className="size-3.5 animate-spin" /> : <Check className="size-3.5" />}
                     Apply to design
@@ -563,7 +563,7 @@ export function DesignStep({
                     size="sm"
                     onClick={applyPreset}
                     disabled={applyingTheme || saving}
-                    className="bg-primary text-primary-foreground hover:bg-ember-600"
+                    className="bg-primary text-primary-foreground hover:bg-ink-600"
                   >
                     {applyingTheme ? <Loader2 className="size-3.5 animate-spin" /> : <Check className="size-3.5" />}
                     Apply {activePreset === 'light' ? 'light' : 'dark'}
@@ -638,7 +638,7 @@ export function DesignStep({
                       <Badge
                         key={trait}
                         variant="outline"
-                        className="border-ember-200 bg-ember-50 text-ember-700 dark:border-ember-500/30 dark:bg-ember-500/10 dark:text-ember-400"
+                        className="border-ink-200 bg-ink-50 text-ink-700 dark:border-ink-500/30 dark:bg-ink-500/10 dark:text-ink-300"
                       >
                         {trait}
                       </Badge>
@@ -843,7 +843,7 @@ export function DesignStep({
           <Button
             onClick={() => void onSaveTokens(tokens)}
             disabled={saving || generating}
-            className="bg-primary text-primary-foreground hover:bg-ember-600"
+            className="bg-primary text-primary-foreground hover:bg-ink-600"
           >
             {saving ? <Loader2 className="size-4 animate-spin" /> : <Save className="size-4" />}
             Save changes
@@ -870,7 +870,7 @@ export function DesignStep({
               <AlertDialogFooter>
                 <AlertDialogCancel>Cancel</AlertDialogCancel>
                 <AlertDialogAction
-                  className="bg-primary text-primary-foreground hover:bg-ember-600"
+                  className="bg-primary text-primary-foreground hover:bg-ink-600"
                   onClick={() => void onRegenerate()}
                 >
                   Regenerate
@@ -926,7 +926,7 @@ export function DesignStep({
               <Button
                 onClick={() => void onSaveMarkdown(markdown)}
                 disabled={saving || generating || markdown === serverDesign.markdown}
-                className="bg-primary text-primary-foreground hover:bg-ember-600"
+                className="bg-primary text-primary-foreground hover:bg-ink-600"
               >
                 {saving ? <Loader2 className="size-4 animate-spin" /> : <Save className="size-4" />}
                 Save markdown

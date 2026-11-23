@@ -116,7 +116,7 @@ export function BriefDialog({ open, onOpenChange, onApply }: BriefDialogProps) {
       <DialogContent className="max-h-[85vh] max-w-2xl overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Wand2 className="size-5 text-ember-600 dark:text-ember-400" />
+            <Wand2 className="size-5 text-ink-600 dark:text-ink-300" />
             Want a prompt?
           </DialogTitle>
           <DialogDescription>
@@ -151,7 +151,7 @@ export function BriefDialog({ open, onOpenChange, onApply }: BriefDialogProps) {
             <Button variant="outline" className="w-full" onClick={() => void copyPrompt()}>
               {copied ? (
                 <>
-                  <Check className="size-4 text-ember-600" />
+                  <Check className="size-4 text-ink-600" />
                   Copied — paste it into your agent
                 </>
               ) : (
@@ -181,7 +181,7 @@ export function BriefDialog({ open, onOpenChange, onApply }: BriefDialogProps) {
               </span>
             </div>
             <Button
-              className="w-full bg-primary text-primary-foreground hover:bg-ember-600"
+              className="w-full bg-primary text-primary-foreground hover:bg-ink-600"
               disabled={!pasted.trim() || extracting}
               onClick={() => void handleAutofill()}
             >

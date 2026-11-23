@@ -111,7 +111,7 @@ export function UploadStep({ project, busy, onReplace }: UploadStepProps) {
               void onReplace(file, name.trim(), description.trim())
             }}
             disabled={!canSubmit}
-            className="w-full bg-primary text-primary-foreground hover:bg-ember-600 sm:w-auto"
+            className="w-full bg-primary text-primary-foreground hover:bg-ink-600 sm:w-auto"
           >
             {busy ? (
               <>

@@ -126,7 +126,7 @@ export function MatchStep({ design, onContinue }: MatchStepProps) {
                 className="rounded-lg border border-border bg-card p-4 shadow-sm"
               >
                 <div className="flex items-center gap-2">
-                  <span className="flex size-7 items-center justify-center rounded-lg bg-ember-50 text-ember-600 dark:bg-ember-500/10 dark:text-ember-400">
+                  <span className="flex size-7 items-center justify-center rounded-lg bg-ink-50 text-ink-600 dark:bg-ink-500/10 dark:text-ink-300">
                     <Lightbulb className="size-3.5" />
                   </span>
                   <span className="text-sm font-medium text-gray-900 dark:text-gray-50">{s.title}</span>
@@ -144,7 +144,7 @@ export function MatchStep({ design, onContinue }: MatchStepProps) {
       </p>
 
       <div className="flex justify-end">
-        <Button onClick={onContinue} className="bg-primary text-primary-foreground hover:bg-ember-600">
+        <Button onClick={onContinue} className="bg-primary text-primary-foreground hover:bg-ink-600">
           Continue → Design system
           <ArrowRight className="size-4" />
         </Button>

@@ -130,7 +130,7 @@ export function AudienceStep({ project, saving, prefill, onSave }: AudienceStepP
     <div className="space-y-6">
       <section className="rounded-lg border border-border bg-card p-6 shadow-sm">
         <div className="mb-1 flex items-center gap-2">
-          <span className="flex size-8 items-center justify-center rounded-lg bg-ember-50 text-ember-600 dark:bg-ember-500/10 dark:text-ember-400">
+          <span className="flex size-8 items-center justify-center rounded-lg bg-ink-50 text-ink-600 dark:bg-ink-500/10 dark:text-ink-300">
             <Users className="size-4" />
           </span>
           <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-50">Who will use it?</h2>
@@ -139,7 +139,7 @@ export function AudienceStep({ project, saving, prefill, onSave }: AudienceStepP
           Research quality depends on this — the more specific, the better.
         </p>
         {prefillApplied && (
-          <div className="mt-3 flex items-center gap-2 rounded-lg border border-ember-200 bg-ember-50 px-3 py-2 text-xs font-medium text-ember-700 dark:border-ember-500/30 dark:bg-ember-500/10 dark:text-ember-400">
+          <div className="mt-3 flex items-center gap-2 rounded-lg border border-ink-200 bg-ink-50 px-3 py-2 text-xs font-medium text-ink-700 dark:border-ink-500/30 dark:bg-ink-500/10 dark:text-ink-300">
             <Sparkles className="size-3.5 shrink-0" />
             Prefilled from your AI assistant brief — review everything, then save.
           </div>
@@ -257,7 +257,7 @@ export function AudienceStep({ project, saving, prefill, onSave }: AudienceStepP
             <Button
               onClick={submit}
               disabled={!canSave}
-              className="bg-primary text-primary-foreground hover:bg-ember-600"
+              className="bg-primary text-primary-foreground hover:bg-ink-600"
             >
               {saving ? (
                 <>
@@ -291,7 +291,7 @@ export function AudienceStep({ project, saving, prefill, onSave }: AudienceStepP
               Cancel
             </Button>
             <Button
-              className="bg-primary text-primary-foreground hover:bg-ember-600"
+              className="bg-primary text-primary-foreground hover:bg-ink-600"
               onClick={() => {
                 setConfirmOpen(false)
                 void onSave(buildAudience())

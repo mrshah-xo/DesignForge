@@ -60,15 +60,15 @@ export function Landing({ analyzing, onStart, onAudiencePrefill, audiencePrefill
 
   return (
     <div className="mx-auto w-full max-w-5xl px-4 py-10 sm:py-14">
-      {/* Hero — the single allowed flourish: ember mesh gradient */}
-      <section className="df-mesh rounded-lg border border-border bg-card px-6 py-10 text-center shadow-sm sm:px-10 sm:py-14">
+      {/* Hero — the single allowed flourish: neutral mesh wash under a glass pane */}
+      <section className="df-mesh df-glass rounded-lg border border-border/80 px-6 py-10 text-center shadow-sm sm:px-10 sm:py-14">
         <motion.div
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.25 }}
           className="mx-auto flex max-w-2xl flex-col items-center gap-4"
         >
-          <span className="inline-flex items-center gap-1.5 rounded-full border border-ember-200 bg-ember-50 px-3 py-1 text-xs font-medium text-ember-700 dark:border-ember-500/30 dark:bg-ember-500/10 dark:text-ember-400">
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-ink-100 bg-ink-50 px-3 py-1 text-xs font-medium text-ink-700 dark:border-ink-500/30 dark:bg-ink-500/10 dark:text-ink-300">
             <Sparkles className="size-3.5" />
             7 steps · AI-powered
           </span>
@@ -120,23 +120,27 @@ export function Landing({ analyzing, onStart, onAudiencePrefill, audiencePrefill
                     maxLength={280}
                   />
                 </div>
-                <Button
-                  onClick={handleSubmit}
-                  disabled={!canSubmit || submitting}
-                  className="h-10 w-full bg-primary text-primary-foreground hover:bg-ember-600"
-                >
-                  {submitting ? (
-                    <>
-                      <Loader2 className="size-4 animate-spin" />
-                      Creating project…
-                    </>
-                  ) : (
-                    <>
-                      <Sparkles className="size-4" />
-                      Start Designing
-                    </>
-                  )}
-                </Button>
+                {/* Venom pill CTA with the animated RGB glow — selected
+                    component only, never the whole page (DESIGN.md). */}
+                <div className="df-rgb-glow w-full rounded-full">
+                  <Button
+                    onClick={handleSubmit}
+                    disabled={!canSubmit || submitting}
+                    className="df-btn-venom h-10 w-full rounded-full text-sm font-bold"
+                  >
+                    {submitting ? (
+                      <>
+                        <Loader2 className="size-4 animate-spin" />
+                        Creating project…
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="size-4" />
+                        Start Designing
+                      </>
+                    )}
+                  </Button>
+                </div>
                 <Button
                   type="button"
                   variant="outline"
@@ -147,7 +151,7 @@ export function Landing({ analyzing, onStart, onAudiencePrefill, audiencePrefill
                   Want a prompt? Let an AI assistant fill this
                 </Button>
                 {audiencePrefilled && (
-                  <p className="flex items-center justify-center gap-1.5 text-xs font-medium text-ember-600 dark:text-ember-400">
+                  <p className="flex items-center justify-center gap-1.5 text-xs font-medium text-ink-600 dark:text-ink-300">
                     <CircleCheck className="size-3.5" />
                     Agent brief applied — after your logo is analyzed we jump straight to Research review (step 4).
                   </p>
@@ -164,7 +168,7 @@ export function Landing({ analyzing, onStart, onAudiencePrefill, audiencePrefill
               key={label}
               className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1.5 text-xs font-medium text-gray-600 dark:text-gray-300"
             >
-              <Icon className="size-3.5 text-ember-600 dark:text-ember-400" />
+              <Icon className="size-3.5 text-ink-600 dark:text-ink-300" />
               {label}
             </span>
           ))}
@@ -195,7 +199,7 @@ export function Landing({ analyzing, onStart, onAudiencePrefill, audiencePrefill
               whileHover={{ y: -2 }}
               className="flex flex-col items-center gap-2 rounded-lg border border-border bg-card p-4 text-center shadow-sm"
             >
-              <span className="flex size-9 items-center justify-center rounded-lg bg-ember-50 text-ember-600 dark:bg-ember-500/10 dark:text-ember-400">
+              <span className="flex size-9 items-center justify-center rounded-lg bg-ink-50 text-ink-600 dark:bg-ink-500/10 dark:text-ink-300">
                 <StepIcon icon={step.icon} className="size-4" />
               </span>
               <span className="text-[10px] font-semibold uppercase tracking-wider text-gray-400">
