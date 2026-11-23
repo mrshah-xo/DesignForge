@@ -52,13 +52,13 @@ export function Header({ projects, loadingProjects, onOpenProject, onNewProject 
         <div className="flex min-w-0 items-center gap-2.5">
           <span
             aria-hidden="true"
-            className="flex h-11 shrink-0 items-center rounded-lg bg-black px-3 shadow-sm ring-1 ring-border"
+            className="flex h-11 shrink-0 items-center rounded-lg bg-black px-3 shadow-sm"
           >
             <Image
-              src="/mr-logo.png"
+              src="/mrdesign-logo.png"
               alt=""
-              width={809}
-              height={405}
+              width={953}
+              height={221}
               priority
               className="h-7 w-auto"
             />

@@ -150,23 +150,32 @@ const POLL_INTERVAL_MS = 1500
 /**
  * Run a long AI pipeline as an async job: POST starts it and returns a job
  * id immediately (no request stays open long enough for the preview gateway
- * to cut it), then a short GET is polled until done/error.
+ * to cut it), then a short GET is polled until done/error. Each poll that
+ * carries a `job.progress` step fires `onProgress` so the UI can show what
+ * the AI is actually doing.
  */
 async function runJob<T>(
   startUrl: string,
   pollUrl: (jobId: string) => string,
   extract: (data: { job: JobInfo } & Record<string, unknown>) => T,
   startedLabel: string,
+  onProgress?: (step: string) => void,
 ): Promise<T> {
   const start = await request<{ job: JobInfo }>(startUrl, { method: 'POST' })
   const jobId = start.job?.id
   if (!jobId) throw new Error(`${startedLabel}: no job id returned`)
+
+  const emit = (step: string | null | undefined) => {
+    if (step && onProgress) onProgress(step)
+  }
+  emit(start.job?.progress)
 
   const deadline = Date.now() + JOB_TIMEOUT_MS
   while (Date.now() < deadline) {
     await sleep(POLL_INTERVAL_MS)
     const data = await request<{ job: JobInfo } & Record<string, unknown>>(pollUrl(jobId))
     const status = data.job?.status
+    emit(data.job?.progress)
     if (status === 'done') return extract(data)
     if (status === 'error') throw new Error(data.job?.error || 'Generation failed')
     // still running — keep polling
@@ -221,13 +230,14 @@ export const api = {
     return data.audience
   },
 
-  runResearch(id: string): Promise<ResearchData> {
+  runResearch(id: string, onProgress?: (step: string) => void): Promise<ResearchData> {
     const base = `/api/projects/${encodeURIComponent(id)}/research`
     return runJob<ResearchData>(
       base,
       (jobId) => `${base}?jobId=${encodeURIComponent(jobId)}`,
       (data) => data.research as ResearchData,
       'Research',
+      onProgress,
     )
   },
 
@@ -246,13 +256,14 @@ export const api = {
     return data.research
   },
 
-  generateDesign(id: string): Promise<DesignData> {
+  generateDesign(id: string, onProgress?: (step: string) => void): Promise<DesignData> {
     const base = `/api/projects/${encodeURIComponent(id)}/design`
     return runJob<DesignData>(
       base,
       (jobId) => `${base}?jobId=${encodeURIComponent(jobId)}`,
       (data) => data.design as DesignData,
       'Design generation',
+      onProgress,
     )
   },
 

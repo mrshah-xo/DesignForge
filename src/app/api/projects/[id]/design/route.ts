@@ -44,6 +44,7 @@ import {
   getJob,
   jobStartTs,
   publicJob,
+  setJobProgress,
   syntheticJob,
   JOB_TS_SKEW_MS,
   STALE_JOB_MS,
@@ -100,6 +101,7 @@ async function runDesignPipeline(id: string, jobId: string, userKey: string | nu
     }
 
     // 1. Tokens + match analysis from the LLM.
+    setJobProgress(jobId, 'Generating design tokens from your research…');
     const raw = await llmJson<Record<string, unknown>>(
       DESIGN_SYSTEM,
       buildDesignPrompt(project, audience, analysis, research),
@@ -109,6 +111,7 @@ async function runDesignPipeline(id: string, jobId: string, userKey: string | nu
     );
 
     // 2. Bulletproof normalization (also enforces the WCAG AA primary contrast).
+    setJobProgress(jobId, 'Checking color contrast and accessibility…');
     const normalized: DesignTokens = normalizeTokens(
       isPlainObject(raw.tokens) ? raw.tokens : {},
       analysis.palette[0]?.hex,
@@ -124,6 +127,7 @@ async function runDesignPipeline(id: string, jobId: string, userKey: string | nu
       : 70;
 
     // 4. DESIGN.md (raw markdown, never fails the request).
+    setJobProgress(jobId, 'Writing your DESIGN.md specification…');
     let markdown = '';
     try {
       markdown = cleanMarkdown(
@@ -135,6 +139,7 @@ async function runDesignPipeline(id: string, jobId: string, userKey: string | nu
     }
 
     // 5. Upsert DesignSpec + advance status.
+    setJobProgress(jobId, 'Finalizing and saving your design system…');
     const record = {
       tokens: JSON.stringify(normalized),
       markdown,

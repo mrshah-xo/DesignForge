@@ -36,6 +36,7 @@ import {
   getJob,
   jobStartTs,
   publicJob,
+  setJobProgress,
   syntheticJob,
   JOB_TS_SKEW_MS,
   STALE_JOB_MS,
@@ -56,6 +57,7 @@ const GENERATING_FRESH_MS = 4 * 60 * 1000;
 /** Research pipeline: 3 parallel web searches + LLM synthesis, persisted to DB. */
 async function runResearchPipeline(id: string, jobId: string, userKey: string | null): Promise<void> {
   try {
+    setJobProgress(jobId, 'Reading your audience brief…');
     const project = await db.project.findUnique({
       where: { id },
       include: { analysis: true, audience: true },
@@ -75,8 +77,10 @@ async function runResearchPipeline(id: string, jobId: string, userKey: string | 
     const settled = await Promise.allSettled(
       queries.map(async (query, index) => {
         // Small stagger avoids tripping per-second gateway rate limits
-        // (429s) that three identical parallel calls can trigger.
+        // (429s) that three identical parallel calls can trigger. It also
+        // spaces the progress updates so the UI shows each real query fire.
         if (index > 0) await new Promise((resolve) => setTimeout(resolve, index * 300));
+        setJobProgress(jobId, `Searching the web: "${query}"`);
         return webSearch(query, 5, userKey);
       }),
     );
@@ -100,13 +104,17 @@ async function runResearchPipeline(id: string, jobId: string, userKey: string | 
     // 2. LLM research synthesis — with an offline fallback when the AI
     //    service is unavailable (empty responses, rate limits, quota) so
     //    step 4 never dead-ends.
+    setJobProgress(
+      jobId,
+      `Found ${searchResults.length} sources — synthesizing your research report…`,
+    );
     let raw: Record<string, unknown>;
     try {
       raw = await llmJson<Record<string, unknown>>(
         RESEARCH_SYSTEM,
         buildResearchPrompt(project, audience, analysis, searchResults),
         4,
-        16000,
+        8000,
         userKey,
       );
     } catch (llmErr) {
@@ -118,6 +126,8 @@ async function runResearchPipeline(id: string, jobId: string, userKey: string | 
     const rawSections = (raw.sections && typeof raw.sections === 'object' ? raw.sections : raw) as unknown;
     const sections = normalizeResearchSections(rawSections);
     const sources = normalizeSources(raw.sources);
+
+    setJobProgress(jobId, 'Saving your research report…');
 
     // 4. Upsert ResearchReport (new research always needs review again).
     const record = {

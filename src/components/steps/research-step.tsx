@@ -18,7 +18,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
-import { DesignGenerating } from '@/components/wizard/design-generating'
+import { DesignGenerating, type LiveProgress } from '@/components/wizard/design-generating'
 import { DESIGN_MESSAGES, RESEARCH_MESSAGES } from '@/components/wizard/progress-messages'
 import { ResearchPromptDialog } from '@/components/wizard/research-prompt-dialog'
 import { StatusBadge } from '@/components/wizard/status-badge'
@@ -39,6 +39,9 @@ interface ResearchStepProps {
   generating: boolean
   savingEdits: boolean
   approving: boolean
+  /** Live pipeline steps (what the AI is actually searching/writing). */
+  researchLive: LiveProgress | null
+  designLive: LiveProgress | null
   onRunResearch: () => Promise<void>
   onSaveEdits: (payload: { sections: ResearchSections; sources: ResearchSource[] }) => Promise<void>
   onApproveAndGenerate: (payload: {
@@ -159,6 +162,8 @@ export function ResearchStep({
   generating,
   savingEdits,
   approving,
+  researchLive,
+  designLive,
   onRunResearch,
   onSaveEdits,
   onApproveAndGenerate,
@@ -215,7 +220,11 @@ export function ResearchStep({
     if (researching) {
       return (
         <div className="rounded-lg border border-border bg-card shadow-sm">
-          <DesignGenerating messages={RESEARCH_MESSAGES} />
+          <DesignGenerating
+            messages={RESEARCH_MESSAGES}
+            live={researchLive}
+            subtext="Real web search runs under the hood — every step is shown live."
+          />
         </div>
       )
     }
@@ -264,7 +273,11 @@ export function ResearchStep({
   if (generating) {
     return (
       <div className="rounded-lg border border-border bg-card shadow-sm">
-        <DesignGenerating messages={DESIGN_MESSAGES} />
+        <DesignGenerating
+          messages={DESIGN_MESSAGES}
+          live={designLive}
+          subtext="Tokens, accessibility checks and your DESIGN.md are generated in sequence."
+        />
       </div>
     )
   }

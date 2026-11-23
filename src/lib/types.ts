@@ -322,4 +322,6 @@ export interface JobInfo {
   projectId: string;
   status: JobStatus;
   error: string | null;
+  /** Live pipeline step (what the AI is actually doing right now), if tracked. */
+  progress?: string | null;
 }

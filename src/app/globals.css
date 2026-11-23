@@ -341,3 +341,42 @@
 .df-md strong {
   font-weight: 600;
 }
+
+/* ============================================================
+ * ChatGPT-style shimmer sweep for live AI progress text.
+ * The gradient sweeps across clipped text; base color follows
+ * muted-foreground, the moving highlight follows the foreground,
+ * so it works in both light and dark themes.
+ * ============================================================ */
+@keyframes df-shimmer {
+  0% {
+    background-position: 200% center;
+  }
+  100% {
+    background-position: -200% center;
+  }
+}
+
+.df-shimmer {
+  background-image: linear-gradient(
+    100deg,
+    var(--muted-foreground) 42%,
+    var(--foreground) 50%,
+    var(--muted-foreground) 58%
+  );
+  background-size: 200% 100%;
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+  animation: df-shimmer 2s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .df-shimmer {
+    animation: none;
+    background: none;
+    -webkit-text-fill-color: currentColor;
+    color: var(--foreground);
+  }
+}

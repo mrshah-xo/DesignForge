@@ -21,6 +21,8 @@ export interface JobRecord {
   projectId: string;
   status: JobStatus;
   error: string | null;
+  /** Latest human-readable pipeline step (what the AI is doing right now). */
+  progress: string | null;
   createdAt: number;
   updatedAt: number;
 }
@@ -81,6 +83,7 @@ export function createJob(kind: JobKind, projectId: string): JobRecord {
     projectId,
     status: 'running',
     error: null,
+    progress: null,
     createdAt: now,
     updatedAt: now,
   };
@@ -102,6 +105,14 @@ export function findRunningJob(projectId: string, kind: JobKind): JobRecord | nu
   return null;
 }
 
+/** Record the current pipeline step so polls surface real progress. */
+export function setJobProgress(id: string, message: string): void {
+  const job = jobs.get(id);
+  if (!job) return;
+  job.progress = message;
+  job.updatedAt = Date.now();
+}
+
 /** Transition a job to a terminal state (done / error). */
 export function finishJob(id: string, status: 'done' | 'error', error?: string): JobRecord | null {
   const job = jobs.get(id);
@@ -119,6 +130,7 @@ export function publicJob(job: JobRecord): {
   projectId: string;
   status: JobStatus;
   error: string | null;
+  progress: string | null;
 } {
   return {
     id: job.id,
@@ -126,6 +138,7 @@ export function publicJob(job: JobRecord): {
     projectId: job.projectId,
     status: job.status,
     error: job.error,
+    progress: job.progress,
   };
 }
 
@@ -139,12 +152,14 @@ export function syntheticJob(
   projectId: string,
   status: JobStatus,
   error: string | null = null,
+  progress: string | null = null,
 ): {
   id: string;
   kind: JobKind;
   projectId: string;
   status: JobStatus;
   error: string | null;
+  progress: string | null;
 } {
-  return { id, kind, projectId, status, error };
+  return { id, kind, projectId, status, error, progress };
 }

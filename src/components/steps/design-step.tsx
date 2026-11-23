@@ -43,7 +43,7 @@ import {
 } from '@/components/ui/alert-dialog'
 import { LivePreview, FALLBACK_HEX, isHex } from '@/components/preview/live-preview'
 import { themeSwatches, themeTokens } from '@/lib/preview-themes'
-import { DesignGenerating } from '@/components/wizard/design-generating'
+import { DesignGenerating, type LiveProgress } from '@/components/wizard/design-generating'
 import { DESIGN_MESSAGES } from '@/components/wizard/progress-messages'
 import { copyToClipboard, downloadText } from '@/lib/client/api'
 import {
@@ -59,6 +59,8 @@ interface DesignStepProps {
   project: ProjectDetail
   saving: boolean
   generating: boolean
+  /** Live pipeline steps while the design generates. */
+  designLive: LiveProgress | null
   onSaveTokens: (tokens: DesignTokens) => Promise<void>
   onSaveMarkdown: (markdown: string) => Promise<void>
   onRegenerate: () => Promise<void>
@@ -105,6 +107,7 @@ export function DesignStep({
   project,
   saving,
   generating,
+  designLive,
   onSaveTokens,
   onSaveMarkdown,
   onRegenerate,
@@ -132,7 +135,11 @@ export function DesignStep({
   if (generating) {
     return (
       <div className="rounded-lg border border-border bg-card shadow-sm">
-        <DesignGenerating messages={DESIGN_MESSAGES} />
+        <DesignGenerating
+          messages={DESIGN_MESSAGES}
+          live={designLive}
+          subtext="Tokens, accessibility checks and your DESIGN.md are generated in sequence."
+        />
       </div>
     )
   }

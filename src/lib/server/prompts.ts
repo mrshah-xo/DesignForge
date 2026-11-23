@@ -130,6 +130,7 @@ Return JSON with EXACTLY these keys:
 Rules:
 - Every bullet must be specific and actionable (mention concrete colors, patterns, or numbers), not generic platitudes.
 - Competitor brands must be real and famous in this exact field.
+- Keep each section body to 2-3 sentences and the WHOLE JSON under ~700 words — dense beats long.
 - If the search results are sparse, rely on your own knowledge, but keep every key present with the required structure.`;
 }
 

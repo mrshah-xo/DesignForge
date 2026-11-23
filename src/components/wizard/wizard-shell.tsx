@@ -23,6 +23,7 @@ import { Stepper, type StepStatus } from '@/components/wizard/stepper'
 import { Landing } from '@/components/wizard/landing'
 import { LogoThumb } from '@/components/wizard/logo-thumb'
 import { StatusBadge } from '@/components/wizard/status-badge'
+import type { LiveProgress } from '@/components/wizard/design-generating'
 import { UploadStep } from '@/components/steps/upload-step'
 import { AnalysisStep } from '@/components/steps/analysis-step'
 import { AudienceStep } from '@/components/steps/audience-step'
@@ -33,6 +34,23 @@ import { ExportStep } from '@/components/steps/export-step'
 
 function errMsg(err: unknown): string {
   return err instanceof Error ? err.message : 'Something went wrong'
+}
+
+/**
+ * Build a progress sink for a pipeline: appends each new step to the
+ * client-side trail (deduped) and marks it as the current step.
+ */
+function trackProgress(
+  setter: React.Dispatch<React.SetStateAction<LiveProgress | null>>
+): (step: string) => void {
+  return (step) => {
+    setter((prev) => {
+      const trail = prev?.trail ?? []
+      const last = trail[trail.length - 1]
+      if (last === step) return prev
+      return { step, trail: [...trail, step].slice(-10) }
+    })
+  }
 }
 
 /** Derive a canonical status for a fully loaded project. */
@@ -102,6 +120,9 @@ export function WizardShell() {
   const [savingEdits, setSavingEdits] = useState(false)
   const [generating, setGenerating] = useState(false)
   const [savingDesign, setSavingDesign] = useState(false)
+  // Live pipeline progress (what the AI is actually doing), tracked per job.
+  const [researchLive, setResearchLive] = useState<LiveProgress | null>(null)
+  const [designLive, setDesignLive] = useState<LiveProgress | null>(null)
   // Nonces force step remounts when server data is replaced wholesale
   // (regenerated research / design), so editors re-initialize cleanly.
   const [researchNonce, setResearchNonce] = useState(0)
@@ -253,8 +274,9 @@ export function WizardShell() {
     if (!project) return
     const id = project.id
     setResearching(true)
+    setResearchLive(null)
     try {
-      const research = await api.runResearch(id)
+      const research = await api.runResearch(id, trackProgress(setResearchLive))
       setProject((p) => (p && p.id === id ? { ...p, research } : p))
       setResearchNonce((n) => n + 1)
       await refresh(id)
@@ -263,6 +285,7 @@ export function WizardShell() {
       toast.error('Research failed', { description: errMsg(err) })
     } finally {
       setResearching(false)
+      setResearchLive(null)
     }
   }, [project, refresh])
 
@@ -291,8 +314,9 @@ export function WizardShell() {
       if (!project) return
       const id = project.id
       setGenerating(true)
+      setDesignLive(null)
       try {
-        const design = await api.generateDesign(id)
+        const design = await api.generateDesign(id, trackProgress(setDesignLive))
         setProject((p) => (p && p.id === id ? { ...p, design } : p))
         setDesignNonce((n) => n + 1)
         await refresh(id)
@@ -302,6 +326,7 @@ export function WizardShell() {
         toast.error('Could not generate design', { description: errMsg(err) })
       } finally {
         setGenerating(false)
+        setDesignLive(null)
       }
     },
     [project, refresh]
@@ -312,10 +337,11 @@ export function WizardShell() {
       if (!project) return
       const id = project.id
       setGenerating(true)
+      setDesignLive(null)
       try {
         const research = await api.saveResearch(id, { ...payload, approve: true })
         setProject((p) => (p && p.id === id ? { ...p, research } : p))
-        const design = await api.generateDesign(id)
+        const design = await api.generateDesign(id, trackProgress(setDesignLive))
         setProject((p) => (p && p.id === id ? { ...p, design } : p))
         setDesignNonce((n) => n + 1)
         await refresh(id)
@@ -325,6 +351,7 @@ export function WizardShell() {
         toast.error('Could not generate design', { description: errMsg(err) })
       } finally {
         setGenerating(false)
+        setDesignLive(null)
       }
     },
     [project, refresh]
@@ -478,6 +505,8 @@ export function WizardShell() {
             generating={generating}
             savingEdits={savingEdits}
             approving={generating}
+            researchLive={researchLive}
+            designLive={designLive}
             onRunResearch={runResearch}
             onSaveEdits={saveResearchEdits}
             onApproveAndGenerate={approveAndGenerate}
@@ -500,6 +529,7 @@ export function WizardShell() {
             project={project}
             saving={savingDesign}
             generating={generating}
+            designLive={designLive}
             onSaveTokens={saveDesignTokens}
             onSaveMarkdown={saveDesignMarkdown}
             onRegenerate={() => generateDesign(false)}
