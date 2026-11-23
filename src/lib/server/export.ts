@@ -35,6 +35,7 @@ import type {
 import type { PaletteStep } from '@/lib/types';
 import { normalizeTokens } from '@/lib/server/ai';
 import { parseBackgroundSuggestion } from '@/lib/server/background-suggestion';
+import { getCursorPack } from '@/lib/cursor-packs';
 import {
   contrastRatio,
   lightenHex,
@@ -603,6 +604,19 @@ export function buildFallbackMarkdown(
   const contrast = contrastRatio(colors.primary.hex, colors.primaryForeground.hex).toFixed(2);
   const c = (label: string, hex: string) => `${label} \`${hex}\``;
 
+  // Cursor pack flag (Cursor styles feature) — describes the cursor system in DESIGN.md.
+  const cursorPack = getCursorPack(tokens.style?.cursorPack);
+  const cursorLines = cursorPack
+    ? [
+      `- Pack: **${cursorPack.label}** — a full custom cursor set replaces the system cursor across every surface.`,
+      '- Mouse state: base cursor on plain surfaces; Link state: pointer cursor on links, buttons and other click targets; Text state: beam cursor inside inputs, textareas and editable regions.',
+      '- Implementation: embed the pack as SVG data-URI cursors (`cursor: url(...) x y, fallback`), scoped with `!important` so native cursors never leak through; keep the native keyword fallback for accessibility.',
+    ].join('\n')
+    : [
+      '- System cursors everywhere: `cursor: pointer` on links and buttons, `cursor: text` inside fields, `cursor: not-allowed` on disabled controls.',
+      '- Do not hide or replace the system cursor unless a dedicated custom-cursor pack (Windows / macOS / dot / crosshair) is enabled for the whole surface.',
+    ];
+
   const groupedColors = (roles: Array<keyof DesignTokens['colors']>) =>
     roles
       .map((role) => {
@@ -788,6 +802,10 @@ Photos sit inside ${radius.lg} corners, edge-to-edge; product imagery is 1:1 or 
 ### Navigation
 
 **\`navbar\`** — height 64px, background ${colors.background.hex}, bottom border ${colors.border.hex}; logo left, links ${colors.foreground.hex}, CTA right (primary button).
+
+### Cursor
+
+${cursorLines.join('\n')}
 
 ### Inputs & Forms
 

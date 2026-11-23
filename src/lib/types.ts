@@ -146,6 +146,9 @@ export interface PaletteStep {
   name: string;
 }
 
+/** Available custom cursor packs for the "Cursor styles" feature. '' = system cursors (off). */
+export type CursorPackValue = 'windows' | 'macos' | 'dot' | 'crosshair' | '';
+
 /**
  * Visual style effects layered on top of the base tokens by a prebuilt
  * style (Apple HIG, Liquid Glass, Google glow, …). Optional flags —
@@ -162,6 +165,8 @@ export interface DesignStyleFlags {
   softAmbient?: boolean;
   /** Vision Pictures pill-button pack applied to primary CTAs ('plastic' or 'venom'), empty/undefined = off. */
   buttonPreset?: 'plastic' | 'venom' | '';
+  /** Custom cursor pack applied across the whole surface ('windows' | 'macos' | 'dot' | 'crosshair'), empty/undefined = system cursors. */
+  cursorPack?: CursorPackValue;
 }
 
 export interface DesignTokens {

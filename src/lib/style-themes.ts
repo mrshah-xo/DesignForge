@@ -23,14 +23,17 @@ import type { DesignStyleFlags } from '@/lib/types'
  *   / venom pill), adapted as CSS and recolored to the brand primary.
  */
 
+/** Preset values used by features that carry a picker (pill buttons, cursor packs). */
+export type StylePresetValue = 'plastic' | 'venom' | 'windows' | 'macos' | 'dot' | 'crosshair'
+
 export interface StyleFeature {
-  id: 'glass' | 'glow' | 'gradientHero' | 'softAmbient' | 'buttonPreset'
+  id: 'glass' | 'glow' | 'gradientHero' | 'softAmbient' | 'buttonPreset' | 'cursorPack'
   name: string
   tagline: string
   description: string
   /** Whether toggling this feature needs an extra preset picker. */
   hasPreset?: boolean
-  presets?: Array<{ value: 'plastic' | 'venom'; label: string }>
+  presets?: Array<{ value: StylePresetValue; label: string }>
 }
 
 export const STYLE_FEATURES: StyleFeature[] = [
@@ -74,12 +77,41 @@ export const STYLE_FEATURES: StyleFeature[] = [
       { value: 'venom', label: 'Venom' },
     ],
   },
+  {
+    id: 'cursorPack',
+    name: 'Cursor styles',
+    tagline: 'Replace the system cursor everywhere — Windows, macOS, modern dot or crosshair',
+    description:
+      'Swaps the browser default arrow, hand and text beam for a full custom pack across your whole surface: "Windows" and "macOS" recreate the OS cursor language (mouse, link and text states), "Modern dot" is the minimal dot-to-ring trend, "Crosshair" targets creative tools. The preview adds a Mouse / Link / Text demo strip so you can feel every state.',
+    hasPreset: true,
+    presets: [
+      { value: 'windows', label: 'Windows' },
+      { value: 'macos', label: 'macOS' },
+      { value: 'dot', label: 'Modern dot' },
+      { value: 'crosshair', label: 'Crosshair' },
+    ],
+  },
 ]
 
 export function isFeatureOn(style: DesignStyleFlags | undefined, id: StyleFeature['id']): boolean {
   if (!style) return false
   if (id === 'buttonPreset') return Boolean(style.buttonPreset)
+  if (id === 'cursorPack') return Boolean(style.cursorPack)
   return style[id] === true
+}
+
+/**
+ * Current preset value for features that carry a picker (buttonPreset,
+ * cursorPack). Boolean features have no preset and return undefined.
+ */
+export function activeFeaturePreset(
+  style: DesignStyleFlags | undefined,
+  id: StyleFeature['id'],
+): string | undefined {
+  if (!style) return undefined
+  if (id === 'buttonPreset') return style.buttonPreset || undefined
+  if (id === 'cursorPack') return style.cursorPack || undefined
+  return undefined
 }
 
 /** Build the next style flags after toggling a feature on/off. */
@@ -87,11 +119,15 @@ export function toggleStyleFeature(
   style: DesignStyleFlags | undefined,
   id: StyleFeature['id'],
   on: boolean,
-  preset: 'plastic' | 'venom' = 'plastic',
+  preset: StylePresetValue = 'plastic',
 ): DesignStyleFlags {
   const next: DesignStyleFlags = { ...(style ?? {}) }
   if (id === 'buttonPreset') {
-    next.buttonPreset = on ? preset : ''
+    next.buttonPreset = on ? (preset === 'venom' ? 'venom' : 'plastic') : ''
+  } else if (id === 'cursorPack') {
+    // Guard against a preset belonging to another feature (e.g. 'plastic').
+    const valid = preset === 'windows' || preset === 'macos' || preset === 'dot' || preset === 'crosshair'
+    next.cursorPack = on ? (valid ? preset : 'windows') : ''
   } else {
     next[id] = on
   }

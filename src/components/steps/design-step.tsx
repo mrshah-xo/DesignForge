@@ -43,7 +43,7 @@ import {
 } from '@/components/ui/alert-dialog'
 import { LivePreview, FALLBACK_HEX, isHex } from '@/components/preview/live-preview'
 import { themeSwatches, themeTokens } from '@/lib/preview-themes'
-import { STYLE_FEATURES, isFeatureOn, toggleStyleFeature, type StyleFeature } from '@/lib/style-themes'
+import { STYLE_FEATURES, isFeatureOn, toggleStyleFeature, activeFeaturePreset, type StyleFeature, type StylePresetValue } from '@/lib/style-themes'
 import { Switch } from '@/components/ui/switch'
 import { DesignGenerating, type LiveProgress } from '@/components/wizard/design-generating'
 import { InlineProgress } from '@/components/wizard/inline-progress'
@@ -230,7 +230,7 @@ export function DesignStep({
   }
 
   /** Toggle a style feature (Liquid Glass, RGB glow, …): persists the flags. */
-  const toggleFeature = (feature: StyleFeature, on: boolean, preset: 'plastic' | 'venom' = 'plastic') => {
+  const toggleFeature = (feature: StyleFeature, on: boolean, preset: StylePresetValue = 'plastic') => {
     if (!tokens) return
     const label = feature.name
     const next: DesignTokens = {
@@ -253,18 +253,19 @@ export function DesignStep({
       .finally(() => setSavingFeature(null))
   }
 
-  /** Switch the pill-button preset while the feature stays on. */
-  const changePillPreset = (preset: 'plastic' | 'venom') => {
+  /** Switch the preset of a value-based feature (pill buttons, cursor pack) while it stays on. */
+  const changeFeaturePreset = (feature: StyleFeature, preset: StylePresetValue) => {
     if (!tokens) return
     const next: DesignTokens = {
       ...tokens,
-      style: toggleStyleFeature(tokens.style, 'buttonPreset', true, preset),
+      style: toggleStyleFeature(tokens.style, feature.id, true, preset),
     }
-    setSavingFeature('buttonPreset')
+    const presetLabel = feature.presets?.find((p) => p.value === preset)?.label ?? preset
+    setSavingFeature(feature.id)
     Promise.resolve(onSaveTokens(next))
       .then(() => {
         setTokens(next)
-        toast.success(`${preset === 'plastic' ? 'Plastic' : 'Venom'} pill preset selected`)
+        toast.success(`${feature.name}: ${presetLabel}`)
       })
       .catch(() => {
         /* error already surfaced by the shell toast */
@@ -472,10 +473,10 @@ export function DesignStep({
                               key={preset.value}
                               type="button"
                               disabled={busy || saving}
-                              onClick={() => changePillPreset(preset.value)}
-                              aria-pressed={tokens?.style?.buttonPreset === preset.value}
+                              onClick={() => changeFeaturePreset(feature, preset.value)}
+                              aria-pressed={activeFeaturePreset(tokens?.style, feature.id) === preset.value}
                               className={`rounded-full border px-2.5 py-1 text-[11px] font-medium transition-colors disabled:opacity-60 ${
-                                tokens?.style?.buttonPreset === preset.value
+                                activeFeaturePreset(tokens?.style, feature.id) === preset.value
                                   ? 'border-ink-300 bg-ink-100 text-ink-800 dark:border-ink-500/40 dark:bg-ink-500/15 dark:text-ink-300'
                                   : 'border-border bg-transparent text-muted-foreground hover:bg-muted/60'
                               }`}
@@ -489,7 +490,7 @@ export function DesignStep({
                     <Switch
                       checked={on}
                       disabled={busy || saving}
-                      onCheckedChange={(value) => void toggleFeature(feature, value)}
+                      onCheckedChange={(value) => void toggleFeature(feature, value, feature.presets?.[0]?.value ?? 'plastic')}
                       aria-label={`${feature.name} feature`}
                     />
                   </div>

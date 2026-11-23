@@ -1103,6 +1103,13 @@ export const normalizeTokens = (raw: unknown, fallbackPrimary?: string, fallback
         rawStyle.buttonPreset === 'plastic' || rawStyle.buttonPreset === 'venom'
           ? rawStyle.buttonPreset
           : '',
+      cursorPack:
+        rawStyle.cursorPack === 'windows' ||
+        rawStyle.cursorPack === 'macos' ||
+        rawStyle.cursorPack === 'dot' ||
+        rawStyle.cursorPack === 'crosshair'
+          ? rawStyle.cursorPack
+          : '',
     },
   };
 

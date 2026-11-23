@@ -13,6 +13,7 @@ import {
 } from 'lucide-react'
 import type { ColorRole, DesignTokens, PreviewFeatureIcon } from '@/lib/types'
 import { DEFAULT_PREVIEW_COPY } from '@/lib/types'
+import { getCursorPack, type CursorPack } from '@/lib/cursor-packs'
 
 // ---------- Color helpers (exported for the visual editor) ----------
 
@@ -197,6 +198,21 @@ function bumpRadius(value: string, extra: number): string {
 }
 
 /**
+ * Scoped cursor CSS for the "Cursor styles" feature. Renders the pack's
+ * three states — base arrow on everything, link pointer on interactive
+ * targets, text beam on fields (and `.df-cursor-text` demo zones). All
+ * rules carry `!important` so Tailwind's `cursor-pointer` buttons and the
+ * UA stylesheet can't leak the system cursor back in.
+ */
+function cursorScopeCss(pack: CursorPack): string {
+  return [
+    `.df-cursor-active, .df-cursor-active * { cursor: ${pack.base} !important; }`,
+    `.df-cursor-active button, .df-cursor-active a, .df-cursor-active [role='button'], .df-cursor-active .df-cursor-link { cursor: ${pack.link} !important; }`,
+    `.df-cursor-active input:not([type='checkbox']):not([type='radio']), .df-cursor-active textarea, .df-cursor-active [contenteditable='true'], .df-cursor-active .df-cursor-text { cursor: ${pack.text} !important; }`,
+  ].join('\n')
+}
+
+/**
  * A self-contained brand gallery rendered purely from design tokens.
  * Every color, font, radius and shadow derives from the token object.
  */
@@ -236,6 +252,7 @@ export function LivePreview({ tokens }: LivePreviewProps) {
     styleFlags.buttonPreset === 'plastic' || styleFlags.buttonPreset === 'venom'
       ? styleFlags.buttonPreset
       : null
+  const cursorPack = getCursorPack(styleFlags.cursorPack)
   const accent = color('accent')
 
   // Soft ambient (Apple HIG-style) depth — layered over the token shadows.
@@ -377,13 +394,15 @@ export function LivePreview({ tokens }: LivePreviewProps) {
 
   return (
     <div
-      className="df-preview max-h-[720px] overflow-y-auto rounded-lg border df-scroll"
+      className={`df-preview max-h-[720px] overflow-y-auto rounded-lg border df-scroll${cursorPack ? ' df-cursor-active' : ''}`}
       style={{ borderColor: border }}
       role="region"
       aria-label="Live component preview built from design tokens"
     >
       {/* Scoped effect CSS for the style feature toggles */}
       <style>{PREVIEW_EFFECT_CSS}</style>
+      {/* Scoped cursor CSS — only when a cursor pack is switched on */}
+      {cursorPack && <style>{cursorScopeCss(cursorPack)}</style>}
       {/* Token-styled canvas — everything below derives from tokens */}
       <div
         style={{
@@ -925,6 +944,103 @@ export function LivePreview({ tokens }: LivePreviewProps) {
             ))}
           </div>
         </Section>
+
+        {/* (k2) Cursor demo strip — lets you feel every state of the active cursor pack */}
+        {cursorPack && (
+          <Section pad="24px" label="Cursor">
+            <div
+              style={{
+                display: 'grid',
+                gap: 12,
+                gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))',
+              }}
+            >
+              {/* Mouse state — base arrow on plain surfaces */}
+              <div
+                style={{
+                  border: `1px solid ${border}`,
+                  borderRadius: radius.md,
+                  padding: 16,
+                  background: muted,
+                }}
+              >
+                <span
+                  style={{
+                    fontSize: 10,
+                    fontWeight: 700,
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.08em',
+                    color: mutedForeground,
+                  }}
+                >
+                  Mouse
+                </span>
+                <p style={{ margin: '6px 0 0', fontSize: scale.caption, color: foreground }}>
+                  Hover this panel — the base cursor takes over the whole surface.
+                </p>
+              </div>
+              {/* Link state — pointer on click targets */}
+              <div
+                style={{
+                  border: `1px solid ${border}`,
+                  borderRadius: radius.md,
+                  padding: 16,
+                  background: muted,
+                }}
+              >
+                <span
+                  style={{
+                    fontSize: 10,
+                    fontWeight: 700,
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.08em',
+                    color: mutedForeground,
+                  }}
+                >
+                  Link
+                </span>
+                <p style={{ margin: '6px 0 0', fontSize: scale.caption, color: foreground }}>
+                  <span
+                    className="df-cursor-link"
+                    style={{ textDecoration: 'underline', textUnderlineOffset: 3, color: primary }}
+                  >
+                    Hover this link to feel the pointer
+                  </span>
+                </p>
+              </div>
+              {/* Text state — beam inside text fields */}
+              <div
+                style={{
+                  border: `1px solid ${border}`,
+                  borderRadius: radius.md,
+                  padding: 16,
+                  background: muted,
+                }}
+              >
+                <span
+                  style={{
+                    fontSize: 10,
+                    fontWeight: 700,
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.08em',
+                    color: mutedForeground,
+                  }}
+                >
+                  Text
+                </span>
+                <p
+                  className="df-cursor-text"
+                  style={{ margin: '6px 0 0', fontSize: scale.caption, color: foreground }}
+                >
+                  Hover this paragraph — the text beam appears. Try selecting me.
+                </p>
+              </div>
+            </div>
+            <p style={{ margin: '10px 0 0', fontSize: scale.caption, color: mutedForeground }}>
+              {cursorPack.label} cursor pack — mouse, link and text states replace the system cursor across your whole site.
+            </p>
+          </Section>
+        )}
 
         {/* (l) Mini footer */}
         <footer
