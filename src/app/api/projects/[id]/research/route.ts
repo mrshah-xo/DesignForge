@@ -31,10 +31,14 @@ import {
 } from '@/lib/server/export';
 import {
   createJob,
-  finishJob,
+  findFreshDbRunningJob,
   findRunningJob,
+  finishJob,
+  getDbJob,
   getJob,
   jobStartTs,
+  JOB_HEARTBEAT_STALE_MS,
+  persistNewJob,
   publicJob,
   setJobProgress,
   syntheticJob,
@@ -51,11 +55,18 @@ export const maxDuration = 90;
 const MAX_SEARCH_RESULTS = 15;
 /** A DB 'generating' marker newer than this is still considered in-flight. */
 const GENERATING_FRESH_MS = 4 * 60 * 1000;
+/**
+ * Wall-clock budget for the research pipeline. maxDuration is 90s on Vercel;
+ * leaving ~20s of headroom means the offline research fallback still gets
+ * saved (step 4 completes) even when the provider is crawling.
+ */
+const PIPELINE_BUDGET_MS = 70 * 1000;
 
 // ---------- Background pipeline ----------
 
 /** Research pipeline: 3 parallel web searches + LLM synthesis, persisted to DB. */
 async function runResearchPipeline(id: string, jobId: string, userKey: string | null): Promise<void> {
+  const t0 = Date.now();
   try {
     setJobProgress(jobId, 'Reading your audience brief…');
     const project = await db.project.findUnique({
@@ -102,24 +113,38 @@ async function runResearchPipeline(id: string, jobId: string, userKey: string | 
     }
 
     // 2. LLM research synthesis — with an offline fallback when the AI
-    //    service is unavailable (empty responses, rate limits, quota) so
-    //    step 4 never dead-ends.
+    //    service is unavailable (empty responses, rate limits, quota) or the
+    //    time budget is spent, so step 4 never dead-ends.
     setJobProgress(
       jobId,
       `Found ${searchResults.length} sources — synthesizing your research report…`,
     );
     let raw: Record<string, unknown>;
-    try {
-      raw = await llmJson<Record<string, unknown>>(
-        RESEARCH_SYSTEM,
-        buildResearchPrompt(project, audience, analysis, searchResults),
-        4,
-        8000,
-        userKey,
-      );
-    } catch (llmErr) {
-      console.error(`Research LLM synthesis failed for ${id}; using offline research fallback:`, llmErr);
+    const budgetLeft = PIPELINE_BUDGET_MS - (Date.now() - t0);
+    if (budgetLeft < 20_000) {
+      console.warn(`Research pipeline out of time budget for ${id}; using offline research fallback`);
       raw = buildFallbackResearch(audience, analysis, searchResults) as Record<string, unknown>;
+    } else {
+      try {
+        raw = await llmJson<Record<string, unknown>>(
+          RESEARCH_SYSTEM,
+          buildResearchPrompt(project, audience, analysis, searchResults),
+          3,
+          8000,
+          userKey,
+          (attempt, attempts) => {
+            setJobProgress(
+              jobId,
+              attempt === 1
+                ? `Synthesizing research from ${searchResults.length} sources…`
+                : `Synthesizing research (retry ${attempt}/${attempts})…`,
+            );
+          },
+        );
+      } catch (llmErr) {
+        console.error(`Research LLM synthesis failed for ${id}; using offline research fallback:`, llmErr);
+        raw = buildFallbackResearch(audience, analysis, searchResults) as Record<string, unknown>;
+      }
     }
 
     // 3. Fill missing sections/sources with safe fallbacks.
@@ -188,19 +213,24 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     if (running) {
       return NextResponse.json({ ok: true, data: { job: publicJob(running) } });
     }
-    // Cross-instance dedupe: a fresh DB 'generating' marker means another
-    // serverless instance is already running the pipeline.
-    if (
-      project.research?.status === 'generating' &&
-      Date.now() - project.research.updatedAt.getTime() < GENERATING_FRESH_MS
-    ) {
+    // Cross-instance / post-restart dedupe: a fresh durable job row means
+    // another instance is already running the pipeline. Return the ORIGINAL
+    // job id so the client's polls pick up the live progress mirror. The old
+    // ResearchReport 'generating' marker is deliberately NOT used for dedupe
+    // here — after a restart it would block re-runs for up to 4 minutes even
+    // though no runner is alive; the mirror's heartbeat cannot lie.
+    const dbRunning = await findFreshDbRunningJob(id, 'research');
+    if (dbRunning) {
       return NextResponse.json({
         ok: true,
-        data: { job: syntheticJob(newResumeJobId(), 'research', id, 'running') },
+        data: { job: syntheticJob(dbRunning.id, 'research', id, 'running', null, dbRunning.progress) },
       });
     }
 
     const job = createJob('research', id);
+    // Durable mirror: other instances (and polls after a restart) read the
+    // real status/progress from this row instead of guessing.
+    await persistNewJob(job);
     // Persist a 'generating' marker (preserving any existing report content)
     // so polls on other instances know a run is in flight.
     if (project.research) {
@@ -275,8 +305,9 @@ async function donePayload(
 }
 
 /**
- * Reconstruct job state from the ResearchReport row when the in-memory job
- * is unavailable (poll landed on a different serverless instance).
+ * Reconstruct job state from the durable mirror (and the ResearchReport row)
+ * when the in-memory job is unavailable (poll landed on a different
+ * serverless instance, or the server restarted mid-run).
  */
 async function fallbackJobPayload(
   id: string,
@@ -286,6 +317,38 @@ async function fallbackJobPayload(
   const project = await db.project.findUnique({ where: { id }, include: { research: true } });
   const row = project?.research ?? null;
 
+  // 1. Durable job mirror — the source of truth across instances/restarts.
+  const dbJob = await getDbJob(jobId);
+  if (dbJob && dbJob.projectId === id) {
+    if (dbJob.status === 'done') {
+      const research = row ? parseResearchRow(row) : null;
+      if (research && row?.status !== 'generating' && row?.status !== 'error') {
+        return { job: syntheticJob(jobId, 'research', id, 'done'), research };
+      }
+    } else if (dbJob.status === 'error') {
+      return {
+        job: syntheticJob(jobId, 'research', id, 'error', dbJob.error ?? 'Research generation failed. Run it again.'),
+      };
+    } else {
+      // Running — but only trust it while the heartbeat is fresh.
+      if (Date.now() - dbJob.updatedAt.getTime() < JOB_HEARTBEAT_STALE_MS) {
+        return {
+          job: syntheticJob(jobId, 'research', id, 'running', null, dbJob.progress),
+        };
+      }
+      return {
+        job: syntheticJob(
+          jobId,
+          'research',
+          id,
+          'error',
+          'Research was interrupted before it finished (often a deployment time limit). Run it again — it usually completes on the first try now.',
+        ),
+      };
+    }
+  }
+
+  // 2. Legacy DB markers on the ResearchReport row (pre-mirror runs).
   if (row) {
     const updated = row.updatedAt.getTime();
     if (row.status === 'generating') {
@@ -332,11 +395,6 @@ async function fallbackJobPayload(
     };
   }
   return { job: syntheticJob(jobId, 'research', id, 'running') };
-}
-
-/** Synthetic job id for clients to poll when deduping across instances. */
-function newResumeJobId(): string {
-  return `job_${Date.now()}_resumegen`;
 }
 
 // ---------- PUT: user review — edit sections/sources, approve ----------

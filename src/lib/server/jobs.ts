@@ -1,16 +1,26 @@
 // ============================================================
-// In-memory async job registry for long-running AI pipelines
-// (analyze / research / design). Generation endpoints return a
-// job id immediately so no HTTP request stays open long enough
-// to be cut by the preview gateway (~60s limit) — the frontend
-// polls a short GET until the job reaches done/error.
+// Job registry for long-running AI pipelines (analyze / research
+// / design / themes). Generation endpoints return a job id
+// immediately so no HTTP request stays open long enough to be
+// cut by the preview gateway (~60s limit) — the frontend polls a
+// short GET until the job reaches done/error.
+//
+// Two layers:
+//   1. In-memory Map — primary, fast, per-instance.
+//   2. GenerationJob DB table — durable mirror. Progress writes
+//      double as heartbeats, so polls that land on another
+//      serverless instance (or after a server restart) report the
+//      REAL status, latest progress step and error instead of
+//      guessing from timestamps and claiming "interrupted".
 //
 // Serverless note (Vercel): lambdas are multi-instance, so an
 // in-memory Map alone cannot carry job state across polls. Job
-// ids therefore embed the start timestamp (job_<ms>_<rand>) and
-// each route falls back to DB markers (row updatedAt/status)
-// when a poll lands on an instance that never saw the job.
+// ids embed the start timestamp (job_<ms>_<rand>) and every route
+// falls back to the DB mirror when a poll lands on an instance
+// that never saw the in-memory job.
 // ============================================================
+
+import { db } from '@/lib/db';
 
 export type JobKind = 'analyze' | 'research' | 'design' | 'themes';
 export type JobStatus = 'running' | 'done' | 'error';
@@ -36,6 +46,18 @@ const MAX_TRACKED = 200;
  * report an interruption instead of polling forever.
  */
 export const STALE_JOB_MS = 5 * 60 * 1000;
+
+/**
+ * Heartbeat window for the durable DB mirror: a DB job row that is still
+ * 'running' but has not written progress (or any update) for this long is
+ * considered dead (process killed mid-pipeline) and polls report it as
+ * interrupted immediately instead of stringing the user along.
+ *
+ * Sized to comfortably cover one LLM attempt (capped at 75s in ai.ts)
+ * plus provider latency — long silent stretches cannot occur because the
+ * attempt hooks in ai.ts fire a progress write per try.
+ */
+export const JOB_HEARTBEAT_STALE_MS = 100 * 1000;
 
 /** Grace window subtracted when comparing DB row timestamps to job start. */
 export const JOB_TS_SKEW_MS = 2000;
@@ -70,6 +92,90 @@ function prune(): void {
     const oldest = [...jobs.values()].sort((a, b) => a.createdAt - b.createdAt)[0];
     if (!oldest) break;
     jobs.delete(oldest.id);
+  }
+}
+
+// ---------- Durable DB mirror (best-effort — never throws) ----------
+
+/** Cut the job table down: drop rows older than the in-memory TTL. */
+function pruneDbJobs(): void {
+  const cutoff = new Date(Date.now() - JOB_TTL_MS);
+  void db.generationJob
+    .deleteMany({ where: { updatedAt: { lt: cutoff } } })
+    .catch(() => undefined);
+}
+
+/** Persist a new running job so other instances can see/dedupe it. */
+export async function persistNewJob(job: JobRecord): Promise<void> {
+  try {
+    await db.generationJob.upsert({
+      where: { id: job.id },
+      update: { status: job.status, progress: job.progress, error: job.error },
+      create: {
+        id: job.id,
+        kind: job.kind,
+        projectId: job.projectId,
+        status: job.status,
+        progress: job.progress,
+        error: job.error,
+      },
+    });
+    pruneDbJobs();
+  } catch {
+    // Mirror is best-effort; in-memory state still drives the fast path.
+  }
+}
+
+/** Persist a terminal state so polls on any instance see the real outcome. */
+async function persistFinish(job: JobRecord): Promise<void> {
+  try {
+    await db.generationJob.upsert({
+      where: { id: job.id },
+      update: { status: job.status, error: job.error, progress: job.progress },
+      create: {
+        id: job.id,
+        kind: job.kind,
+        projectId: job.projectId,
+        status: job.status,
+        error: job.error,
+        progress: job.progress,
+      },
+    });
+  } catch {
+    // best-effort
+  }
+}
+
+/** Fetch the durable mirror row for a job id (null when missing/failed). */
+export async function getDbJob(
+  id: string,
+): Promise<{ id: string; kind: string; projectId: string; status: string; progress: string | null; error: string | null; updatedAt: Date } | null> {
+  try {
+    return await db.generationJob.findUnique({ where: { id } });
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Find a fresh 'running' DB job of this kind for the project — used by POST
+ * handlers to dedupe/rejoin across instances (and after server restarts):
+ * the client gets the ORIGINAL job id back so its polls pick up the live
+ * progress mirror instead of stacking a duplicate pipeline.
+ */
+export async function findFreshDbRunningJob(
+  projectId: string,
+  kind: JobKind,
+): Promise<{ id: string; progress: string | null } | null> {
+  try {
+    const cutoff = new Date(Date.now() - JOB_HEARTBEAT_STALE_MS);
+    const row = await db.generationJob.findFirst({
+      where: { projectId, kind, status: 'running', updatedAt: { gt: cutoff } },
+      orderBy: { createdAt: 'desc' },
+    });
+    return row ? { id: row.id, progress: row.progress } : null;
+  } catch {
+    return null;
   }
 }
 
@@ -108,9 +214,15 @@ export function findRunningJob(projectId: string, kind: JobKind): JobRecord | nu
 /** Record the current pipeline step so polls surface real progress. */
 export function setJobProgress(id: string, message: string): void {
   const job = jobs.get(id);
-  if (!job) return;
-  job.progress = message;
-  job.updatedAt = Date.now();
+  if (job) {
+    job.progress = message;
+    job.updatedAt = Date.now();
+  }
+  // Heartbeat for the durable mirror — other instances (and polls after a
+  // restart) rely on this to tell "working" from "dead". Fire-and-forget.
+  void db.generationJob
+    .updateMany({ where: { id }, data: { progress: message } })
+    .catch(() => undefined);
 }
 
 /** Transition a job to a terminal state (done / error). */
@@ -120,6 +232,7 @@ export function finishJob(id: string, status: 'done' | 'error', error?: string):
   job.status = status;
   job.error = error ?? null;
   job.updatedAt = Date.now();
+  void persistFinish(job);
   return job;
 }
 

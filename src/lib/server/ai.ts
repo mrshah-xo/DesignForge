@@ -485,6 +485,24 @@ function backoffMs(attempt: number): number {
 }
 
 /**
+ * Hard wall-clock cap for a single LLM/search attempt. Without it a hung
+ * gateway socket would eat the whole pipeline budget; with it the retry
+ * loop (and the job heartbeat) keeps moving. The losing promise is left
+ * to settle unobserved — harmless — while the caller proceeds.
+ */
+async function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise<T> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const timeout = new Promise<never>((_, reject) => {
+    timer = setTimeout(() => reject(new Error(`${label} timed out after ${Math.round(ms / 1000)}s`)), ms);
+  });
+  try {
+    return await Promise.race([promise, timeout]);
+  } finally {
+    if (timer) clearTimeout(timer);
+  }
+}
+
+/**
  * The dev environment periodically rotates the token in /etc/ai-gateway.json; calls made
  * during the swap fail with 401 / "missing X-Token header" for a few seconds.
  * Wait generously on auth errors (and re-read the config via resetZAI) so a
@@ -492,11 +510,20 @@ function backoffMs(attempt: number): number {
  */
 const AUTH_BACKOFF_MS = 6000;
 
+/** Wall-clock cap for one chat-completion attempt (text JSON + markdown). */
+const CHAT_TIMEOUT_MS = 75 * 1000;
+/** Wall-clock cap for one vision (logo analysis) attempt — image upload is slower. */
+const VISION_TIMEOUT_MS = 90 * 1000;
+/** Wall-clock cap for one web-search attempt. */
+const SEARCH_TIMEOUT_MS = 30 * 1000;
+
 function retryDelayMs(err: unknown, attempt: number): number {
   if (isAuthError(err)) return AUTH_BACKOFF_MS * (attempt + 1);
   // Empty/filtered responses arrive in bursts (rate-limit windows, provider
-  // hiccups) — wait longer so retries land outside the same bad window.
-  if (err instanceof EmptyResponseError) return 3000 + 5000 * attempt; // 3s, 8s, 13s
+  // hiccups) — wait long enough to land outside the same bad window without
+  // stalling the pipeline for minutes (the old 3s/8s/13s schedule made a
+  // single call with retries take 25s+ of pure waiting).
+  if (err instanceof EmptyResponseError) return 1500 + 2500 * attempt; // 1.5s, 4s, 6.5s
   return backoffMs(attempt);
 }
 
@@ -561,6 +588,8 @@ function modelForAttempt(attempt: number): string | undefined {
  * EmptyResponseError (retryable, rate-limit-aware) when the model returns
  * no usable text — provider rate limits, overload, or quota events that
  * some gateways deliver as HTTP 200 with an empty/error payload.
+ * Every attempt is wall-clock capped (CHAT_TIMEOUT_MS) so a hung socket
+ * cannot stall the pipeline.
  */
 async function chatTextOnce(
   zai: ZAI,
@@ -568,12 +597,16 @@ async function chatTextOnce(
   modelOverride: string | undefined,
   maxTokens: number,
 ): Promise<string> {
-  const res = await zai.chat.completions.create({
-    ...(modelOverride ? { model: modelOverride } : {}),
-    messages,
-    thinking: { type: 'disabled' },
-    max_tokens: maxTokens,
-  });
+  const res = await withTimeout(
+    zai.chat.completions.create({
+      ...(modelOverride ? { model: modelOverride } : {}),
+      messages,
+      thinking: { type: 'disabled' },
+      max_tokens: maxTokens,
+    }),
+    CHAT_TIMEOUT_MS,
+    'Chat completion',
+  );
   const { text, finishReason, model } = messageText(res);
   if (!text.trim()) {
     console.error(
@@ -584,6 +617,9 @@ async function chatTextOnce(
   }
   return text;
 }
+
+/** Fired before every attempt so callers can surface live progress + heartbeats. */
+export type AttemptHook = (attempt: number, attempts: number) => void;
 
 /**
  * Text LLM call parsed as JSON, with retries + exponential backoff.
@@ -597,12 +633,14 @@ export async function llmJson<T>(
   attempts = 4,
   maxTokens = 16000,
   userKey?: string | null,
+  onAttempt?: AttemptHook,
 ): Promise<T> {
   const zai = await getZAI(userKey);
   let lastRaw = '';
   let lastError: unknown = null;
   for (let attempt = 0; attempt < attempts; attempt++) {
     try {
+      onAttempt?.(attempt + 1, attempts);
       const messages: Array<{ role: 'assistant' | 'user'; content: string }> = [
         { role: 'assistant', content: system },
         { role: 'user', content: user },
@@ -652,11 +690,15 @@ export async function visionJson<T>(prompt: string, base64Png: string, attempts 
         const reason = lastError instanceof Error ? lastError.message : '';
         content.push({ type: 'text', text: retryNote(reason) });
       }
-      const res = await zai.chat.completions.createVision({
-        model: VISION_MODEL,
-        messages: [{ role: 'user', content }],
-        thinking: { type: 'disabled' },
-      });
+      const res = await withTimeout(
+        zai.chat.completions.createVision({
+          model: VISION_MODEL,
+          messages: [{ role: 'user', content }],
+          thinking: { type: 'disabled' },
+        }),
+        VISION_TIMEOUT_MS,
+        'Vision analysis',
+      );
       const { text, finishReason, model } = messageText(res);
       lastRaw = text;
       if (!text.trim()) {
@@ -688,11 +730,13 @@ export async function llmText(
   attempts = 3,
   maxTokens = 16000,
   userKey?: string | null,
+  onAttempt?: AttemptHook,
 ): Promise<string> {
   const zai = await getZAI(userKey);
   let lastError: unknown = null;
   for (let attempt = 0; attempt < attempts; attempt++) {
     try {
+      onAttempt?.(attempt + 1, attempts);
       return await chatTextOnce(
         zai,
         [
@@ -718,11 +762,15 @@ export async function llmText(
 /** Real internet web search via the SDK function-calling bridge (with retry). */
 export async function webSearch(query: string, num = 5, userKey?: string | null): Promise<SearchFunctionResultItem[]> {
   let lastError: unknown = null;
-  const attempts = 4;
+  const attempts = 3;
   for (let attempt = 0; attempt < attempts; attempt++) {
     try {
       const zai = await getZAI(userKey);
-      const results = await zai.functions.invoke('web_search', { query, num });
+      const results = await withTimeout(
+        zai.functions.invoke('web_search', { query, num }),
+        SEARCH_TIMEOUT_MS,
+        'Web search',
+      );
       return Array.isArray(results) ? results : [];
     } catch (err) {
       lastError = err;

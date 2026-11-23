@@ -95,6 +95,17 @@ const DDL: string[] = [
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
   )`,
   `CREATE INDEX IF NOT EXISTS "DesignTheme_projectId_idx" ON "DesignTheme"("projectId")`,
+  `CREATE TABLE IF NOT EXISTS "GenerationJob" (
+    "id" TEXT NOT NULL PRIMARY KEY,
+    "kind" TEXT NOT NULL,
+    "projectId" TEXT NOT NULL,
+    "status" TEXT NOT NULL DEFAULT 'running',
+    "progress" TEXT,
+    "error" TEXT,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
+  )`,
+  `CREATE INDEX IF NOT EXISTS "GenerationJob_projectId_kind_idx" ON "GenerationJob"("projectId", "kind")`,
 ];
 
 let schemaPromise: Promise<void> | null = null;

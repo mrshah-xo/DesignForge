@@ -39,10 +39,14 @@ import {
 } from '@/lib/server/export';
 import {
   createJob,
-  finishJob,
+  findFreshDbRunningJob,
   findRunningJob,
+  finishJob,
+  getDbJob,
   getJob,
   jobStartTs,
+  JOB_HEARTBEAT_STALE_MS,
+  persistNewJob,
   publicJob,
   setJobProgress,
   syntheticJob,
@@ -55,6 +59,16 @@ export const dynamic = 'force-dynamic';
 // Vercel: `after()` keeps the invocation alive past the POST response.
 // Design is the longest pipeline (tokens LLM + DESIGN.md LLM).
 export const maxDuration = 120;
+
+/**
+ * Wall-clock budget for the design pipeline. maxDuration is 120s on Vercel;
+ * every phase checks the remaining budget and degrades to its deterministic
+ * fallback instead of blowing the cap and getting killed mid-flight (which
+ * is what used to surface as "generation was interrupted").
+ */
+const PIPELINE_BUDGET_MS = 105 * 1000;
+/** Minimum budget that must remain before starting the DESIGN.md LLM call. */
+const MARKDOWN_MIN_BUDGET_MS = 45 * 1000;
 
 function isPlainObject(v: unknown): v is Record<string, unknown> {
   return typeof v === 'object' && v !== null && !Array.isArray(v);
@@ -88,6 +102,7 @@ function cleanMarkdown(text: string): string {
 
 /** Full design pipeline: tokens + fit report + DESIGN.md, persisted to DB. */
 async function runDesignPipeline(id: string, jobId: string, userKey: string | null): Promise<void> {
+  const t0 = Date.now();
   try {
     const project = await db.project.findUnique({
       where: { id },
@@ -100,42 +115,85 @@ async function runDesignPipeline(id: string, jobId: string, userKey: string | nu
       throw new Error('Project prerequisites changed — complete research approval first');
     }
 
-    // 1. Tokens + match analysis from the LLM.
+    // 1. Tokens + match analysis from the LLM. This step can no longer fail
+    //    the job: on total provider failure a deterministic token set is
+    //    built from the logo palette, so generation ALWAYS completes.
     setJobProgress(jobId, 'Generating design tokens from your research…');
-    const raw = await llmJson<Record<string, unknown>>(
-      DESIGN_SYSTEM,
-      buildDesignPrompt(project, audience, analysis, research),
-      4,
-      16000,
-      userKey,
-    );
+    let raw: Record<string, unknown> | null = null;
+    try {
+      raw = await llmJson<Record<string, unknown>>(
+        DESIGN_SYSTEM,
+        buildDesignPrompt(project, audience, analysis, research),
+        3,
+        8000,
+        userKey,
+        (attempt, attempts) => {
+          setJobProgress(
+            jobId,
+            attempt === 1
+              ? 'Generating design tokens from your research…'
+              : `Generating design tokens (retry ${attempt}/${attempts})…`,
+          );
+        },
+      );
+    } catch (tokensErr) {
+      console.error(`Design tokens LLM failed for project ${id}; using deterministic palette fallback:`, tokensErr instanceof Error ? tokensErr.message : tokensErr);
+      setJobProgress(jobId, 'AI pass unavailable — building tokens from your logo palette…');
+    }
 
     // 2. Bulletproof normalization (also enforces the WCAG AA primary contrast).
     setJobProgress(jobId, 'Checking color contrast and accessibility…');
     const normalized: DesignTokens = normalizeTokens(
-      isPlainObject(raw.tokens) ? raw.tokens : {},
+      raw && isPlainObject(raw.tokens) ? raw.tokens : {},
       analysis.palette[0]?.hex,
       analysis.palette[1]?.hex,
     );
 
     // 3. Match analysis + score (clamped 0-100, default 70).
-    const rawMatch = isPlainObject(raw.matchAnalysis) ? raw.matchAnalysis : {};
+    const rawMatch = raw && isPlainObject(raw.matchAnalysis) ? raw.matchAnalysis : {};
     const logoFeedback: LogoFeedback = normalizeLogoFeedback(rawMatch);
     const rawScore = Number(rawMatch.score);
     const matchScore = Number.isFinite(rawScore)
       ? Math.max(0, Math.min(100, Math.round(rawScore)))
       : 70;
+    if (logoFeedback.verdict.trim()) {
+      logoFeedback.verdict = logoFeedback.verdict.trim();
+    } else if (!raw) {
+      logoFeedback.verdict = 'Built directly from your logo palette — run generation again for the full AI fit report.';
+    }
 
-    // 4. DESIGN.md (raw markdown, never fails the request).
-    setJobProgress(jobId, 'Writing your DESIGN.md specification…');
+    // 4. DESIGN.md (raw markdown, never fails the request). Skipped to the
+    //    instant template when the time budget is nearly spent — a partial
+    //    pipeline that SAVES beats one that gets killed at the cap.
     let markdown = '';
-    try {
-      markdown = cleanMarkdown(
-        await llmText(MARKDOWN_SYSTEM, buildMarkdownPrompt(project, audience, analysis, research, normalized, logoFeedback), 3, 16000, userKey),
-      );
-    } catch (err) {
-      console.error(`DESIGN.md generation failed for project ${id}, using fallback template:`, err instanceof Error ? err.message : err);
+    const remaining = PIPELINE_BUDGET_MS - (Date.now() - t0);
+    if (remaining < MARKDOWN_MIN_BUDGET_MS) {
+      console.warn(`Design pipeline out of time budget for markdown for ${id}; using fallback template`);
       markdown = buildFallbackMarkdown(project, audience, analysis, research, normalized, matchScore);
+    } else {
+      setJobProgress(jobId, 'Writing your DESIGN.md specification…');
+      try {
+        markdown = cleanMarkdown(
+          await llmText(
+            MARKDOWN_SYSTEM,
+            buildMarkdownPrompt(project, audience, analysis, research, normalized, logoFeedback),
+            2,
+            10000,
+            userKey,
+            (attempt, attempts) => {
+              setJobProgress(
+                jobId,
+                attempt === 1
+                  ? 'Writing your DESIGN.md specification…'
+                  : `Writing your DESIGN.md (retry ${attempt}/${attempts})…`,
+              );
+            },
+          ),
+        );
+      } catch (err) {
+        console.error(`DESIGN.md generation failed for project ${id}, using fallback template:`, err instanceof Error ? err.message : err);
+        markdown = buildFallbackMarkdown(project, audience, analysis, research, normalized, matchScore);
+      }
     }
 
     // 5. Upsert DesignSpec + advance status.
@@ -198,11 +256,23 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     if (running) {
       return NextResponse.json({ ok: true, data: { job: publicJob(running) } });
     }
+    // Cross-instance / post-restart dedupe: rejoin a fresh durable job so
+    // the client polls the ORIGINAL id and sees the live progress mirror.
+    const dbRunning = await findFreshDbRunningJob(id, 'design');
+    if (dbRunning) {
+      return NextResponse.json({
+        ok: true,
+        data: { job: syntheticJob(dbRunning.id, 'design', id, 'running', null, dbRunning.progress) },
+      });
+    }
 
     // BYOK gate: reject before starting when no usable credentials exist.
     await assertAiUsable(userKey);
 
     const job = createJob('design', id);
+    // Durable mirror: polls that land on another instance (or after a
+    // restart) read the real status/progress from this row.
+    await persistNewJob(job);
     // `after()` keeps the serverless invocation alive past the POST response
     // (no-op overhead on long-lived servers like the preview dev environment).
     after(() => runDesignPipeline(id, job.id, userKey));
@@ -267,14 +337,45 @@ async function donePayload(
 }
 
 /**
- * Reconstruct job state from DB timestamps when the in-memory job is
- * unavailable (poll landed on a different serverless instance).
+ * Reconstruct job state from the durable mirror (and DB timestamps) when the
+ * in-memory job is unavailable (poll landed on a different serverless
+ * instance, or the server restarted mid-run).
  */
 async function fallbackJobPayload(
   id: string,
   jobId: string,
 ): Promise<{ job: ReturnType<typeof publicJob>; design?: DesignData }> {
   const startTs = jobStartTs(jobId);
+
+  // 1. Durable job mirror — real status, progress and error across instances.
+  const dbJob = await getDbJob(jobId);
+  if (dbJob && dbJob.projectId === id) {
+    if (dbJob.status === 'done') {
+      return await donePayload(id, jobId);
+    }
+    if (dbJob.status === 'error') {
+      return {
+        job: syntheticJob(jobId, 'design', id, 'error', dbJob.error ?? 'Design generation failed. Please run it again.'),
+      };
+    }
+    // Running — only trust it while the heartbeat is fresh.
+    if (Date.now() - dbJob.updatedAt.getTime() < JOB_HEARTBEAT_STALE_MS) {
+      return {
+        job: syntheticJob(jobId, 'design', id, 'running', null, dbJob.progress),
+      };
+    }
+    return {
+      job: syntheticJob(
+        jobId,
+        'design',
+        id,
+        'error',
+        'Design generation was interrupted before it finished (often a deployment time limit). Please run it again.',
+      ),
+    };
+  }
+
+  // 2. No mirror row (legacy run): fall back to timestamps.
   if (startTs === null) {
     return {
       job: syntheticJob(jobId, 'design', id, 'error', 'Generation status could not be tracked. Please run design generation again.'),

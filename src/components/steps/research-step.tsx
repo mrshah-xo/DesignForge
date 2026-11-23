@@ -308,6 +308,21 @@ export function ResearchStep({
 
   const renderSectionCard = (key: SectionKey, label: string, blurb: string) => {
     const isEditing = !!editing[key]
+    const sectionTitle =
+      key === 'competitorLogos'
+        ? draft.sections.competitorLogos.title
+        : draft.sections[key].title
+    // The AI (and the offline fallback) often name a section exactly like
+    // its card label — rendering both reads as a duplicated heading.
+    const showSectionTitle =
+      !!sectionTitle?.trim() && sectionTitle.trim().toLowerCase() !== label.trim().toLowerCase()
+    const body =
+      key === 'competitorLogos'
+        ? draft.sections.competitorLogos.body
+        : draft.sections[key].body
+    const bullets =
+      key === 'competitorLogos' ? draft.brands : draft.sections[key].bullets
+    const hasContent = body.trim().length > 0 || bullets.length > 0
     return (
       <motion.section
         key={key}
@@ -433,16 +448,19 @@ export function ResearchStep({
           </div>
         ) : (
           <div className="space-y-2">
-            <h4 className="text-sm font-medium text-gray-800 dark:text-gray-200">
-              {key === 'competitorLogos'
-                ? draft.sections.competitorLogos.title
-                : draft.sections[key].title}
-            </h4>
+            {showSectionTitle && (
+              <h4 className="text-sm font-medium text-gray-800 dark:text-gray-200">{sectionTitle}</h4>
+            )}
             <p className="whitespace-pre-line text-sm leading-relaxed text-gray-600 dark:text-gray-300">
               {key === 'competitorLogos'
                 ? draft.sections.competitorLogos.body
                 : draft.sections[key].body}
             </p>
+            {!hasContent && (
+              <p className="text-xs italic text-muted-foreground">
+                No content in this section yet — open Edit to add findings.
+              </p>
+            )}
             {key === 'competitorLogos' ? (
               draft.brands.length > 0 && (
                 <ul className="grid gap-2 pt-1 sm:grid-cols-2">
@@ -493,6 +511,18 @@ export function ResearchStep({
           )}
         </div>
         <div className="flex items-center gap-2">
+          {(research.status === 'error' || research.status === 'generating') && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => void onRunResearch()}
+              disabled={researching || generating}
+              className="gap-1.5"
+            >
+              {researching ? <Loader2 className="size-3.5 animate-spin" /> : <Sparkles className="size-3.5" />}
+              Re-run research
+            </Button>
+          )}
           <Button variant="outline" size="sm" onClick={() => setPromptOpen(true)} className="gap-1.5">
             <Wand2 className="size-3.5" />
             Want a prompt?

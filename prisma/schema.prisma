@@ -107,3 +107,23 @@ model DesignTheme {
 
   @@index([projectId])
 }
+
+// Durable job registry for long AI pipelines (research / design).
+// Mirrors the in-memory job Map so polls that land on another
+// serverless instance (or after a server restart) can still report
+// the real status, the latest progress step, and the real error —
+// instead of guessing from timestamps and reporting "interrupted".
+// `updatedAt` doubles as a heartbeat (refreshed on every progress write).
+model GenerationJob {
+  id        String   @id
+  kind      String // research | design | analyze | themes
+  projectId String
+  // running | done | error
+  status    String   @default("running")
+  progress  String?
+  error     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([projectId, kind])
+}
