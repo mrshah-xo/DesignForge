@@ -129,13 +129,12 @@ export function WizardShell() {
   const [researchNonce, setResearchNonce] = useState(0)
   const [designNonce, setDesignNonce] = useState(0)
 
-  // Browser tab title follows the current wizard section: "Design Forge" on
-  // the landing screen, then the active section label (e.g. "Research review")
-  // as the user navigates through the steps.
+  // Browser tab title follows the current wizard section: "MrDesign.md" on
+  // the landing screen, then the active section label (e.g. "Research review
+  // · MrDesign.md") as the user navigates through the steps.
   useEffect(() => {
-    document.title = project
-      ? STEPS.find((s) => s.id === currentStep)?.label ?? 'Design Forge'
-      : 'Design Forge'
+    const label = STEPS.find((s) => s.id === currentStep)?.label
+    document.title = project && label ? `${label} · MrDesign.md` : 'MrDesign.md'
   }, [project, currentStep])
 
   // ---------------- Data loading ----------------
@@ -458,6 +457,13 @@ export function WizardShell() {
     }
   }, [project])
 
+  // Header progress hairline: share of completed steps.
+  const progress = useMemo(() => {
+    if (!project) return undefined
+    const done = Object.values(stepState).filter((s) => s === 'done').length
+    return Math.round((done / STEPS.length) * 100)
+  }, [project, stepState])
+
   const handleSelectStep = useCallback(
     (id: number) => {
       if ((stepState[id] ?? 'locked') === 'locked') return
@@ -555,6 +561,7 @@ export function WizardShell() {
         loadingProjects={loadingProjects}
         onOpenProject={(id) => void openProject(id)}
         onNewProject={startNew}
+        progress={progress}
       />
 
       <main className="flex-1">
@@ -589,9 +596,6 @@ export function WizardShell() {
                       </p>
                       <StatusBadge status={detailStatusLabel(project)} />
                     </div>
-                    {project.description && (
-                      <p className="truncate text-xs text-muted-foreground">{project.description}</p>
-                    )}
                   </div>
                   <button
                     type="button"

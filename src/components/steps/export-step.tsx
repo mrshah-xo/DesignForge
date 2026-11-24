@@ -188,7 +188,7 @@ export function ExportStep({ project, onStartNew }: ExportStepProps) {
         <Button
           onClick={() => void run('zip', () => api.downloadZip(project.id, project.name))}
           disabled={busy !== null}
-          className="h-10 w-full bg-primary text-primary-foreground hover:bg-ink-600 sm:w-auto"
+          className="h-10 w-full bg-primary text-primary-foreground hover:bg-primary/90 sm:w-auto"
         >
           {busy === 'zip' ? <Loader2 className="size-4 animate-spin" /> : <Download className="size-4" />}
           Download full package (.zip)

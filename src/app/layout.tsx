@@ -20,7 +20,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Design Forge",
+  title: "MrDesign.md",
   description:
     "Turn your logo into an agent-ready design system: AI logo analysis, audience psychology research, color palettes, live component preview.",
   // Favicon/tab icon comes from src/app/icon.ico (file convention).
@@ -32,9 +32,24 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html
+      lang="en"
+      suppressHydrationWarning
+      data-accent="graphite"
+      data-radius="soft"
+      data-density="comfortable"
+    >
       <head>
         <link rel="stylesheet" href={GOOGLE_FONTS_HREF} />
+        {/* Apply the stored appearance preferences (accent / radius / density)
+            before first paint so there is no flash of the defaults. Mirrors
+            src/lib/client/appearance.ts. Color mode is handled by next-themes. */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html:
+              "(function(){try{var a=JSON.parse(localStorage.getItem('mrdesign-appearance')||'{}');var e=document.documentElement;if(a.accent)e.dataset.accent=a.accent;if(a.radius)e.dataset.radius=a.radius;if(a.density)e.dataset.density=a.density;}catch(_){}})()",
+          }}
+        />
       </head>
       <body
         className={`${inter.variable} ${geistMono.variable} antialiased bg-background text-foreground`}

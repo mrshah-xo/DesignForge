@@ -369,7 +369,7 @@ export function DesignStep({
                 <AlertDialogFooter>
                   <AlertDialogCancel>Cancel</AlertDialogCancel>
                   <AlertDialogAction
-                    className="bg-primary text-primary-foreground hover:bg-ink-600"
+                    className="bg-primary text-primary-foreground hover:bg-primary/90"
                     onClick={handleGenerateThemes}
                   >
                     Generate
@@ -528,7 +528,7 @@ export function DesignStep({
                     size="sm"
                     onClick={() => applyTheme(activeTheme)}
                     disabled={applyingTheme || saving}
-                    className="bg-primary text-primary-foreground hover:bg-ink-600"
+                    className="bg-primary text-primary-foreground hover:bg-primary/90"
                   >
                     {applyingTheme ? <Loader2 className="size-3.5 animate-spin" /> : <Check className="size-3.5" />}
                     Apply to design
@@ -564,7 +564,7 @@ export function DesignStep({
                     size="sm"
                     onClick={applyPreset}
                     disabled={applyingTheme || saving}
-                    className="bg-primary text-primary-foreground hover:bg-ink-600"
+                    className="bg-primary text-primary-foreground hover:bg-primary/90"
                   >
                     {applyingTheme ? <Loader2 className="size-3.5 animate-spin" /> : <Check className="size-3.5" />}
                     Apply {activePreset === 'light' ? 'light' : 'dark'}
@@ -844,7 +844,7 @@ export function DesignStep({
           <Button
             onClick={() => void onSaveTokens(tokens)}
             disabled={saving || generating}
-            className="bg-primary text-primary-foreground hover:bg-ink-600"
+            className="bg-primary text-primary-foreground hover:bg-primary/90"
           >
             {saving ? <Loader2 className="size-4 animate-spin" /> : <Save className="size-4" />}
             Save changes
@@ -871,7 +871,7 @@ export function DesignStep({
               <AlertDialogFooter>
                 <AlertDialogCancel>Cancel</AlertDialogCancel>
                 <AlertDialogAction
-                  className="bg-primary text-primary-foreground hover:bg-ink-600"
+                  className="bg-primary text-primary-foreground hover:bg-primary/90"
                   onClick={() => void onRegenerate()}
                 >
                   Regenerate
@@ -927,7 +927,7 @@ export function DesignStep({
               <Button
                 onClick={() => void onSaveMarkdown(markdown)}
                 disabled={saving || generating || markdown === serverDesign.markdown}
-                className="bg-primary text-primary-foreground hover:bg-ink-600"
+                className="bg-primary text-primary-foreground hover:bg-primary/90"
               >
                 {saving ? <Loader2 className="size-4 animate-spin" /> : <Save className="size-4" />}
                 Save markdown

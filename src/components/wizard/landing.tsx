@@ -76,9 +76,8 @@ export function Landing({ analyzing, onStart, onAudiencePrefill, audiencePrefill
             Design Without Compromise
           </h1>
           <p className="text-pretty text-sm text-muted-foreground sm:text-base">
-            Your creative forge, where precision meets passion. Upload a logo - get an
-            agent-ready DESIGN.md, design tokens, a live component preview, and a
-            trust-focused fit report.
+            Upload a logo - get an agent-ready DESIGN.md, design tokens, a live
+            component preview, and a trust-focused fit report.
           </p>
         </motion.div>
 
@@ -201,9 +200,6 @@ export function Landing({ analyzing, onStart, onAudiencePrefill, audiencePrefill
             >
               <span className="flex size-9 items-center justify-center rounded-lg bg-ink-50 text-ink-600 dark:bg-ink-500/10 dark:text-ink-300">
                 <StepIcon icon={step.icon} className="size-4" />
-              </span>
-              <span className="text-[10px] font-semibold uppercase tracking-wider text-gray-400">
-                Step {step.id}
               </span>
               <span className="text-xs font-medium text-gray-700 dark:text-gray-300">{step.label}</span>
             </motion.div>

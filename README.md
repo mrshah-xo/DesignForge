@@ -253,6 +253,11 @@ Secrets are never committed. `.env` is git-ignored; use `.env.example` as the te
 
 Issues and pull requests are welcome. For larger changes, please open an issue first to discuss the approach.
 
+
+
 ## License
 
 See [`LICENSE`](LICENSE).
+
+<div align="center">
+<img src="assets/mrdesign-circle-512.png" alt="DesignForge" width="500" />

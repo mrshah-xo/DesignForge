@@ -80,7 +80,7 @@ export function ResearchPromptDialog({
     try {
       if (text.length > PARSE_RESEARCH_MAX_CHARS) {
         toast.error('Reply is too long', {
-          description: 'Ask your agent to return just the DESIGNFORGE_RESEARCH block.',
+          description: 'Ask your agent to return just the MRDESIGN_RESEARCH block.',
         })
         return
       }
@@ -88,7 +88,7 @@ export function ResearchPromptDialog({
       if (parsed.found.length === 0) {
         toast.error('No research sections found', {
           description:
-            'Ask your agent to reply with the DESIGNFORGE_RESEARCH block, then paste that reply here.',
+            'Ask your agent to reply with the MRDESIGN_RESEARCH block, then paste that reply here.',
         })
         return
       }
@@ -142,7 +142,7 @@ export function ResearchPromptDialog({
             </div>
             <p className="text-xs text-muted-foreground">
               Paste this into your AI assistant. It critiques the current report and replies with
-              the corrected <span className="font-mono text-[11px]">DESIGNFORGE_RESEARCH</span>{' '}
+              the corrected <span className="font-mono text-[11px]">MRDESIGN_RESEARCH</span>{' '}
               block in one message - no interview.
             </p>
             <Textarea
@@ -171,7 +171,7 @@ export function ResearchPromptDialog({
           {/* Step 2 - paste the agent's reply back */}
           <TabsContent value="paste" className="mt-3 space-y-3">
             <Textarea
-              placeholder="Paste your agent's one-shot reply here - the DESIGNFORGE_RESEARCH block updates the report instantly, even loose field lines work…"
+              placeholder="Paste your agent's one-shot reply here - the MRDESIGN_RESEARCH block updates the report instantly, even loose field lines work…"
               value={pasted}
               onChange={(e) => setPasted(e.target.value)}
               rows={9}
@@ -186,7 +186,7 @@ export function ResearchPromptDialog({
               </span>
             </div>
             <Button
-              className="w-full bg-primary text-primary-foreground hover:bg-ink-600"
+              className="w-full bg-primary text-primary-foreground hover:bg-primary/90"
               disabled={!pasted.trim() || applying}
               onClick={handleApply}
             >

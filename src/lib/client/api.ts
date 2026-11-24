@@ -116,7 +116,7 @@ export function slugify(input: string): string {
     .trim()
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-+|-+$/g, '')
-  return slug || 'designforge'
+  return slug || 'mrdesign'
 }
 
 export function downloadText(filename: string, text: string, mime: string) {
@@ -321,7 +321,7 @@ export const api = {
     const match = /filename\*?=(?:UTF-8'')?"?([^";]+)"?/i.exec(disposition)
     const filename = match
       ? decodeURIComponent(match[1].trim())
-      : `${slugify(fallbackName ?? 'designforge')}-design-package.zip`
+      : `${slugify(fallbackName ?? 'mrdesign')}-design-package.zip`
     triggerDownload(URL.createObjectURL(blob), filename)
   },
 }

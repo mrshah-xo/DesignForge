@@ -244,7 +244,7 @@ export function ResearchStep({
         <div>
           <Button
             onClick={() => void onRunResearch()}
-            className="mt-6 bg-primary text-primary-foreground hover:bg-ink-600"
+            className="mt-6 bg-primary text-primary-foreground hover:bg-primary/90"
           >
             <Sparkles className="size-4" />
             Run automatic research
@@ -595,7 +595,7 @@ export function ResearchStep({
           <Button
             onClick={() => void onGenerateDesign()}
             disabled={approving || generating || savingEdits}
-            className="bg-primary text-primary-foreground hover:bg-ink-600"
+            className="bg-primary text-primary-foreground hover:bg-primary/90"
           >
             {approving ? <Loader2 className="size-4 animate-spin" /> : <Sparkles className="size-4" />}
             Generate design
@@ -604,7 +604,7 @@ export function ResearchStep({
           <Button
             onClick={() => void onApproveAndGenerate(payload)}
             disabled={approving || generating || savingEdits}
-            className="bg-primary text-primary-foreground hover:bg-ink-600"
+            className="bg-primary text-primary-foreground hover:bg-primary/90"
           >
             {approving ? <Loader2 className="size-4 animate-spin" /> : <CheckCircle2 className="size-4" />}
             Approve research & generate design

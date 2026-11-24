@@ -137,7 +137,7 @@ export function AnalysisStep({ project, analyzing, onRunAnalysis, onContinue }: 
         </p>
         <Button
           onClick={() => void onRunAnalysis()}
-          className="mt-6 bg-primary text-primary-foreground hover:bg-ink-600"
+          className="mt-6 bg-primary text-primary-foreground hover:bg-primary/90"
         >
           <ScanSearch className="size-4" />
           Run AI analysis
@@ -279,7 +279,7 @@ export function AnalysisStep({ project, analyzing, onRunAnalysis, onContinue }: 
       <div className="flex justify-end">
         <Button
           onClick={onContinue}
-          className="bg-primary text-primary-foreground hover:bg-ink-600"
+          className="bg-primary text-primary-foreground hover:bg-primary/90"
         >
           Continue → Who will use it
           <ArrowRight className="size-4" />

@@ -257,7 +257,7 @@ export function AudienceStep({ project, saving, prefill, onSave }: AudienceStepP
             <Button
               onClick={submit}
               disabled={!canSave}
-              className="bg-primary text-primary-foreground hover:bg-ink-600"
+              className="bg-primary text-primary-foreground hover:bg-primary/90"
             >
               {saving ? (
                 <>
@@ -291,7 +291,7 @@ export function AudienceStep({ project, saving, prefill, onSave }: AudienceStepP
               Cancel
             </Button>
             <Button
-              className="bg-primary text-primary-foreground hover:bg-ink-600"
+              className="bg-primary text-primary-foreground hover:bg-primary/90"
               onClick={() => {
                 setConfirmOpen(false)
                 void onSave(buildAudience())

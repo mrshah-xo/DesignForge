@@ -3,7 +3,7 @@
 //
 // The home page can hand the user a prompt template they paste
 // into any AI assistant (ChatGPT, Claude, Gemini...). The agent
-// interviews them and prints a DESIGNFORGE_BRIEF block; the user
+// interviews them and prints a MRDESIGN_BRIEF block; the user
 // pastes that reply back into MrDesign.md and every required
 // field is filled automatically.
 //
@@ -37,7 +37,7 @@ The fields:
 
 OUTPUT PATTERN - your reply must be EXACTLY this block, nothing before it and nothing after it:
 
-<<<DESIGNFORGE_BRIEF>>>
+<<<MRDESIGN_BRIEF>>>
 PROJECT_NAME: <one line>
 DESCRIPTION: <one line>
 CATEGORY: <one allowed value>
@@ -46,11 +46,11 @@ PLATFORM: <one allowed value>
 MONETIZATION: <one allowed value>
 TRUST_NEED: <one allowed value>
 NOTES: <one line or none>
-<<<END_DESIGNFORGE_BRIEF>>>
+<<<END_MRDESIGN_BRIEF>>>
 
 Example of a correct one-shot reply:
 
-<<<DESIGNFORGE_BRIEF>>>
+<<<MRDESIGN_BRIEF>>>
 PROJECT_NAME: LedgerMate
 DESCRIPTION: Invoicing and expense tracking built for solo freelancers.
 CATEGORY: fintech
@@ -59,7 +59,7 @@ PLATFORM: web
 MONETIZATION: subscription
 TRUST_NEED: critical
 NOTES: Competitors are FreshBooks and Bonsai; the brand should feel calm and trustworthy.
-<<<END_DESIGNFORGE_BRIEF>>>`;
+<<<END_MRDESIGN_BRIEF>>>`;
 
 // ---------- Parsed brief shape ----------
 
@@ -290,7 +290,9 @@ function buildBrief(collected: Partial<Record<BriefField, string>>): ParsedBrief
 
 // ---------- Local (offline) parser ----------
 
-const BLOCK_RE = /<<<\s*DESIGNFORGE_BRIEF\s*>>>([\s\S]*?)<<<\s*END_DESIGNFORGE_BRIEF\s*>>>/i;
+// Legacy DESIGNFORGE_BRIEF blocks (older saved replies) still parse.
+const BLOCK_RE =
+  /<<<\s*(?:MRDESIGN|DESIGNFORGE)_BRIEF\s*>>>([\s\S]*?)<<<\s*END_(?:MRDESIGN|DESIGNFORGE)_BRIEF\s*>>>/i;
 
 /** `KEY: value` / `KEY = value` lines, tolerating bullets and markdown bold. */
 const FIELD_LINE_RE =
@@ -298,7 +300,7 @@ const FIELD_LINE_RE =
 
 /**
  * Parse an agent reply without any network call. Handles:
- * - the exact DESIGNFORGE_BRIEF block,
+ * - the exact MRDESIGN_BRIEF block,
  * - bare `Field: value` lines anywhere in the reply,
  * - a JSON object with familiar keys.
  * Returns a ParsedBrief whose `found` lists what was recognized.

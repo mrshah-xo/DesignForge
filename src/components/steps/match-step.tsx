@@ -144,7 +144,7 @@ export function MatchStep({ design, onContinue }: MatchStepProps) {
       </p>
 
       <div className="flex justify-end">
-        <Button onClick={onContinue} className="bg-primary text-primary-foreground hover:bg-ink-600">
+        <Button onClick={onContinue} className="bg-primary text-primary-foreground hover:bg-primary/90">
           Continue → Design system
           <ArrowRight className="size-4" />
         </Button>

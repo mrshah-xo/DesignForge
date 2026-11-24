@@ -31,12 +31,9 @@ export function UploadStep({ project, busy, onReplace }: UploadStepProps) {
   return (
     <div className="space-y-6">
       <section aria-labelledby="current-logo">
-        <h2 id="current-logo" className="mb-1 text-lg font-semibold text-gray-900 dark:text-gray-50">
+        <h2 id="current-logo" className="mb-4 text-lg font-semibold text-gray-900 dark:text-gray-50">
           Current logo
         </h2>
-        <p className="mb-4 text-sm text-muted-foreground">
-          This is the logo your project is built around.
-        </p>
         <motion.div
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
@@ -111,7 +108,7 @@ export function UploadStep({ project, busy, onReplace }: UploadStepProps) {
               void onReplace(file, name.trim(), description.trim())
             }}
             disabled={!canSubmit}
-            className="w-full bg-primary text-primary-foreground hover:bg-ink-600 sm:w-auto"
+            className="w-full bg-primary text-primary-foreground hover:bg-primary/90 sm:w-auto"
           >
             {busy ? (
               <>

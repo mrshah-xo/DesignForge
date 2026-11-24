@@ -88,7 +88,7 @@ export function BriefDialog({ open, onOpenChange, onApply }: BriefDialogProps) {
       if (merged.found.length === 0) {
         toast.error('No brief fields found', {
           description:
-            'Ask your agent to reply with the DESIGNFORGE_BRIEF block, then paste that reply here.',
+            'Ask your agent to reply with the MRDESIGN_BRIEF block, then paste that reply here.',
         })
       } else {
         apply(merged)
@@ -101,7 +101,7 @@ export function BriefDialog({ open, onOpenChange, onApply }: BriefDialogProps) {
       } else if (/credential|z-ai-config|ZAI_BASE_URL/i.test(msg)) {
         toast.error('AI extraction is unavailable', {
           description:
-            'Paste the full DESIGNFORGE_BRIEF block from your agent instead - it fills every field instantly, no AI needed on this side.',
+            'Paste the full MRDESIGN_BRIEF block from your agent instead - it fills every field instantly, no AI needed on this side.',
         })
       } else {
         toast.error('Could not read the brief', { description: msg })
@@ -137,7 +137,7 @@ export function BriefDialog({ open, onOpenChange, onApply }: BriefDialogProps) {
           <TabsContent value="copy" className="mt-3 space-y-3">
             <p className="text-xs text-muted-foreground">
               Paste this into your AI assistant. It replies with the filled{' '}
-              <span className="font-mono text-[11px]">DESIGNFORGE_BRIEF</span> block in one
+              <span className="font-mono text-[11px]">MRDESIGN_BRIEF</span> block in one
               message - no interview.
             </p>
             <Textarea
@@ -166,7 +166,7 @@ export function BriefDialog({ open, onOpenChange, onApply }: BriefDialogProps) {
           {/* Step 2 - paste the agent's reply back */}
           <TabsContent value="paste" className="mt-3 space-y-3">
             <Textarea
-              placeholder="Paste your agent's one-shot reply here - the DESIGNFORGE_BRIEF block fills everything instantly, even free-form text works…"
+              placeholder="Paste your agent's one-shot reply here - the MRDESIGN_BRIEF block fills everything instantly, even free-form text works…"
               value={pasted}
               onChange={(e) => setPasted(e.target.value)}
               rows={9}
@@ -181,7 +181,7 @@ export function BriefDialog({ open, onOpenChange, onApply }: BriefDialogProps) {
               </span>
             </div>
             <Button
-              className="w-full bg-primary text-primary-foreground hover:bg-ink-600"
+              className="w-full bg-primary text-primary-foreground hover:bg-primary/90"
               disabled={!pasted.trim() || extracting}
               onClick={() => void handleAutofill()}
             >

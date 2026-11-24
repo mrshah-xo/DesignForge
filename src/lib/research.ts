@@ -5,7 +5,7 @@
 // to review and fix by hand. That takes time, so - like the brief
 // flow - the user can copy a generated prompt into their coding
 // agent (ChatGPT, Claude, Gemini...). The agent critiques and
-// rewrites the report and prints a DESIGNFORGE_RESEARCH block;
+// rewrites the report and prints a MRDESIGN_RESEARCH block;
 // the user pastes that reply back into MrDesign.md and the
 // sections / competitor brands / sources update automatically,
 // then save to the project.
@@ -22,11 +22,12 @@ import type {
 
 // ---------- Block markers ----------
 
-export const RESEARCH_BLOCK_START = '<<<DESIGNFORGE_RESEARCH>>>';
-export const RESEARCH_BLOCK_END = '<<<END_DESIGNFORGE_RESEARCH>>>';
+export const RESEARCH_BLOCK_START = '<<<MRDESIGN_RESEARCH>>>';
+export const RESEARCH_BLOCK_END = '<<<END_MRDESIGN_RESEARCH>>>';
 
+// Legacy DESIGNFORGE_RESEARCH blocks (older saved replies) still parse.
 const BLOCK_RE =
-  /<<<\s*DESIGNFORGE_RESEARCH\s*>>>([\s\S]*?)<<<\s*END_DESIGNFORGE_RESEARCH\s*>>>/i;
+  /<<<\s*(?:MRDESIGN|DESIGNFORGE)_RESEARCH\s*>>>([\s\S]*?)<<<\s*END_(?:MRDESIGN|DESIGNFORGE)_RESEARCH\s*>>>/i;
 
 /** Max chars accepted for a pasted agent reply (generous; research replies are long). */
 export const PARSE_RESEARCH_MAX_CHARS = 60000;
@@ -676,7 +677,7 @@ function buildParsed(c: CollectState): ParsedResearch {
 
 /**
  * Parse an agent reply without any network call. Handles:
- * - the exact DESIGNFORGE_RESEARCH block,
+ * - the exact MRDESIGN_RESEARCH block,
  * - loose `SECTION_FIELD: value` lines with `- ` bullet lists,
  * - a JSON object with section / sources keys.
  * Returns a ParsedResearch whose `found` lists what was recognized.

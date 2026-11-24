@@ -37,7 +37,7 @@ export async function GET() {
       secrets,
       note: writable
         ? null
-        : 'This deployment is read-only. Set environment variables in your Vercel dashboard (Settings → Environment Variables) and redeploy.',
+        : 'This deployment is read-only. Set environment variables in your Vercel dashboard (Settings > Environment Variables) and redeploy.',
     },
   } satisfies ApiEnvelope<SecretsGetPayload>)
 }

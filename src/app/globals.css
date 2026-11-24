@@ -138,6 +138,68 @@
   --sidebar-ring: #ececec;
 }
 
+/* ============================================================
+   Appearance preferences - applied as data attributes on <html>
+   by src/lib/client/appearance.ts (persisted in localStorage).
+   The accent swaps the single primary accent across every
+   component; radius and density retune the shared scales, so the
+   whole UI changes together.
+   ============================================================ */
+
+/* Accent: light mode swaps the primary + ring; dark mode also
+   flips the primary text color for contrast on the light accent. */
+[data-accent='moss'] {
+  --primary: #15803d;
+  --ring: #15803d;
+}
+[data-accent='terracotta'] {
+  --primary: #c2410c;
+  --ring: #c2410c;
+}
+[data-accent='wine'] {
+  --primary: #9f1239;
+  --ring: #9f1239;
+}
+[data-accent='honey'] {
+  --primary: #854d0e;
+  --ring: #854d0e;
+}
+.dark[data-accent='moss'] {
+  --primary: #4ade80;
+  --ring: #4ade80;
+  --primary-foreground: #052e16;
+}
+.dark[data-accent='terracotta'] {
+  --primary: #fb923c;
+  --ring: #fb923c;
+  --primary-foreground: #431407;
+}
+.dark[data-accent='wine'] {
+  --primary: #fb7185;
+  --ring: #fb7185;
+  --primary-foreground: #4c0519;
+}
+.dark[data-accent='honey'] {
+  --primary: #facc15;
+  --ring: #facc15;
+  --primary-foreground: #422006;
+}
+
+/* Corner radius: the whole radius ladder derives from --radius. */
+[data-radius='sharp'] {
+  --radius: 0.25rem;
+}
+[data-radius='round'] {
+  --radius: 1.25rem;
+}
+
+/* Density: Tailwind v4 derives every spacing utility from
+   --spacing, so one variable tightens padding, gaps, and control
+   heights across the entire UI (~12% more compact). */
+[data-density='compact'] {
+  --spacing: 0.22rem;
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;

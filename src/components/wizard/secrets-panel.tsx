@@ -347,7 +347,7 @@ export function SecretsPanel() {
               </div>
               <Button
                 size="sm"
-                className="h-9 shrink-0 bg-primary text-primary-foreground hover:bg-ink-600"
+                className="h-9 shrink-0 bg-primary text-primary-foreground hover:bg-primary/90"
                 onClick={saveBrowserKey}
                 disabled={!browserKeyDraft.trim()}
               >
@@ -426,7 +426,7 @@ export function SecretsPanel() {
                     </div>
                     <Button
                       size="sm"
-                      className="h-9 shrink-0 bg-primary text-primary-foreground hover:bg-ink-600"
+                      className="h-9 shrink-0 bg-primary text-primary-foreground hover:bg-primary/90"
                       onClick={() => void save(s.name)}
                       disabled={savingKeys[s.name] || !(drafts[s.name] ?? '').trim()}
                     >
