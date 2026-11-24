@@ -69,7 +69,6 @@ function BackgroundCard({ background }: { background: BackgroundSuggestion }) {
         <h2 id="bg-heading" className="text-lg font-semibold text-gray-900 dark:text-gray-50">
           Suggested page background
         </h2>
-        <span className="text-xs text-muted-foreground">auto-applied when your design is generated</span>
       </div>
       <div className="overflow-hidden rounded-lg border border-border bg-card shadow-sm">
         <div
@@ -121,7 +120,7 @@ export function AnalysisStep({ project, analyzing, onRunAnalysis, onContinue }: 
     if (analyzing) {
       return (
         <div className="rounded-lg border border-border bg-card shadow-sm">
-          <DesignGenerating messages={ANALYSIS_MESSAGES} subtext="Our vision model is reading your logo - this can take up to 40 seconds." />
+          <DesignGenerating messages={ANALYSIS_MESSAGES} subtext="Up to 40 seconds." />
         </div>
       )
     }
@@ -132,8 +131,7 @@ export function AnalysisStep({ project, analyzing, onRunAnalysis, onContinue }: 
         </div>
         <h2 className="mt-4 text-lg font-semibold text-gray-900 dark:text-gray-50">Run AI analysis</h2>
         <p className="mx-auto mt-1 max-w-md text-sm text-muted-foreground">
-          Our vision model will extract your logo&apos;s palette, style, mood, industry signals and
-          trust cues. This takes up to 40 seconds.
+          Extracts palette, style and trust cues from your logo - up to 40 seconds.
         </p>
         <Button
           onClick={() => void onRunAnalysis()}

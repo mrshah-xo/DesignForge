@@ -32,35 +32,33 @@ const PACKAGE_CONTENTS = [
   {
     icon: FileText,
     name: 'DESIGN.md',
-    detail: 'The full agent-ready brand spec: palette, typography, voice, trust patterns, do/don\u2019t rules.',
+    detail: 'Agent-ready brand spec',
   },
   {
     icon: FileJson,
     name: 'tokens.json',
-    detail: 'Design tokens in structured JSON - colors, type scale, radius, shadows, patterns.',
+    detail: 'Structured design tokens',
   },
   {
     icon: FileJson,
     name: 'metadata.json',
-    detail: 'Project metadata: audience, research summary, match score, timestamps.',
+    detail: 'Audience, research, score',
   },
   {
     icon: ImageIcon,
     name: 'logo file',
-    detail: 'Your original logo, preserved in the package for drop-in use.',
+    detail: 'Your original logo',
   },
   {
     icon: ImageIcon,
     name: 'brand-sheet.svg',
-    detail: 'A one-glance brand sheet: palette swatches and type samples as a standalone SVG.',
+    detail: 'Palette + type samples',
   },
 ]
 
 const AGENT_TIPS = [
-  'Paste DESIGN.md into Cursor, v0, Lovable, or Claude Code - the agent gets your full brand context instantly.',
-  'Import tokens.json into your Tailwind config or design tool so every screen stays on-brand.',
-  'Keep the logo file in /brand and reference brand-sheet.svg for quick mockups.',
-  'Iterate anytime - regenerate the design system from step 6 without redoing research.',
+  'Paste DESIGN.md into Cursor, v0, Lovable or Claude Code.',
+  'Import tokens.json into Tailwind or your design tool.',
 ]
 
 function trustLabel(value: string): string {

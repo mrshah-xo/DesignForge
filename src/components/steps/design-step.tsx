@@ -144,11 +144,7 @@ export function DesignStep({
   if (generating) {
     return (
       <div className="rounded-lg border border-border bg-card shadow-sm">
-        <DesignGenerating
-          messages={DESIGN_MESSAGES}
-          live={designLive}
-          subtext="Tokens, accessibility checks and your DESIGN.md are generated in sequence."
-        />
+        <DesignGenerating messages={DESIGN_MESSAGES} live={designLive} subtext="Takes 45-90 seconds." />
       </div>
     )
   }
@@ -156,7 +152,7 @@ export function DesignStep({
   if (!tokens || !serverDesign) {
     return (
       <p className="rounded-lg border border-border bg-card p-8 text-center text-sm text-muted-foreground shadow-sm">
-        No design system generated yet - approve the research in step 4 first.
+        Generate the design in step 4 first.
       </p>
     )
   }
@@ -200,7 +196,7 @@ export function DesignStep({
         setTokens(theme.tokens)
         setActiveThemeId('original')
         toast.success(`Theme "${theme.name}" applied`, {
-          description: 'DESIGN.md still describes the previous direction - use Regenerate with AI (Visual editor tab) or edit it to refresh the copy.',
+          description: 'Regenerate with AI to refresh DESIGN.md.',
         })
       })
       .catch(() => {
@@ -220,7 +216,7 @@ export function DesignStep({
         setTokens(next)
         setActiveThemeId('original')
         toast.success(`${label} theme applied`, {
-          description: 'Same brand colors, remapped surfaces. DESIGN.md still describes the previous direction - regenerate it to refresh the copy.',
+          description: 'Regenerate with AI to refresh DESIGN.md.',
         })
       })
       .catch(() => {
@@ -242,11 +238,7 @@ export function DesignStep({
       .then(() => {
         setTokens(next)
         toast.success(`${label} ${on ? 'enabled' : 'disabled'}`, {
-          description: on
-            ? feature.id === 'layoutRedesign'
-              ? 'Your components are re-arranged into a new page layout - alignment and hierarchy rebuilt from your existing tokens. Pick an arrangement below.'
-              : 'The effect layer is baked into your design tokens - combine it freely with the other features.'
-            : 'The effect layer was removed from your design tokens.',
+          description: on && feature.id === 'layoutRedesign' ? 'Pick an arrangement below.' : undefined,
         })
       })
       .catch(() => {
@@ -337,9 +329,6 @@ export function DesignStep({
           <div className="mb-3 flex flex-wrap items-start justify-between gap-2">
             <div className="min-w-0">
               <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-50">Theme directions</h3>
-              <p className="text-xs text-muted-foreground">
-                Switch live: Light/Dark derive instantly from your design, and AI directions are built from your approved research.
-              </p>
             </div>
             <AlertDialog>
               <AlertDialogTrigger asChild>
@@ -362,9 +351,7 @@ export function DesignStep({
                     {themes.length === 0 ? 'Generate theme directions?' : 'Regenerate theme directions?'}
                   </AlertDialogTitle>
                   <AlertDialogDescription>
-                    The AI will propose 3 alternative directions (colors, typography, shapes) grounded
-                    in your approved research, with the best-matching one marked. Your current design
-                    stays untouched until you apply a direction.
+                    3 research-grounded directions. Nothing changes until you apply one.
                     {themes.length > 0 && ' The previous suggestions will be replaced.'}
                   </AlertDialogDescription>
                 </AlertDialogHeader>
@@ -449,7 +436,6 @@ export function DesignStep({
           <div className="mt-3 border-t border-border pt-3">
             <p className="mb-2 text-xs font-semibold text-gray-900 dark:text-gray-50">
               Style features
-              <span className="ml-2 font-normal text-muted-foreground">toggle effects onto your current theme - colors and type stay untouched, combine freely</span>
             </p>
             <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
               {STYLE_FEATURES.map((feature) => {
@@ -467,7 +453,6 @@ export function DesignStep({
                   >
                     <div className="min-w-0">
                       <p className="text-sm font-medium text-gray-800 dark:text-gray-200">{feature.name}</p>
-                      <p className="mt-0.5 text-xs leading-relaxed text-muted-foreground">{feature.tagline}</p>
                       {feature.hasPreset && on && (
                         <div className="mt-2 flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
                           {feature.presets?.map((preset) => (
@@ -500,12 +485,6 @@ export function DesignStep({
               })}
             </div>
           </div>
-
-          {themes.length === 0 && !themesLoading && (
-            <p className="mt-2 text-xs text-muted-foreground">
-              No AI suggestions yet - generate to get 3 research-backed directions with the best outcome marked. Light and Dark are always available above.
-            </p>
-          )}
 
           {activeTheme && (
             <div className="mt-3 rounded-md border border-ink-200 bg-ink-50/60 p-3 dark:border-ink-500/30 dark:bg-ink-500/5">
@@ -555,11 +534,6 @@ export function DesignStep({
                   <span className="text-sm font-semibold text-gray-900 dark:text-gray-50">
                     {activePreset === 'light' ? 'Light variant' : 'Dark variant'}
                   </span>
-                  <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
-                    {activePreset === 'light'
-                      ? 'Derived automatically from your applied design - same brand colors on bright neutral surfaces.'
-                      : 'Derived automatically from your applied design - same brand colors on deep dark surfaces.'}
-                  </p>
                 </div>
                 <div className="flex shrink-0 items-center gap-2">
                   <Button
@@ -805,7 +779,7 @@ export function DesignStep({
           <section className="rounded-lg border border-border bg-card p-5 shadow-sm">
             <h3 className="mb-4 text-sm font-semibold text-gray-900 dark:text-gray-50">Shadows</h3>
             <div className="space-y-1.5">
-              <Label htmlFor="shadow-preset">Shadow preset (applies to all elevations)</Label>
+              <Label htmlFor="shadow-preset">Shadow preset</Label>
               <Select value={currentShadowPreset} onValueChange={applyShadowPreset}>
                 <SelectTrigger id="shadow-preset" className="w-full sm:w-56">
                   <SelectValue />
@@ -825,9 +799,7 @@ export function DesignStep({
           <section className="rounded-lg border border-border bg-card p-5 shadow-sm">
             <h3 className="mb-4 text-sm font-semibold text-gray-900 dark:text-gray-50">Trust patterns</h3>
             <div className="space-y-1.5">
-              <Label htmlFor="trust-patterns">
-                Trust-building patterns <span className="font-normal text-muted-foreground">(one per line)</span>
-              </Label>
+              <Label htmlFor="trust-patterns">One per line</Label>
               <Textarea
                 id="trust-patterns"
                 value={(tokens.trustPatterns ?? []).join('\n')}
@@ -866,8 +838,7 @@ export function DesignStep({
               <AlertDialogHeader>
                 <AlertDialogTitle>Regenerate the design system?</AlertDialogTitle>
                 <AlertDialogDescription>
-                  The AI will rebuild colors, typography, components and DESIGN.md from your logo
-                  and audience research. Unsaved manual edits will be lost.
+                  Unsaved manual edits will be lost.
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>

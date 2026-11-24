@@ -172,11 +172,6 @@ export function MatchStep({ design, project, onContinue }: MatchStepProps) {
         </section>
       )}
 
-      <p className="rounded-lg border border-border bg-muted/60 px-4 py-3 text-xs text-muted-foreground">
-        Suggestions are advisory - the generated palette already adapts your logo&apos;s DNA to this
-        audience.
-      </p>
-
       <div className="flex justify-end">
         <Button onClick={onContinue} className="bg-primary text-primary-foreground hover:bg-primary/90">
           Continue → Design system

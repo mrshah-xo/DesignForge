@@ -53,28 +53,19 @@ export function UploadStep({ project, busy, onReplace }: UploadStepProps) {
             {project.description && (
               <p className="text-sm text-muted-foreground">{project.description}</p>
             )}
-            <p className="text-xs text-gray-400">
-              Uploaded {new Date(project.createdAt).toLocaleString()}
-            </p>
           </div>
         </motion.div>
       </section>
 
       <section aria-labelledby="replace-logo">
-        <h2 id="replace-logo" className="mb-1 text-lg font-semibold text-gray-900 dark:text-gray-50">
+        <h2 id="replace-logo" className="mb-4 text-lg font-semibold text-gray-900 dark:text-gray-50">
           Replace logo
         </h2>
-        <p className="mb-4 text-sm text-muted-foreground">
-          Upload a different logo to start a fresh run of the wizard.
-        </p>
 
         <div className="space-y-4 rounded-lg border border-border bg-card p-6 shadow-sm">
           <div className="flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-400">
             <AlertTriangle className="mt-0.5 size-3.5 shrink-0" />
-            <p>
-              Re-uploading re-runs AI analysis and invalidates any research, fit report and design
-              system generated for this project.
-            </p>
+            <p>Re-uploading resets research, fit report and design.</p>
           </div>
 
           <LogoDropzone file={file} onFile={setFile} compact disabled={busy} />

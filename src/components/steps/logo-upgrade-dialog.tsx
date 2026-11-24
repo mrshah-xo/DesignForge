@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
-import { Check, Copy, ImageUp, Info, WandSparkles } from 'lucide-react'
+import { Check, Copy, WandSparkles } from 'lucide-react'
 import { Textarea } from '@/components/ui/textarea'
 import {
   Dialog,
@@ -21,12 +21,8 @@ interface LogoUpgradeDialogProps {
   prompt: string
 }
 
-/** The 3-step round trip, shown as a compact numbered strip. */
-const STEPS = [
-  { title: 'Copy the prompt', text: 'It carries the fit report: score, issues, palette, audience.' },
-  { title: 'Generate in your tool', text: 'Attach your current logo + paste the prompt into ChatGPT, Midjourney, Ideogram or Gemini.' },
-  { title: 'Re-upload & regenerate', text: 'Download the upgraded logo, upload it in step 1, generate again to re-score.' },
-]
+/** The 3-step round trip, one glanceable row. */
+const STEPS = ['Copy the prompt', 'Attach your logo + paste', 'Re-upload & regenerate']
 
 /**
  * Copy button with its own "copied" state. Lives inside DialogContent,
@@ -58,7 +54,7 @@ function CopyUpgradeButton({ prompt }: { prompt: string }) {
       {copied ? (
         <>
           <Check className="size-4" />
-          Copied - paste it into your image tool
+          Copied - paste it into your tool
         </>
       ) : (
         <>
@@ -80,26 +76,18 @@ export function LogoUpgradeDialog({ open, onOpenChange, prompt }: LogoUpgradeDia
             Want a logo upgrade prompt?
           </DialogTitle>
           <DialogDescription>
-            Paste this into ChatGPT or any image tool (Midjourney, Ideogram, Gemini, Canva…).
-            It carries your fit report - score, issues, palette and audience - so the tool
-            upgrades your actual logo instead of guessing, and aims for a near-100 fit.
+            Paste this into ChatGPT or any image tool - it carries your fit report, so the tool
+            upgrades your actual logo.
           </DialogDescription>
         </DialogHeader>
 
-        <ol className="mt-1 space-y-2">
-          {STEPS.map((s, i) => (
-            <li
-              key={s.title}
-              className="flex items-start gap-3 rounded-lg border border-border bg-muted/40 px-3 py-2"
-            >
+        <ol className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-2">
+          {STEPS.map((label, i) => (
+            <li key={label} className="flex items-center gap-2">
               <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-ink-50 text-xs font-bold text-ink-700 dark:bg-ink-500/10 dark:text-ink-200">
                 {i + 1}
               </span>
-              <span className="min-w-0 text-xs leading-relaxed text-muted-foreground">
-                <span className="font-semibold text-gray-900 dark:text-gray-50">{s.title}</span>
-                {' - '}
-                {s.text}
-              </span>
+              <span className="text-xs font-medium text-gray-700 dark:text-gray-200">{label}</span>
             </li>
           ))}
         </ol>
@@ -113,21 +101,7 @@ export function LogoUpgradeDialog({ open, onOpenChange, prompt }: LogoUpgradeDia
           className="max-h-72 overflow-y-auto font-mono text-[11px] leading-relaxed"
         />
 
-        <div className="flex items-start gap-2 rounded-lg border border-border bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
-          <Info className="mt-0.5 size-3.5 shrink-0" />
-          <span>
-            The prompt is built live from this fit report - if you regenerate the design (or
-            edit the audience), open this again to refresh it with the latest findings.
-          </span>
-        </div>
-
         <CopyUpgradeButton prompt={prompt} />
-
-        <p className="flex items-center justify-center gap-1.5 text-center text-xs text-muted-foreground">
-          <ImageUp className="size-3.5" />
-          Back from your tool with a new logo? Upload it in step 1, then generate again - the
-          fit report re-scores the new file automatically.
-        </p>
       </DialogContent>
     </Dialog>
   )

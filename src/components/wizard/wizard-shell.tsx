@@ -529,7 +529,7 @@ export function WizardShell() {
           <MatchStep design={project.design} project={project} onContinue={() => handleSelectStep(6)} />
         ) : (
           <p data-slot="panel" className="rounded-lg border border-border bg-card p-8 text-center text-sm text-muted-foreground shadow-sm">
-            Generate the design system in step 4 to see the fit report.
+            Generate the design in step 4 first.
           </p>
         )
       case 6:

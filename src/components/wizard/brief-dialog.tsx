@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
-import { Check, Copy, Info, Loader2, Wand2 } from 'lucide-react'
+import { Check, Copy, Loader2, Wand2 } from 'lucide-react'
 import { Textarea } from '@/components/ui/textarea'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import {
@@ -62,7 +62,7 @@ export function BriefDialog({ open, onOpenChange, onApply }: BriefDialogProps) {
   const apply = (brief: ParsedBrief) => {
     const labels = brief.found.map((f) => FIELD_LABELS[f] ?? f).join(', ')
     toast.success('Brief applied', {
-      description: `Filled: ${labels}. Now drop your logo - we jump straight to Research review.`,
+      description: `Filled: ${labels}. Drop your logo next.`,
     })
     onApply(brief)
     onOpenChange(false)
@@ -120,10 +120,8 @@ export function BriefDialog({ open, onOpenChange, onApply }: BriefDialogProps) {
             Want a prompt?
           </DialogTitle>
           <DialogDescription>
-            Skip typing every time: copy this prompt into your AI assistant (ChatGPT, Claude,
-            Gemini, your IDE agent…). It already knows your product, so it answers all 8 fields
-            in one message - paste that reply back here and every field fills in automatically,
-            then we jump straight to Research review.
+            Copy this into your AI assistant, then paste the reply back here - every field fills
+            in automatically.
           </DialogDescription>
         </DialogHeader>
 
@@ -135,11 +133,6 @@ export function BriefDialog({ open, onOpenChange, onApply }: BriefDialogProps) {
 
           {/* Step 1 - copy the prompt into the AI assistant */}
           <TabsContent value="copy" className="mt-3 space-y-3">
-            <p className="text-xs text-muted-foreground">
-              Paste this into your AI assistant. It replies with the filled{' '}
-              <span className="font-mono text-[11px]">MRDESIGN_BRIEF</span> block in one
-              message - no interview.
-            </p>
             <Textarea
               readOnly
               value={BRIEF_PROMPT}
@@ -173,13 +166,6 @@ export function BriefDialog({ open, onOpenChange, onApply }: BriefDialogProps) {
               aria-label="Agent reply"
               className="max-h-72 overflow-y-auto"
             />
-            <div className="flex items-start gap-2 rounded-lg border border-border bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
-              <Info className="mt-0.5 size-3.5 shrink-0" />
-              <span>
-                Your logo file is still uploaded on this page - the brief fills every text
-                field, and we jump straight to Research review (step 4).
-              </span>
-            </div>
             <VenomButton
               disabled={!pasted.trim() || extracting}
               onClick={() => void handleAutofill()}

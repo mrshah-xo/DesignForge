@@ -6,7 +6,6 @@ import {
   BookOpenCheck,
   CheckCircle2,
   ExternalLink,
-  Lightbulb,
   Loader2,
   Pencil,
   Save,
@@ -69,37 +68,13 @@ interface ResearchDraft {
   sources: ResearchSource[]
 }
 
-const SECTION_META: { key: SectionKey; label: string; blurb: string }[] = [
-  {
-    key: 'audiencePsychology',
-    label: 'Audience psychology',
-    blurb: 'What motivates, worries and convinces the people you are building for.',
-  },
-  {
-    key: 'trustFactors',
-    label: 'Trust factors',
-    blurb: 'The signals that make this audience believe - and pay.',
-  },
-  {
-    key: 'successfulPatterns',
-    label: 'Successful patterns',
-    blurb: 'Visual patterns proven to work with audiences like yours.',
-  },
-  {
-    key: 'competitorLogos',
-    label: 'Competitor logos',
-    blurb: 'How similar brands look, and what their choices communicate.',
-  },
-  {
-    key: 'colorTheory',
-    label: 'Color theory',
-    blurb: 'Color psychology applied to your category and audience.',
-  },
-  {
-    key: 'commonMistakes',
-    label: 'Common mistakes',
-    blurb: 'Design choices that erode trust with this audience.',
-  },
+const SECTION_META: { key: SectionKey; label: string }[] = [
+  { key: 'audiencePsychology', label: 'Audience psychology' },
+  { key: 'trustFactors', label: 'Trust factors' },
+  { key: 'successfulPatterns', label: 'Successful patterns' },
+  { key: 'competitorLogos', label: 'Competitor logos' },
+  { key: 'colorTheory', label: 'Color theory' },
+  { key: 'commonMistakes', label: 'Common mistakes' },
 ]
 
 const emptySection = (): ResearchSection => ({ title: '', body: '', bullets: [] })
@@ -223,7 +198,7 @@ export function ResearchStep({
           <DesignGenerating
             messages={RESEARCH_MESSAGES}
             live={researchLive}
-            subtext="Real web search runs under the hood - every step is shown live."
+            subtext="Every step runs live."
           />
         </div>
       )
@@ -237,9 +212,7 @@ export function ResearchStep({
           Automatic audience research
         </h2>
         <p className="mx-auto mt-1 max-w-lg text-sm text-muted-foreground">
-          We research your audience&apos;s psychology, trust factors, successful design patterns,
-          competitor logos, color theory - then you review before anything is generated. Real web
-          search runs under the hood, so this takes 20-90 seconds.
+          Real web research on your audience - you review before anything is generated.
         </p>
         <div>
           <Button
@@ -257,7 +230,7 @@ export function ResearchStep({
           className="mt-2 gap-1.5 text-xs text-muted-foreground"
         >
           <Wand2 className="size-3.5" />
-          Or have your agent write it - &quot;Want a prompt?&quot;
+          Or have your agent write it
         </Button>
         <ResearchPromptDialog
           open={promptOpen}
@@ -273,11 +246,7 @@ export function ResearchStep({
   if (generating) {
     return (
       <div className="rounded-lg border border-border bg-card shadow-sm">
-        <DesignGenerating
-          messages={DESIGN_MESSAGES}
-          live={designLive}
-          subtext="Tokens, accessibility checks and your DESIGN.md are generated in sequence."
-        />
+        <DesignGenerating messages={DESIGN_MESSAGES} live={designLive} subtext="Takes 45-90 seconds." />
       </div>
     )
   }
@@ -306,7 +275,7 @@ export function ResearchStep({
     setEditing((e) => ({ ...e, [key]: !e[key] }))
   }
 
-  const renderSectionCard = (key: SectionKey, label: string, blurb: string) => {
+  const renderSectionCard = (key: SectionKey, label: string) => {
     const isEditing = !!editing[key]
     const sectionTitle =
       key === 'competitorLogos'
@@ -334,7 +303,6 @@ export function ResearchStep({
         <div className="mb-3 flex items-start justify-between gap-3">
           <div>
             <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-50">{label}</h3>
-            <p className="mt-0.5 text-xs text-muted-foreground">{blurb}</p>
           </div>
           <Button
             variant="ghost"
@@ -457,9 +425,7 @@ export function ResearchStep({
                 : draft.sections[key].body}
             </p>
             {!hasContent && (
-              <p className="text-xs italic text-muted-foreground">
-                No content in this section yet - open Edit to add findings.
-              </p>
+              <p className="text-xs italic text-muted-foreground">Nothing here yet.</p>
             )}
             {key === 'competitorLogos' ? (
               draft.brands.length > 0 && (
@@ -504,11 +470,6 @@ export function ResearchStep({
         <div className="flex items-center gap-2">
           <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-50">Research report</h2>
           <StatusBadge status={research.status} />
-          {approved && research.reviewedAt && (
-            <span className="text-xs text-muted-foreground">
-              Reviewed {new Date(research.reviewedAt).toLocaleDateString()}
-            </span>
-          )}
         </div>
         <div className="flex items-center gap-2">
           {(research.status === 'error' || research.status === 'generating') && (
@@ -537,7 +498,7 @@ export function ResearchStep({
 
       {approved && !designExists && (
         <p className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-400">
-          Research is approved - generate the design system to continue.
+          Approved - generate the design to continue.
         </p>
       )}
 
@@ -578,7 +539,7 @@ export function ResearchStep({
 
       {/* Sections */}
       <div className="space-y-4">
-        {SECTION_META.map(({ key, label, blurb }) => renderSectionCard(key, label, blurb))}
+        {SECTION_META.map(({ key, label }) => renderSectionCard(key, label))}
       </div>
 
       {/* Actions */}
@@ -611,12 +572,6 @@ export function ResearchStep({
           </Button>
         )}
       </div>
-
-      <p className="flex items-start gap-2 rounded-lg border border-border bg-muted/60 px-4 py-3 text-xs text-muted-foreground">
-        <Lightbulb className="mt-0.5 size-3.5 shrink-0 text-amber-500" />
-        Editing sections is encouraged - approving uses exactly what you see here. Nothing is
-        generated until you approve.
-      </p>
 
       <ResearchPromptDialog
         open={promptOpen}

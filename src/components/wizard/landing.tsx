@@ -78,8 +78,7 @@ export function Landing({ analyzing, onStart, onAudiencePrefill, audiencePrefill
             Design Without Compromise
           </h1>
           <p className="text-pretty text-base text-muted-foreground sm:text-lg">
-            Upload a logo - get an agent-ready DESIGN.md, design tokens, a live
-            component preview, and a trust-focused fit report.
+            Upload a logo. Get a complete design system.
           </p>
         </motion.div>
 
@@ -92,7 +91,7 @@ export function Landing({ analyzing, onStart, onAudiencePrefill, audiencePrefill
         >
           {analyzing ? (
             <div data-slot="panel" className="rounded-lg border border-border bg-card shadow-sm">
-              <DesignGenerating messages={ANALYSIS_MESSAGES} subtext="Our vision model is reading your logo - this can take up to 40 seconds." />
+              <DesignGenerating messages={ANALYSIS_MESSAGES} subtext="Up to 40 seconds." />
             </div>
           ) : (
             <div data-slot="panel" className="rounded-lg border border-border bg-card p-6 text-left shadow-sm">
@@ -111,9 +110,7 @@ export function Landing({ analyzing, onStart, onAudiencePrefill, audiencePrefill
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <Label htmlFor="project-desc">
-                    What is it? <span className="text-xs font-normal text-muted-foreground">(optional)</span>
-                  </Label>
+                  <Label htmlFor="project-desc">What is it?</Label>
                   <Textarea
                     id="project-desc"
                     placeholder="One or two sentences about the product or company…"
@@ -151,7 +148,7 @@ export function Landing({ analyzing, onStart, onAudiencePrefill, audiencePrefill
                 {audiencePrefilled && (
                   <p className="flex items-center justify-center gap-1.5 text-xs font-medium text-ink-600 dark:text-ink-300">
                     <CircleCheck className="size-3.5" />
-                    Agent brief applied - we jump straight to research review.
+                    Agent brief applied
                   </p>
                 )}
               </div>

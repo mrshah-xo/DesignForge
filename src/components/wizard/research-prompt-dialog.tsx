@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import { toast } from 'sonner'
-import { Check, Copy, Info, Loader2, Wand2 } from 'lucide-react'
+import { Check, Copy, Loader2, Wand2 } from 'lucide-react'
 import { Textarea } from '@/components/ui/textarea'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import {
@@ -94,7 +94,7 @@ export function ResearchPromptDialog({
       }
       const labels = parsed.found.join(', ')
       toast.success('Research applied', {
-        description: `Updated: ${labels}. Review it below - applying also saves to your project.`,
+        description: `Updated: ${labels}.`,
       })
       onApply(parsed)
       onOpenChange(false)
@@ -112,10 +112,8 @@ export function ResearchPromptDialog({
             Want a research prompt?
           </DialogTitle>
           <DialogDescription>
-            Reviewing every section by hand takes time. Copy this prompt into your AI assistant
-            (ChatGPT, Claude, Gemini, your IDE agent…) - it already knows your project, so it
-            fixes the weak sections and answers with one block. Paste that reply back here and
-            the report updates automatically, then saves to your project.
+            Copy this into your AI assistant - it fixes the weak sections and replies with one
+            block. Paste the reply back to update the report.
           </DialogDescription>
         </DialogHeader>
 
@@ -129,7 +127,7 @@ export function ResearchPromptDialog({
           <TabsContent value="copy" className="mt-3 space-y-3">
             <div className="space-y-1.5">
               <label htmlFor="research-fix-notes" className="text-xs font-medium text-gray-700 dark:text-gray-300">
-                Anything your agent should fix? <span className="font-normal text-muted-foreground">(optional)</span>
+                Anything to fix? <span className="font-normal text-muted-foreground">(optional)</span>
               </label>
               <Textarea
                 id="research-fix-notes"
@@ -140,11 +138,6 @@ export function ResearchPromptDialog({
                 className="min-h-16"
               />
             </div>
-            <p className="text-xs text-muted-foreground">
-              Paste this into your AI assistant. It critiques the current report and replies with
-              the corrected <span className="font-mono text-[11px]">MRDESIGN_RESEARCH</span>{' '}
-              block in one message - no interview.
-            </p>
             <Textarea
               readOnly
               value={prompt}
@@ -178,13 +171,6 @@ export function ResearchPromptDialog({
               aria-label="Agent research reply"
               className="max-h-72 overflow-y-auto"
             />
-            <div className="flex items-start gap-2 rounded-lg border border-border bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
-              <Info className="mt-0.5 size-3.5 shrink-0" />
-              <span>
-                Only the sections your agent returns are replaced - everything else stays exactly
-                as it is. Applying also saves to your project.
-              </span>
-            </div>
             <VenomButton
               disabled={!pasted.trim() || applying}
               onClick={handleApply}

@@ -133,7 +133,7 @@ export function LogoDropzone({ file, onFile, disabled = false, compact = false }
           <span className="text-sm font-medium text-gray-900 dark:text-gray-50">
             {dragging ? 'Drop your logo here' : 'Drag & drop your logo, or click to browse'}
           </span>
-          <span className="text-xs text-muted-foreground">PNG, JPG, SVG or WebP · up to 5MB</span>
+          <span className="text-xs text-muted-foreground">PNG, JPG, SVG or WebP · 5MB max</span>
         </motion.button>
       )}
     </div>
