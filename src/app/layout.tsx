@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Geist_Mono, Inter } from "next/font/google";
+import { Geist_Mono, Inter, Sacramento } from "next/font/google";
 import { ThemeProvider } from "next-themes";
 import "./globals.css";
 import { Toaster } from "@/components/ui/sonner";
@@ -12,6 +12,16 @@ import { GOOGLE_FONTS_HREF } from "@/lib/types";
 const inter = Inter({
   variable: "--font-inter",
   subsets: ["latin"],
+});
+
+// Sacramento - the MrDesign.md identity font. A monoline calligraphy script
+// that matches the signature-style logo; reserved for brand moments only
+// (landing hero headline, footer wordmark) at display sizes. UI and body
+// text stay on Inter - script faces never carry functional text.
+const sacramento = Sacramento({
+  variable: "--font-sacramento",
+  subsets: ["latin"],
+  weight: "400",
 });
 
 const geistMono = Geist_Mono({
@@ -54,7 +64,7 @@ export default function RootLayout({
         />
       </head>
       <body
-        className={`${inter.variable} ${geistMono.variable} antialiased bg-background text-foreground`}
+        className={`${inter.variable} ${geistMono.variable} ${sacramento.variable} antialiased bg-background text-foreground`}
       >
         <ThemeProvider
           attribute="class"

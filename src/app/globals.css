@@ -346,6 +346,14 @@
    MrDesign.md utilities
    ============================================================ */
 
+/* Identity font - Sacramento calligraphy script (brand moments only:
+   landing hero headline, footer wordmark). Registered as a Tailwind v4
+   custom utility so it lives in the utilities layer; @theme inline does
+   not generate utilities for composite var()+fallback font stacks. */
+@utility font-identity {
+  font-family: var(--font-sacramento), cursive;
+}
+
 /* Hero mesh - the single allowed flourish (landing only), neutral wash */
 .df-mesh {
   background-image: radial-gradient(

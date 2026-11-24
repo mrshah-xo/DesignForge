@@ -68,7 +68,12 @@ export function Landing({ analyzing, onStart, onAudiencePrefill, audiencePrefill
           transition={{ duration: 0.25 }}
           className="mx-auto flex max-w-2xl flex-col items-center gap-4"
         >
-          <h1 className="text-balance text-3xl font-bold tracking-tight text-gray-900 dark:text-gray-50 sm:text-4xl lg:text-5xl">
+          {/* Identity font: Sacramento calligraphy. font-normal (the face only
+              ships 400 - synthetic bold would break the monoline strokes) and
+              normal tracking (script letterforms must stay connected). One
+              size step larger than the old sans headline - script faces read
+              lighter at the same size. */}
+          <h1 className="font-identity text-balance text-4xl font-normal leading-[1.5] tracking-normal text-gray-900 dark:text-gray-50 sm:text-5xl lg:text-6xl">
             Design Without Compromise
           </h1>
           <p className="text-pretty text-sm text-muted-foreground sm:text-base">

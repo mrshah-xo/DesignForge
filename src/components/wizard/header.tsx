@@ -1,7 +1,6 @@
 'use client'
 
 import { useSyncExternalStore } from 'react'
-import Image from 'next/image'
 import { Clock, ChevronDown, Plus, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -49,30 +48,21 @@ export function Header({ projects, loadingProjects, onOpenProject, onNewProject,
   return (
     <header className="df-glass sticky top-0 z-40 border-b border-border/80">
       <div className="mx-auto flex h-16 w-full max-w-7xl items-center justify-between gap-2 px-3 sm:gap-3 sm:px-4">
-        <div className="flex min-w-0 items-center gap-2.5">
-          {/* Brand signature: black calligraphy in light mode, white in dark.
-              Both renderings stay in the markup and are switched purely via
-              CSS (dark:hidden / dark:block), so the server render and the
-              hydration pass always agree - no mounted-gate needed. */}
-          <span aria-hidden="true" className="flex shrink-0 items-center">
-            <Image
-              src="/mrdesign-logo-light.png"
-              alt=""
-              width={941}
-              height={211}
-              priority
-              className="h-9 w-auto sm:h-10 dark:hidden"
-            />
-            <Image
-              src="/mrdesign-logo-dark.png"
-              alt=""
-              width={2057}
-              height={685}
-              priority
-              className="hidden h-9 w-auto sm:h-12 dark:block"
-            />
-          </span>
-          <span className="sr-only">MrDesign.md</span>
+        <div className="flex min-w-0 items-center">
+          {/* Brand wordmark in the identity font - Sacramento calligraphy,
+              matching the look of the retired PNG signature. Real text stays
+              crisp at any zoom and recolors per color mode via CSS (no
+              mounted gate - server and hydration renders agree). Clicking it
+              returns to the start, same as "New project". */}
+          <button
+            type="button"
+            onClick={onNewProject}
+            aria-label="MrDesign.md - back to start"
+            title="MrDesign.md - back to start"
+            className="font-identity shrink-0 cursor-pointer text-2xl leading-[1.5] tracking-normal text-gray-900 transition-opacity hover:opacity-70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background sm:text-3xl dark:text-gray-50"
+          >
+            MrDesign.md
+          </button>
         </div>
 
         <nav aria-label="Project actions" className="flex items-center gap-2">
