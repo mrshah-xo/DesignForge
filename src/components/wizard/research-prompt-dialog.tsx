@@ -3,7 +3,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { toast } from 'sonner'
 import { Check, Copy, Info, Loader2, Wand2 } from 'lucide-react'
-import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import {
@@ -13,6 +12,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
+import { VenomButton } from '@/components/wizard/venom-button'
 import { copyToClipboard } from '@/lib/client/api'
 import {
   buildResearchPrompt,
@@ -153,10 +153,10 @@ export function ResearchPromptDialog({
               onFocus={(e) => e.currentTarget.select()}
               className="max-h-72 overflow-y-auto font-mono text-[11px] leading-relaxed"
             />
-            <Button variant="outline" className="w-full" onClick={() => void copyPrompt()}>
+            <VenomButton onClick={() => void copyPrompt()}>
               {copied ? (
                 <>
-                  <Check className="size-4 text-ink-600" />
+                  <Check className="size-4" />
                   Copied - paste it into your agent
                 </>
               ) : (
@@ -165,7 +165,7 @@ export function ResearchPromptDialog({
                   Copy prompt
                 </>
               )}
-            </Button>
+            </VenomButton>
           </TabsContent>
 
           {/* Step 2 - paste the agent's reply back */}
@@ -185,8 +185,7 @@ export function ResearchPromptDialog({
                 as it is. Applying also saves to your project.
               </span>
             </div>
-            <Button
-              className="w-full bg-primary text-primary-foreground hover:bg-primary/90"
+            <VenomButton
               disabled={!pasted.trim() || applying}
               onClick={handleApply}
             >
@@ -201,7 +200,7 @@ export function ResearchPromptDialog({
                   Apply research fixes
                 </>
               )}
-            </Button>
+            </VenomButton>
           </TabsContent>
         </Tabs>
       </DialogContent>

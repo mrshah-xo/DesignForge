@@ -11,6 +11,7 @@ import { LogoDropzone } from '@/components/steps/logo-dropzone'
 import { DesignGenerating } from '@/components/wizard/design-generating'
 import { StepIcon } from '@/components/wizard/step-icon'
 import { BriefDialog } from '@/components/wizard/brief-dialog'
+import { VenomButton } from '@/components/wizard/venom-button'
 import { ANALYSIS_MESSAGES } from '@/components/wizard/progress-messages'
 import { STEPS } from '@/lib/types'
 import type { AudienceData } from '@/lib/types'
@@ -122,27 +123,22 @@ export function Landing({ analyzing, onStart, onAudiencePrefill, audiencePrefill
                     maxLength={280}
                   />
                 </div>
-                {/* Venom pill CTA with the animated RGB glow - selected
-                    component only, never the whole page (DESIGN.md). */}
-                <div className="df-rgb-glow w-full rounded-full">
-                  <Button
-                    onClick={handleSubmit}
-                    disabled={!canSubmit || submitting}
-                    className="df-btn-venom h-10 w-full rounded-full text-sm font-bold"
-                  >
-                    {submitting ? (
-                      <>
-                        <Loader2 className="size-4 animate-spin" />
-                        Creating project…
-                      </>
-                    ) : (
-                      <>
-                        <Sparkles className="size-4" />
-                        Start Designing
-                      </>
-                    )}
-                  </Button>
-                </div>
+                {/* Signature CTA - matte black pill inside the animated
+                    warm-gradient aura (VenomButton). The one allowed
+                    flourish, on the single primary action of this view. */}
+                <VenomButton onClick={handleSubmit} disabled={!canSubmit || submitting}>
+                  {submitting ? (
+                    <>
+                      <Loader2 className="size-4 animate-spin" />
+                      Creating project…
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="size-4" />
+                      Start Designing
+                    </>
+                  )}
+                </VenomButton>
                 <Button
                   type="button"
                   variant="outline"

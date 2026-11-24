@@ -423,27 +423,124 @@
 }
 
 /* ============================================================
- * Venom pill button - the app's own primary CTA preset.
- * Matte near-black pill with a soft under-glow and springy press,
- * adapted from the Vision Pictures pack (same CSS as the live
- * preview's .df-btn-venom, scoped to the app chrome). In dark mode
- * the pill inverts to keep the monochrome discipline.
+ * Signature CTA (VenomButton) - matte near-black pill wrapped in
+ * a slow warm-gradient aura, matching the brand reference: orange
+ * dominates the left edge while pink, violet, blue, cyan, green
+ * and gold travel around the top and right. Two aura layers live
+ * on the wrapper - a blurred halo behind the pill plus a crisp
+ * masked hairline hugging its edge. Reserved for the single
+ * primary action of a view: the landing "Start Designing" button
+ * and the primary actions of the "Want a prompt?" dialogs.
+ * The pill stays black in dark mode too - the aura carries the
+ * color, and `data-disabled` on the wrapper calms the whole unit
+ * (grayscale + dim) so a vivid ring never sits on a washed pill.
  * ============================================================ */
+@property --df-aura-angle {
+  syntax: "<angle>";
+  inherits: false;
+  initial-value: 0deg;
+}
+@keyframes df-aura-spin {
+  to {
+    --df-aura-angle: 360deg;
+  }
+}
+.df-rgb-glow {
+  position: relative;
+  isolation: isolate;
+}
+/* Warm-dominant rainbow: ~100deg of orange/gold, the rest of the
+   wheel spread across pink, violet, blue, cyan and green. */
+.df-rgb-glow::before {
+  content: "";
+  position: absolute;
+  inset: -8px;
+  border-radius: calc(9999px + 8px);
+  background: conic-gradient(
+    from var(--df-aura-angle) at 50% 50%,
+    #ff8a00 0deg,
+    #ff6a2a 45deg,
+    #ff3d78 90deg,
+    #b84dff 140deg,
+    #4d74ff 185deg,
+    #2dd4ff 225deg,
+    #45f0a0 265deg,
+    #ffd24d 305deg,
+    #ff9a1f 335deg,
+    #ff8a00 360deg
+  );
+  filter: blur(16px);
+  opacity: 0.6;
+  z-index: -1;
+  animation: df-aura-spin 9s linear infinite;
+  pointer-events: none;
+}
+.df-rgb-glow::after {
+  content: "";
+  position: absolute;
+  inset: -1.5px;
+  padding: 1.5px;
+  border-radius: calc(9999px + 1.5px);
+  background: conic-gradient(
+    from var(--df-aura-angle) at 50% 50%,
+    #ff8a00 0deg,
+    #ff6a2a 45deg,
+    #ff3d78 90deg,
+    #b84dff 140deg,
+    #4d74ff 185deg,
+    #2dd4ff 225deg,
+    #45f0a0 265deg,
+    #ffd24d 305deg,
+    #ff9a1f 335deg,
+    #ff8a00 360deg
+  );
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
+  opacity: 0.9;
+  z-index: 1;
+  animation: df-aura-spin 9s linear infinite;
+  pointer-events: none;
+}
+.dark .df-rgb-glow::before {
+  opacity: 0.7;
+}
+/* Calm the entire unit (halo + hairline) when the action is
+   unavailable - previously only the pill dimmed, leaving a vivid
+   ring floating over a muddy gray fill. */
+.df-rgb-glow[data-disabled='true']::before {
+  filter: blur(16px) grayscale(1);
+  opacity: 0.12;
+  animation: none;
+}
+.df-rgb-glow[data-disabled='true']::after {
+  filter: grayscale(1);
+  opacity: 0.2;
+  animation: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .df-rgb-glow::before,
+  .df-rgb-glow::after {
+    animation: none;
+  }
+}
+
 .df-btn-venom {
   position: relative;
   isolation: isolate;
   color: #ffffff;
   background: radial-gradient(
-    130% 100% at 50% 0%,
-    #3b3b3b 0%,
-    #161616 38%,
-    #060606 72%,
+    120% 150% at 50% 0%,
+    #2a2a2a 0%,
+    #131313 40%,
+    #060606 75%,
     #000 100%
   );
   box-shadow:
-    0 14px 22px -10px rgb(0 0 0 / 0.55),
-    0 3px 4px -1px rgb(0 0 0 / 0.35),
-    0 8px 30px -8px rgb(56 56 56 / 0.5);
+    inset 0 1px 0 rgb(255 255 255 / 0.07),
+    0 16px 30px -12px rgb(0 0 0 / 0.5),
+    0 3px 6px -2px rgb(0 0 0 / 0.35),
+    0 8px 28px -8px rgb(255 122 26 / 0.2);
   transition: transform 0.45s cubic-bezier(0.3, 1.6, 0.45, 1);
 }
 .df-btn-venom:hover:not(:disabled) {
@@ -454,96 +551,13 @@
   transition-duration: 0.12s;
 }
 .df-btn-venom:disabled {
-  opacity: 0.5;
+  opacity: 0.45;
   cursor: not-allowed;
+  transform: none;
 }
 .df-btn-venom:focus-visible {
   outline: 2px solid var(--color-ink-300, #9c9c9c);
   outline-offset: 4px;
-}
-.dark .df-btn-venom {
-  color: #18181b;
-  background: radial-gradient(
-    130% 100% at 50% 0%,
-    #ffffff 0%,
-    #ececec 40%,
-    #cfcfcf 100%
-  );
-  box-shadow:
-    0 14px 26px -10px rgb(0 0 0 / 0.7),
-    0 0 30px -8px rgb(236 236 236 / 0.22);
-}
-.dark .df-btn-venom:focus-visible {
-  outline-color: rgb(236 236 236 / 0.8);
-}
-
-/* ============================================================
- * Google RGB glow for the app chrome - the animated conic-gradient
- * border Google uses on its Gemini AI action elements, applied ONLY
- * to the hero primary CTA wrapper (never globally). Same technique
- * as the live preview: @property + conic-gradient so the color
- * rotation travels around the component - blurred halo layer behind
- * a crisp masked ring. Reduced-motion users get a static gradient.
- * ============================================================ */
-@property --df-chrome-rgb-angle {
-  syntax: "<angle>";
-  inherits: false;
-  initial-value: 0deg;
-}
-@keyframes df-chrome-rgb-spin {
-  to {
-    --df-chrome-rgb-angle: 360deg;
-  }
-}
-.df-rgb-glow {
-  position: relative;
-  isolation: isolate;
-}
-.df-rgb-glow::before {
-  content: "";
-  position: absolute;
-  inset: -5px;
-  border-radius: calc(9999px + 5px);
-  background: conic-gradient(
-    from var(--df-chrome-rgb-angle) at 50% 50%,
-    #ea4335,
-    #fbbc04,
-    #34a853,
-    #4285f4,
-    #ea4335
-  );
-  filter: blur(11px);
-  opacity: 0.4;
-  z-index: -1;
-  animation: df-chrome-rgb-spin 3.6s linear infinite;
-  pointer-events: none;
-}
-.df-rgb-glow::after {
-  content: "";
-  position: absolute;
-  inset: -1.5px;
-  padding: 1.5px;
-  border-radius: calc(9999px + 1.5px);
-  background: conic-gradient(
-    from var(--df-chrome-rgb-angle) at 50% 50%,
-    #ea4335,
-    #fbbc04,
-    #34a853,
-    #4285f4,
-    #ea4335
-  );
-  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
-  -webkit-mask-composite: xor;
-  mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
-  z-index: 1;
-  animation: df-chrome-rgb-spin 3.6s linear infinite;
-  pointer-events: none;
-}
-@media (prefers-reduced-motion: reduce) {
-  .df-rgb-glow::before,
-  .df-rgb-glow::after {
-    animation: none;
-  }
 }
 
 /* Minimal typography for rendered markdown (no @tailwindcss/typography) */
