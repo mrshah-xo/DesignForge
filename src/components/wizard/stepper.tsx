@@ -41,6 +41,7 @@ export function Stepper({ currentStep, stepState, onSelect }: StepperProps) {
               onClick={() => onSelect(step.id)}
               className={cn(
                 'flex shrink-0 items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition-colors',
+                'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background',
                 st === 'locked' && 'cursor-not-allowed border-border text-gray-300 dark:text-gray-600',
                 st !== 'locked' && isActive(step.id) &&
                   'border-primary bg-primary text-primary-foreground',
@@ -80,6 +81,7 @@ export function Stepper({ currentStep, stepState, onSelect }: StepperProps) {
                 onClick={() => onSelect(step.id)}
                 className={cn(
                   'group flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm transition-colors',
+                  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background',
                   st === 'locked' && 'cursor-not-allowed text-gray-300 dark:text-gray-600',
                   st !== 'locked' && active &&
                     'bg-ink-50 font-semibold text-ink-800 dark:bg-ink-500/10 dark:text-ink-300',

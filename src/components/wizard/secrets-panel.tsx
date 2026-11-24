@@ -254,7 +254,7 @@ export function SecretsPanel() {
       <SheetTrigger asChild>
         <Button
           variant="outline"
-          size="sm"
+          size="default"
           className="gap-1.5 shrink-0"
           aria-label="Manage API keys"
           title="Manage API keys"

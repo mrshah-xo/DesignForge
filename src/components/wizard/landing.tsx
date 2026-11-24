@@ -76,7 +76,7 @@ export function Landing({ analyzing, onStart, onAudiencePrefill, audiencePrefill
           <h1 className="font-identity text-balance text-4xl font-normal leading-[1.5] tracking-normal text-gray-900 dark:text-gray-50 sm:text-5xl lg:text-6xl">
             Design Without Compromise
           </h1>
-          <p className="text-pretty text-sm text-muted-foreground sm:text-base">
+          <p className="text-pretty text-base text-muted-foreground sm:text-lg">
             Upload a logo - get an agent-ready DESIGN.md, design tokens, a live
             component preview, and a trust-focused fit report.
           </p>
@@ -96,7 +96,9 @@ export function Landing({ analyzing, onStart, onAudiencePrefill, audiencePrefill
           ) : (
             <div data-slot="panel" className="rounded-lg border border-border bg-card p-6 text-left shadow-sm">
               <LogoDropzone file={file} onFile={setFile} />
-              <div className="mt-4 space-y-4">
+              {/* Field rhythm: 20px between fields (single column, labels
+                  above fields - the fastest scan path per NN/g). */}
+              <div className="mt-5 space-y-5">
                 <div className="space-y-1.5">
                   <Label htmlFor="project-name">Project name</Label>
                   <Input
@@ -162,7 +164,7 @@ export function Landing({ analyzing, onStart, onAudiencePrefill, audiencePrefill
         </motion.div>
 
         {/* Feature chips */}
-        <div className="mx-auto mt-8 flex max-w-3xl flex-wrap items-center justify-center gap-2">
+        <div className="mx-auto mt-6 flex max-w-3xl flex-wrap items-center justify-center gap-2">
           {FEATURE_CHIPS.map(({ icon: Icon, label }) => (
             <span
               key={label}
@@ -181,11 +183,12 @@ export function Landing({ analyzing, onStart, onAudiencePrefill, audiencePrefill
         onApply={handleBriefApplied}
       />
 
-      {/* How it works */}
-      <section className="mt-10" aria-labelledby="how-it-works">
+      {/* How it works - 64px below the hero (section rhythm), 24px
+          heading-to-grid gap */}
+      <section className="mt-16 sm:mt-20" aria-labelledby="how-it-works">
         <h2
           id="how-it-works"
-          className="mb-4 text-center text-sm font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500"
+          className="mb-6 text-center text-sm font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500"
         >
           How it works
         </h2>
@@ -197,12 +200,12 @@ export function Landing({ analyzing, onStart, onAudiencePrefill, audiencePrefill
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.2, delay: 0.03 * i }}
               whileHover={{ y: -2 }}
-              className="flex flex-col items-center gap-2 rounded-lg border border-border bg-card p-4 text-center shadow-sm"
+              className="flex h-full flex-col items-center gap-2 rounded-lg border border-border bg-card p-4 text-center shadow-sm"
             >
               <span className="flex size-9 items-center justify-center rounded-lg bg-ink-50 text-ink-600 dark:bg-ink-500/10 dark:text-ink-300">
                 <StepIcon icon={step.icon} className="size-4" />
               </span>
-              <span className="text-xs font-medium text-gray-700 dark:text-gray-300">{step.label}</span>
+              <span className="text-pretty text-xs font-medium leading-snug text-gray-700 dark:text-gray-300">{step.label}</span>
             </motion.div>
           ))}
         </div>

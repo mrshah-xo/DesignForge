@@ -91,7 +91,7 @@ export function LogoDropzone({ file, onFile, disabled = false, compact = false }
             aria-label="Remove selected file"
             disabled={disabled}
             onClick={() => confirmFile(null)}
-            className="flex size-8 shrink-0 items-center justify-center rounded-full text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-700 disabled:opacity-50 dark:hover:bg-gray-800"
+            className="flex size-8 shrink-0 items-center justify-center rounded-full text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50 dark:hover:bg-gray-800"
           >
             <X className="size-4" />
           </button>
@@ -114,6 +114,7 @@ export function LogoDropzone({ file, onFile, disabled = false, compact = false }
           whileHover={disabled ? undefined : { y: -1 }}
           className={cn(
             'flex w-full flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed text-center transition-colors',
+            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background',
             compact ? 'p-6' : 'p-8',
             dragging
               ? 'border-ink-500 bg-ink-50/60 dark:bg-ink-500/10'

@@ -78,7 +78,7 @@ export function Header({ projects, loadingProjects, onOpenProject, onNewProject,
             <DropdownMenuTrigger asChild>
               <Button
                 variant="outline"
-                size="sm"
+                size="default"
                 className="gap-1.5"
                 title="Projects"
               >
@@ -133,7 +133,7 @@ export function Header({ projects, loadingProjects, onOpenProject, onNewProject,
           ) : (
             <Button
               variant="outline"
-              size="sm"
+              size="default"
               className="gap-1.5"
               aria-label="Projects"
               title="Projects"
@@ -145,7 +145,7 @@ export function Header({ projects, loadingProjects, onOpenProject, onNewProject,
           )}
 
           <Button
-            size="sm"
+            size="default"
             onClick={onNewProject}
             aria-label="New project"
             title="New project"

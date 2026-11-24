@@ -141,7 +141,7 @@ export function AppearancePanel() {
         <Button
           variant="outline"
           size="icon"
-          className="size-9 shrink-0"
+          className="relative size-9 shrink-0 after:absolute after:-inset-2 after:rounded-md after:content-[''] focus-visible:after:-inset-0.5"
           aria-label="Appearance settings"
           title="Appearance settings"
         >
