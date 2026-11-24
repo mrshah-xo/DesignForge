@@ -1099,6 +1099,12 @@ export const normalizeTokens = (raw: unknown, fallbackPrimary?: string, fallback
       glow: rawStyle.glow === true,
       gradientHero: rawStyle.gradientHero === true,
       softAmbient: rawStyle.softAmbient === true,
+      layoutRedesign:
+        rawStyle.layoutRedesign === 'bento' ||
+        rawStyle.layoutRedesign === 'split' ||
+        rawStyle.layoutRedesign === 'editorial'
+          ? rawStyle.layoutRedesign
+          : '',
       buttonPreset:
         rawStyle.buttonPreset === 'plastic' || rawStyle.buttonPreset === 'venom'
           ? rawStyle.buttonPreset

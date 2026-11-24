@@ -80,6 +80,9 @@ export function Header({ projects, loadingProjects, onOpenProject, onNewProject,
 
           <AppearancePanel />
 
+          {/* Utility cluster | project cluster divider */}
+          <div aria-hidden="true" className="h-5 w-px bg-border" />
+
           {mounted ? (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -87,16 +90,16 @@ export function Header({ projects, loadingProjects, onOpenProject, onNewProject,
                 variant="outline"
                 size="sm"
                 className="gap-1.5"
-                title="Recent projects"
+                title="Projects"
               >
                 <Clock className="size-4 text-gray-400" />
-                <span className="hidden sm:inline">Recent projects</span>
+                <span className="hidden sm:inline">Projects</span>
                 <ChevronDown className="size-3.5 text-gray-400" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-72">
               <DropdownMenuLabel className="text-xs text-gray-500">
-                Recent projects
+                Projects
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
               {loadingProjects ? (
@@ -106,7 +109,7 @@ export function Header({ projects, loadingProjects, onOpenProject, onNewProject,
                 </div>
               ) : projects.length === 0 ? (
                 <p className="px-3 py-6 text-center text-sm text-muted-foreground">
-                  No projects yet - upload a logo to start.
+                  No projects yet.
                 </p>
               ) : (
                 <div className="max-h-72 overflow-y-auto df-scroll">
@@ -119,9 +122,11 @@ export function Header({ projects, loadingProjects, onOpenProject, onNewProject,
                       <LogoThumb src={p.logoDataUrl} name={p.name} size={28} />
                       <span className="min-w-0 flex-1">
                         <span className="block truncate text-sm font-medium">{p.name}</span>
-                        <span className="block truncate text-xs text-muted-foreground">
-                          {p.description || 'No description'}
-                        </span>
+                        {p.description && (
+                          <span className="block truncate text-xs text-muted-foreground">
+                            {p.description}
+                          </span>
+                        )}
                       </span>
                       <Badge
                         variant="secondary"
@@ -140,11 +145,11 @@ export function Header({ projects, loadingProjects, onOpenProject, onNewProject,
               variant="outline"
               size="sm"
               className="gap-1.5"
-              aria-label="Recent projects"
-              title="Recent projects"
+              aria-label="Projects"
+              title="Projects"
             >
               <Clock className="size-4 text-gray-400" />
-              <span className="hidden sm:inline">Recent projects</span>
+              <span className="hidden sm:inline">Projects</span>
               <ChevronDown className="size-3.5 text-gray-400" />
             </Button>
           )}

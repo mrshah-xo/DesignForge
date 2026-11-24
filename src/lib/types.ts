@@ -154,6 +154,11 @@ export type CursorPackValue = 'windows' | 'macos' | 'dot' | 'crosshair' | '';
  * style (Apple HIG, Liquid Glass, Google glow, …). Optional flags -
  * the live preview renders the matching treatment when a flag is set.
  */
+export type CursorPackValue = '' | 'windows' | 'macos' | 'dot' | 'crosshair';
+
+/** Whole-page arrangement for the Layout redesign feature (live preview). */
+export type LayoutVariant = 'bento' | 'split' | 'editorial';
+
 export interface DesignStyleFlags {
   /** Liquid-glass surfaces: translucent cards/nav/inputs + backdrop blur over a gradient canvas. */
   glass?: boolean;
@@ -167,6 +172,8 @@ export interface DesignStyleFlags {
   buttonPreset?: 'plastic' | 'venom' | '';
   /** Custom cursor pack applied across the whole surface ('windows' | 'macos' | 'dot' | 'crosshair'), empty/undefined = system cursors. */
   cursorPack?: CursorPackValue;
+  /** Redesigned page arrangement for the whole UI ('bento' | 'split' | 'editorial'), empty/undefined = classic gallery flow. */
+  layoutRedesign?: LayoutVariant | '';
 }
 
 export interface DesignTokens {

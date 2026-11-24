@@ -617,6 +617,34 @@ export function buildFallbackMarkdown(
       '- Do not hide or replace the system cursor unless a dedicated custom-cursor pack (Windows / macOS / dot / crosshair) is enabled for the whole surface.',
     ];
 
+  // Layout redesign flag - describes the whole-page arrangement in DESIGN.md.
+  const layoutRedesign = tokens.style?.layoutRedesign;
+  const layoutLines =
+    layoutRedesign === 'bento'
+      ? [
+        '- Arrangement: **Bento mosaic** - components compose into an asymmetric card grid on one centered content column (max-width ~1000px).',
+        '- Hero stays centered and compact; foundations (buttons + badges) share one row; feature cards form a bento mosaic (first card spans 2 columns, last card spans the full row as a horizontal card).',
+        '- Pricing and the testimonial sit side by side in a two-column band of equal height; stats become three tiles; alerts flow into a compact 3-column grid; forms widen to a centered two-column card.',
+        '- Alignment rule: every section aligns to the same content column with a consistent 36px vertical rhythm; keep gaps uniform (12-16px) so the mosaic reads as one system.',
+      ].join('\n')
+      : layoutRedesign === 'split'
+        ? [
+          '- Arrangement: **Split** - left-aligned hero paired with a product visual card on the right (two columns, ~1.1fr / 0.9fr on a ~1000px content column).',
+          '- The hero card reuses brand tokens: mini stat tiles, a trust alert strip and a full-width primary CTA - a believable product surface, not decoration.',
+          '- Feature cards become horizontal rows (icon left, text right); pricing and the testimonial sit side by side; stats become three tiles; alerts flow into a compact grid.',
+          '- Alignment rule: all section content starts on the same left edge as the hero copy; consistent 36px section rhythm; CTAs left-aligned with the headline.',
+        ].join('\n')
+        : layoutRedesign === 'editorial'
+          ? [
+            '- Arrangement: **Editorial** - magazine-style left-aligned layout: oversized headline (~44px, tight -0.03em tracking), small uppercase brand kicker with an accent rule above it.',
+            '- Hero copy occupies a ~760px column; CTAs and trust chips left-aligned under the headline; generous top whitespace.',
+            '- Feature cards become horizontal rows; pricing and the testimonial sit side by side; the rest of the page aligns to one content column with a consistent 36px rhythm.',
+            '- Alignment rule: strong left edge for every section - no centered blocks below the hero; keep line lengths under ~70 characters for readability.',
+          ].join('\n')
+          : [
+            '- Default gallery flow: sections stack vertically in component order; center the hero, keep each section full-width with 24px padding.',
+          ];
+
   const groupedColors = (roles: Array<keyof DesignTokens['colors']>) =>
     roles
       .map((role) => {
@@ -802,6 +830,10 @@ Photos sit inside ${radius.lg} corners, edge-to-edge; product imagery is 1:1 or 
 ### Navigation
 
 **\`navbar\`** - height 64px, background ${colors.background.hex}, bottom border ${colors.border.hex}; logo left, links ${colors.foreground.hex}, CTA right (primary button).
+
+### Page layout
+
+${layoutLines}
 
 ### Cursor
 

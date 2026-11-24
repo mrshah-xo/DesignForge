@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { toast } from 'sonner'
-import { Loader2, Plus } from 'lucide-react'
+import { Loader2 } from 'lucide-react'
 
 import { api } from '@/lib/client/api'
 import { CATEGORIES, MONETIZATION, PLATFORMS, TRUST_LEVELS, STEPS } from '@/lib/types'
@@ -528,7 +528,7 @@ export function WizardShell() {
         return project.design ? (
           <MatchStep design={project.design} onContinue={() => handleSelectStep(6)} />
         ) : (
-          <p className="rounded-lg border border-border bg-card p-8 text-center text-sm text-muted-foreground shadow-sm">
+          <p data-slot="panel" className="rounded-lg border border-border bg-card p-8 text-center text-sm text-muted-foreground shadow-sm">
             Generate the design system in step 4 to see the fit report.
           </p>
         )
@@ -582,7 +582,7 @@ export function WizardShell() {
             <section className="min-w-0 flex-1" aria-label="Wizard content">
               <div className="mx-auto max-w-5xl">
                 {/* Project strip */}
-                <div className="mb-6 flex items-center gap-3 rounded-lg border border-border bg-card p-4 shadow-sm">
+                <div data-slot="panel" className="mb-6 flex items-center gap-3 rounded-lg border border-border bg-card p-4 shadow-sm">
                   <LogoThumb
                     src={project.logoDataUrl}
                     name={project.name}
@@ -597,18 +597,10 @@ export function WizardShell() {
                       <StatusBadge status={detailStatusLabel(project)} />
                     </div>
                   </div>
-                  <button
-                    type="button"
-                    onClick={startNew}
-                    className="flex shrink-0 items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-medium text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-800 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-gray-200"
-                  >
-                    <Plus className="size-3.5" />
-                    New project
-                  </button>
                 </div>
 
                 {loadingProject ? (
-                  <div className="flex items-center justify-center gap-2 rounded-lg border border-border bg-card p-12 text-sm text-muted-foreground shadow-sm">
+                  <div data-slot="panel" className="flex items-center justify-center gap-2 rounded-lg border border-border bg-card p-12 text-sm text-muted-foreground shadow-sm">
                     <Loader2 className="size-4 animate-spin" />
                     Loading project…
                   </div>

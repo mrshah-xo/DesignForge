@@ -243,7 +243,9 @@ export function DesignStep({
         setTokens(next)
         toast.success(`${label} ${on ? 'enabled' : 'disabled'}`, {
           description: on
-            ? 'The effect layer is baked into your design tokens - combine it freely with the other features.'
+            ? feature.id === 'layoutRedesign'
+              ? 'Your components are re-arranged into a new page layout - alignment and hierarchy rebuilt from your existing tokens. Pick an arrangement below.'
+              : 'The effect layer is baked into your design tokens - combine it freely with the other features.'
             : 'The effect layer was removed from your design tokens.',
         })
       })

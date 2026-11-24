@@ -1,11 +1,11 @@
 'use client'
 
 // ============================================================
-// Global appearance preferences for the MrDesign.md UI: color
-// mode, accent color, corner radius, and density.
+// Global appearance preferences for the MrDesign.md UI: UI style
+// preset, color mode, accent color, corner radius, and density.
 //
 // Preferences are stored in localStorage and applied as data
-// attributes on <html> (data-mode / data-accent / data-radius /
+// attributes on <html> (data-uistyle / data-accent / data-radius /
 // data-density). Plain CSS in globals.css reads those attributes
 // and restyles EVERY component - all shadcn/ui primitives and the
 // wizard chrome share the same CSS variable scales, so one change
@@ -21,8 +21,11 @@ export type ColorMode = 'light' | 'dark'
 export type Accent = 'graphite' | 'moss' | 'terracotta' | 'wine' | 'honey'
 export type Radius = 'sharp' | 'soft' | 'round'
 export type Density = 'comfortable' | 'compact'
+/** Whole-UI component style presets (applied as data-uistyle on <html>). */
+export type UiStyle = 'classic' | 'glass' | 'brutal' | 'soft'
 
 export interface Appearance {
+  uiStyle: UiStyle
   accent: Accent
   radius: Radius
   density: Density
@@ -31,10 +34,18 @@ export interface Appearance {
 const STORAGE_KEY = 'mrdesign-appearance'
 
 export const DEFAULT_APPEARANCE: Appearance = {
+  uiStyle: 'classic',
   accent: 'graphite',
   radius: 'soft',
   density: 'comfortable',
 }
+
+export const UI_STYLE_OPTIONS: { value: UiStyle; label: string }[] = [
+  { value: 'classic', label: 'Classic' },
+  { value: 'glass', label: 'Glass' },
+  { value: 'brutal', label: 'Brutal' },
+  { value: 'soft', label: 'Soft' },
+]
 
 export const ACCENT_OPTIONS: { value: Accent; label: string; swatch: string }[] = [
   { value: 'graphite', label: 'Graphite', swatch: '#383838' },
@@ -66,6 +77,9 @@ function readStorage(): Appearance {
     if (!raw) return DEFAULT_APPEARANCE
     const parsed = JSON.parse(raw) as Partial<Appearance>
     return {
+      uiStyle: isOneOf(parsed.uiStyle, UI_STYLE_OPTIONS.map((s) => s.value))
+        ? parsed.uiStyle
+        : DEFAULT_APPEARANCE.uiStyle,
       accent: isOneOf(parsed.accent, ACCENT_OPTIONS.map((a) => a.value))
         ? parsed.accent
         : DEFAULT_APPEARANCE.accent,
@@ -85,6 +99,7 @@ function readStorage(): Appearance {
 function applyToDocument(a: Appearance) {
   if (typeof document === 'undefined') return
   const el = document.documentElement
+  el.dataset.uistyle = a.uiStyle
   el.dataset.accent = a.accent
   el.dataset.radius = a.radius
   el.dataset.density = a.density

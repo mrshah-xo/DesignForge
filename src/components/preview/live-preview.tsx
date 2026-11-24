@@ -8,6 +8,7 @@ import {
   ChevronDown,
   ShieldCheck,
   Sparkles,
+  Wand2,
   XCircle,
   Zap,
 } from 'lucide-react'
@@ -253,6 +254,22 @@ export function LivePreview({ tokens }: LivePreviewProps) {
       ? styleFlags.buttonPreset
       : null
   const cursorPack = getCursorPack(styleFlags.cursorPack)
+
+  // ---------- Layout redesign feature (whole-page arrangement) ----------
+  // When enabled, the gallery flow is rebuilt into a designed page:
+  // components move to different places, sit on one consistent content
+  // column and compose into grids - colors and type stay untouched.
+  const layoutRaw = styleFlags.layoutRedesign
+  const layoutVariant: 'bento' | 'split' | 'editorial' | null =
+    layoutRaw === 'bento' || layoutRaw === 'split' || layoutRaw === 'editorial' ? layoutRaw : null
+  const redesigned = layoutVariant !== null
+  const leftAligned = redesigned && layoutVariant !== 'bento'
+  // One content column for every section - the alignment fix.
+  const sectionWrap: CSSProperties | undefined = redesigned
+    ? { maxWidth: 1000, marginLeft: 'auto', marginRight: 'auto', width: '100%' }
+    : undefined
+  const sectionPad = redesigned ? '36px 24px' : '24px'
+
   const accent = color('accent')
 
   // Soft ambient (Apple HIG-style) depth - layered over the token shadows.
@@ -392,6 +409,181 @@ export function LivePreview({ tokens }: LivePreviewProps) {
 
   const navLinks = copy_.navLinks
 
+  // ---------- Shared section content (reused by classic + redesigned arrangements) ----------
+  const buttonsRow = (
+    <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'center' }}>
+      {primaryButton('Primary')}
+      <button type="button" style={{ ...btnBase, background: secondary, color: foreground }}>
+        Secondary
+      </button>
+      <button
+        type="button"
+        style={{ ...btnBase, background: 'transparent', color: foreground, border: `1px solid ${border}` }}
+      >
+        Outline
+      </button>
+      <button type="button" style={{ ...btnBase, background: 'transparent', color: foreground }}>
+        Ghost
+      </button>
+      <button type="button" style={{ ...btnBase, background: danger, color: readableOn(danger) }}>
+        Destructive
+      </button>
+      <button
+        type="button"
+        style={{
+          ...btnBase,
+          background: muted,
+          color: mutedForeground,
+          opacity: 0.6,
+          cursor: 'not-allowed',
+        }}
+        disabled
+      >
+        Disabled
+      </button>
+    </div>
+  )
+
+  const badgesRow = (
+    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+      <span
+        style={{
+          padding: '4px 12px',
+          borderRadius: radius.full,
+          background: primary,
+          color: primaryForeground,
+          fontSize: scale.caption,
+          fontWeight: 600,
+        }}
+      >
+        Primary
+      </span>
+      <span
+        style={{
+          padding: '4px 12px',
+          borderRadius: radius.full,
+          background: withAlpha(success, 0.12),
+          color: success,
+          fontSize: scale.caption,
+          fontWeight: 600,
+        }}
+      >
+        Success
+      </span>
+      <span
+        style={{
+          padding: '4px 12px',
+          borderRadius: radius.full,
+          background: withAlpha(warning, 0.12),
+          color: warning,
+          fontSize: scale.caption,
+          fontWeight: 600,
+        }}
+      >
+        Warning
+      </span>
+      <span
+        style={{
+          padding: '4px 12px',
+          borderRadius: radius.full,
+          background: withAlpha(danger, 0.12),
+          color: danger,
+          fontSize: scale.caption,
+          fontWeight: 600,
+        }}
+      >
+        Danger
+      </span>
+    </div>
+  )
+
+  const pricingCard = (
+    <div
+      style={{
+        ...cardBase,
+        padding: 24,
+        ...(redesigned ? { height: '100%', boxSizing: 'border-box' } : { maxWidth: 380 }),
+        border: `2px solid ${primary}`,
+        boxShadow: shadows.lg,
+        position: 'relative',
+      }}
+    >
+      <span
+        style={{
+          position: 'absolute',
+          top: -12,
+          left: 24,
+          padding: '4px 12px',
+          borderRadius: radius.full,
+          background: primary,
+          color: primaryForeground,
+          fontSize: scale.caption,
+          fontWeight: 700,
+        }}
+      >
+        Most popular
+      </span>
+      <h3 style={{ fontFamily: headingFamily, fontWeight: 700, fontSize: scale.h3, margin: '6px 0 4px' }}>
+        Growth
+      </h3>
+      <p style={{ display: 'flex', alignItems: 'baseline', gap: 4 }}>
+        <span style={{ fontFamily: headingFamily, fontWeight: 800, fontSize: scale.h2 }}>$29</span>
+        <span style={{ color: mutedForeground, fontSize: scale.small }}>/ month</span>
+      </p>
+      <ul style={{ listStyle: 'none', margin: '16px 0', padding: 0, display: 'grid', gap: 10 }}>
+        {copy_.pricingFeatures.map((feature) => (
+          <li key={feature} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: scale.small }}>
+            <Check size={15} style={{ color: success, flexShrink: 0 }} />
+            {feature}
+          </li>
+        ))}
+      </ul>
+      {primaryButton('Choose Growth', { width: '100%' })}
+    </div>
+  )
+
+  const testimonialCard = (
+    <div
+      style={{
+        background: muted,
+        borderRadius: radius.lg,
+        padding: 24,
+        ...(redesigned
+          ? { height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'center' }
+          : { maxWidth: 520 }),
+      }}
+    >
+      <p style={{ fontSize: scale.body, color: foreground, margin: 0 }}>
+        “{copy_.testimonial.quote}”
+      </p>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 16 }}>
+        <span
+          aria-hidden="true"
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            width: 40,
+            height: 40,
+            borderRadius: radius.full,
+            background: primary,
+            color: primaryForeground,
+            fontWeight: 700,
+            fontSize: scale.small,
+          }}
+        >
+          {copy_.testimonial.author.charAt(0).toUpperCase()}
+        </span>
+        <span>
+          <span style={{ display: 'block', fontWeight: 600, fontSize: scale.small }}>{copy_.testimonial.author}</span>
+          <span style={{ display: 'block', color: mutedForeground, fontSize: scale.caption }}>
+            {copy_.testimonial.role}
+          </span>
+        </span>
+      </div>
+    </div>
+  )
+
   return (
     <div
       className={`df-preview max-h-[720px] overflow-y-auto rounded-lg border df-scroll${cursorPack ? ' df-cursor-active' : ''}`}
@@ -475,11 +667,37 @@ export function LivePreview({ tokens }: LivePreviewProps) {
           </nav>
         </header>
 
-        {/* (b) Hero */}
+        {/* Layout redesign indicator */}
+        {redesigned && (
+          <div style={{ display: 'flex', justifyContent: 'center', paddingTop: 16 }}>
+            <span
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 6,
+                padding: '4px 12px',
+                borderRadius: radius.full,
+                background: withAlpha(primary, 0.1),
+                color: primary,
+                fontSize: scale.caption,
+                fontWeight: 600,
+              }}
+            >
+              <Wand2 size={12} />
+              Layout redesign · {layoutVariant === 'bento' ? 'Bento' : layoutVariant === 'split' ? 'Split' : 'Editorial'}
+            </span>
+          </div>
+        )}
+
+        {/* (b) Hero - classic centered, or re-arranged by the Layout redesign feature */}
         <section
           style={{
-            padding: '56px 24px',
-            textAlign: 'center',
+            padding: redesigned
+              ? layoutVariant === 'editorial'
+                ? '56px 24px 44px'
+                : '48px 24px'
+              : '56px 24px',
+            textAlign: leftAligned ? 'left' : 'center',
             ...(gradientHero
               ? {
                   background: `linear-gradient(160deg, ${withAlpha(primary, 0.16)} 0%, ${withAlpha(accent, 0.12)} 55%, transparent 85%)`,
@@ -487,166 +705,225 @@ export function LivePreview({ tokens }: LivePreviewProps) {
               : {}),
           }}
         >
-          <h1
-            style={{
-              fontFamily: headingFamily,
-              fontWeight: 800,
-              fontSize: scale.h1,
-              letterSpacing: headingSpacing,
-              lineHeight: 1.1,
-              margin: '0 auto',
-              maxWidth: 640,
-            }}
-          >
-            {copy_.heroHeadline}
-          </h1>
-          <p
-            style={{
-              marginTop: 16,
-              marginBottom: 24,
-              color: mutedForeground,
-              fontSize: scale.body,
-              maxWidth: 520,
-              marginLeft: 'auto',
-              marginRight: 'auto',
-            }}
-          >
-            {copy_.heroSubhead}
-          </p>
           <div
-            style={{
-              display: 'flex',
-              gap: 12,
-              justifyContent: 'center',
-              flexWrap: 'wrap',
-              marginBottom: 20,
-            }}
-          >
-            {primaryButton(copy_.primaryCta)}
-            <button
-              type="button"
-              style={{ ...btnBase, border: `1px solid ${border}`, color: foreground, background: 'transparent' }}
-            >
-              {copy_.secondaryCta}
-            </button>
-          </div>
-          {trustPatterns.length > 0 && (
-            <div style={{ display: 'flex', gap: 8, justifyContent: 'center', flexWrap: 'wrap' }}>
-              {trustPatterns.slice(0, 3).map((pattern) => (
-                <span
-                  key={pattern}
-                  style={{
-                    display: 'inline-flex',
+            style={
+              layoutVariant === 'split'
+                ? {
+                    display: 'grid',
+                    gridTemplateColumns: 'minmax(0, 1.1fr) minmax(0, 0.9fr)',
+                    gap: 40,
                     alignItems: 'center',
-                    gap: 6,
-                    padding: '6px 12px',
-                    borderRadius: radius.full,
-                    background: muted,
-                    color: mutedForeground,
-                    fontSize: scale.caption,
+                    maxWidth: 1000,
+                    margin: '0 auto',
+                    width: '100%',
+                    boxSizing: 'border-box',
+                  }
+                : {
+                    maxWidth: leftAligned ? 760 : 640,
+                    margin: '0 auto',
+                    width: '100%',
+                    boxSizing: 'border-box',
+                  }
+            }
+          >
+            <div>
+              {layoutVariant === 'editorial' && (
+                <span
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: 10, marginBottom: 20 }}
+                >
+                  <span aria-hidden="true" style={{ width: 40, height: 3, background: primary }} />
+                  <span
+                    style={{
+                      fontSize: scale.caption,
+                      fontWeight: 700,
+                      letterSpacing: '0.14em',
+                      textTransform: 'uppercase',
+                      color: mutedForeground,
+                    }}
+                  >
+                    {brandName}
+                  </span>
+                </span>
+              )}
+              <h1
+                style={{
+                  fontFamily: headingFamily,
+                  fontWeight: 800,
+                  fontSize: layoutVariant === 'editorial' ? 44 : scale.h1,
+                  letterSpacing: layoutVariant === 'editorial' ? '-0.03em' : headingSpacing,
+                  lineHeight: 1.08,
+                  margin: 0,
+                  maxWidth: leftAligned ? undefined : 640,
+                  marginLeft: leftAligned ? undefined : 'auto',
+                  marginRight: leftAligned ? undefined : 'auto',
+                }}
+              >
+                {copy_.heroHeadline}
+              </h1>
+              <p
+                style={{
+                  marginTop: 16,
+                  marginBottom: 24,
+                  color: mutedForeground,
+                  fontSize: scale.body,
+                  maxWidth: 520,
+                  marginLeft: leftAligned ? undefined : 'auto',
+                  marginRight: leftAligned ? undefined : 'auto',
+                }}
+              >
+                {copy_.heroSubhead}
+              </p>
+              <div
+                style={{
+                  display: 'flex',
+                  gap: 12,
+                  justifyContent: leftAligned ? 'flex-start' : 'center',
+                  flexWrap: 'wrap',
+                  marginBottom: 20,
+                }}
+              >
+                {primaryButton(copy_.primaryCta)}
+                <button
+                  type="button"
+                  style={{ ...btnBase, border: `1px solid ${border}`, color: foreground, background: 'transparent' }}
+                >
+                  {copy_.secondaryCta}
+                </button>
+              </div>
+              {trustPatterns.length > 0 && (
+                <div
+                  style={{
+                    display: 'flex',
+                    gap: 8,
+                    justifyContent: leftAligned ? 'flex-start' : 'center',
+                    flexWrap: 'wrap',
                   }}
                 >
-                  <ShieldCheck size={13} style={{ color: success }} />
-                  {pattern}
-                </span>
-              ))}
+                  {trustPatterns.slice(0, 3).map((pattern) => (
+                    <span
+                      key={pattern}
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: 6,
+                        padding: '6px 12px',
+                        borderRadius: radius.full,
+                        background: muted,
+                        color: mutedForeground,
+                        fontSize: scale.caption,
+                      }}
+                    >
+                      <ShieldCheck size={13} style={{ color: success }} />
+                      {pattern}
+                    </span>
+                  ))}
+                </div>
+              )}
             </div>
-          )}
+            {layoutVariant === 'split' && (
+              <div style={{ ...cardBase, padding: 20, display: 'grid', gap: 12 }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <span
+                      aria-hidden="true"
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        width: 24,
+                        height: 24,
+                        borderRadius: radius.sm,
+                        background: primary,
+                        color: primaryForeground,
+                        fontWeight: 800,
+                        fontSize: 11,
+                      }}
+                    >
+                      {initial}
+                    </span>
+                    <span style={{ fontWeight: 700, fontFamily: headingFamily, fontSize: scale.small }}>
+                      {brandName}
+                    </span>
+                  </span>
+                  <span
+                    style={{
+                      padding: '3px 10px',
+                      borderRadius: radius.full,
+                      background: withAlpha(success, 0.12),
+                      color: success,
+                      fontSize: scale.caption,
+                      fontWeight: 700,
+                    }}
+                  >
+                    Live
+                  </span>
+                </div>
+                <div style={{ display: 'grid', gap: 12, gridTemplateColumns: '1fr 1fr' }}>
+                  {[
+                    { value: '98%', label: 'Satisfaction' },
+                    { value: '12k+', label: 'Teams' },
+                  ].map((stat) => (
+                    <div key={stat.label} style={{ background: muted, borderRadius: radius.md, padding: 14 }}>
+                      <p style={{ fontFamily: headingFamily, fontWeight: 800, fontSize: scale.h3, margin: 0 }}>
+                        {stat.value}
+                      </p>
+                      <p style={{ fontSize: scale.caption, color: mutedForeground, margin: 0 }}>{stat.label}</p>
+                    </div>
+                  ))}
+                </div>
+                <div
+                  style={{
+                    display: 'flex',
+                    gap: 8,
+                    alignItems: 'center',
+                    background: withAlpha(success, 0.1),
+                    borderLeft: `3px solid ${success}`,
+                    borderRadius: radius.md,
+                    padding: '10px 12px',
+                  }}
+                >
+                  <CheckCircle2 size={14} style={{ color: success, flexShrink: 0 }} />
+                  <span style={{ fontSize: scale.caption, color: foreground }}>
+                    {trustPatterns[0] ?? 'Trusted by teams worldwide'}
+                  </span>
+                </div>
+                {primaryButton(copy_.primaryCta, { width: '100%' })}
+              </div>
+            )}
+          </div>
         </section>
 
-        {/* (c) Buttons */}
-        <Section pad="24px" label="Buttons">
-          <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'center' }}>
-            {primaryButton('Primary')}
-            <button type="button" style={{ ...btnBase, background: secondary, color: foreground }}>
-              Secondary
-            </button>
-            <button
-              type="button"
-              style={{ ...btnBase, background: 'transparent', color: foreground, border: `1px solid ${border}` }}
-            >
-              Outline
-            </button>
-            <button type="button" style={{ ...btnBase, background: 'transparent', color: foreground }}>
-              Ghost
-            </button>
-            <button type="button" style={{ ...btnBase, background: danger, color: readableOn(danger) }}>
-              Destructive
-            </button>
-            <button
-              type="button"
+        {/* (c) Buttons & badges - merged foundations row when redesigned */}
+        {redesigned ? (
+          <Section pad={sectionPad} label="Buttons & badges" sectionStyle={sectionWrap}>
+            <div
               style={{
-                ...btnBase,
-                background: muted,
-                color: mutedForeground,
-                opacity: 0.6,
-                cursor: 'not-allowed',
+                display: 'grid',
+                gap: 16,
+                gridTemplateColumns: 'minmax(0, 1.5fr) minmax(0, 1fr)',
+                alignItems: 'start',
               }}
-              disabled
             >
-              Disabled
-            </button>
-          </div>
-        </Section>
+              {buttonsRow}
+              {badgesRow}
+            </div>
+          </Section>
+        ) : (
+          <>
+            <Section pad="24px" label="Buttons">
+              {buttonsRow}
+            </Section>
 
-        {/* (d) Badges */}
-        <Section pad="24px" label="Badges">
-          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-            <span
-              style={{
-                padding: '4px 12px',
-                borderRadius: radius.full,
-                background: primary,
-                color: primaryForeground,
-                fontSize: scale.caption,
-                fontWeight: 600,
-              }}
-            >
-              Primary
-            </span>
-            <span
-              style={{
-                padding: '4px 12px',
-                borderRadius: radius.full,
-                background: withAlpha(success, 0.12),
-                color: success,
-                fontSize: scale.caption,
-                fontWeight: 600,
-              }}
-            >
-              Success
-            </span>
-            <span
-              style={{
-                padding: '4px 12px',
-                borderRadius: radius.full,
-                background: withAlpha(warning, 0.12),
-                color: warning,
-                fontSize: scale.caption,
-                fontWeight: 600,
-              }}
-            >
-              Warning
-            </span>
-            <span
-              style={{
-                padding: '4px 12px',
-                borderRadius: radius.full,
-                background: withAlpha(danger, 0.12),
-                color: danger,
-                fontSize: scale.caption,
-                fontWeight: 600,
-              }}
-            >
-              Danger
-            </span>
-          </div>
-        </Section>
+            <Section pad="24px" label="Badges">
+              {badgesRow}
+            </Section>
+          </>
+        )}
 
-        {/* (e) Form card */}
-        <Section pad="24px" label="Forms">
-          <div style={{ ...cardBase, padding: 24, maxWidth: 460 }}>
-            <div style={{ display: 'grid', gap: 16 }}>
+        {/* (e) Form card - wider two-column fields when redesigned */}
+        <Section pad={sectionPad} label="Forms" sectionStyle={sectionWrap}>
+          <div style={{ ...cardBase, padding: 24, maxWidth: redesigned ? 640 : 460, margin: redesigned ? '0 auto' : undefined }}>
+            <div style={{ display: 'grid', gap: 16, gridTemplateColumns: redesigned ? '1fr 1fr' : undefined }}>
               <label style={{ display: 'grid', gap: 6, fontSize: scale.small, fontWeight: 600 }}>
                 Full name
                 <input type="text" readOnly value="Jane Cooper" style={inputBase} />
@@ -676,11 +953,11 @@ export function LivePreview({ tokens }: LivePreviewProps) {
                   />
                 )}
               </label>
-              <label style={{ display: 'grid', gap: 6, fontSize: scale.small, fontWeight: 600 }}>
+              <label style={{ ...(redesigned ? { gridColumn: 'span 2' } : {}), display: 'grid', gap: 6, fontSize: scale.small, fontWeight: 600 }}>
                 Anything we should know?
                 <textarea readOnly rows={3} defaultValue="We invoice about 40 clients a month." style={{ ...inputBase, resize: 'none' }} />
               </label>
-              <div style={{ position: 'relative' }}>
+              <div style={redesigned ? { gridColumn: 'span 2' } : undefined}>
                 <label style={{ display: 'grid', gap: 6, fontSize: scale.small, fontWeight: 600 }}>
                   Country
                   <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -694,7 +971,7 @@ export function LivePreview({ tokens }: LivePreviewProps) {
                   </span>
                 </label>
               </div>
-              <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: scale.small, color: mutedForeground }}>
+              <label style={{ ...(redesigned ? { gridColumn: 'span 2' } : {}), display: 'flex', alignItems: 'center', gap: 8, fontSize: scale.small, color: mutedForeground }}>
                 <input type="checkbox" defaultChecked readOnly style={{ accentColor: primary, width: 15, height: 15 }} />
                 Email me product updates
               </label>
@@ -706,6 +983,7 @@ export function LivePreview({ tokens }: LivePreviewProps) {
                     background: primary,
                     color: primaryForeground,
                     width: '100%',
+                    ...(redesigned ? { gridColumn: 'span 2' } : {}),
                   }}
                 >
                   Create account
@@ -717,144 +995,114 @@ export function LivePreview({ tokens }: LivePreviewProps) {
           </div>
         </Section>
 
-        {/* (f) Feature cards */}
-        <Section pad="24px" label="Features">
-          <div style={{ display: 'grid', gap: 16, gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))' }}>
-            {copy_.featureCards.map(({ icon, title, text }) => {
+        {/* (f) Feature cards - bento mosaic / horizontal rows when redesigned */}
+        <Section pad={sectionPad} label="Features" sectionStyle={sectionWrap}>
+          <div
+            style={
+              redesigned && layoutVariant === 'bento'
+                ? { display: 'grid', gap: 16, gridTemplateColumns: 'repeat(3, 1fr)' }
+                : redesigned
+                  ? { display: 'grid', gap: 12 }
+                  : { display: 'grid', gap: 16, gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))' }
+            }
+          >
+            {copy_.featureCards.map(({ icon, title, text }, index) => {
               const Icon = FEATURE_ICONS[icon] ?? Sparkles
+              const horizontal = redesigned && layoutVariant !== 'bento'
+              const bentoFirst = redesigned && layoutVariant === 'bento' && index === 0
+              const bentoWide = redesigned && layoutVariant === 'bento' && index === copy_.featureCards.length - 1
               return (
-              <div key={title} style={{ ...cardBase, padding: 20 }}>
+              <div
+                key={title}
+                style={{
+                  ...cardBase,
+                  padding: bentoFirst ? 28 : 20,
+                  ...(bentoFirst ? { gridColumn: 'span 2' } : {}),
+                  ...(bentoWide ? { gridColumn: 'span 3', display: 'flex', gap: 20, alignItems: 'center' } : {}),
+                  ...(horizontal ? { display: 'flex', gap: 16, alignItems: 'flex-start' } : {}),
+                }}
+              >
                 <span
                   style={{
                     display: 'inline-flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    width: 36,
-                    height: 36,
+                    width: bentoFirst ? 44 : 36,
+                    height: bentoFirst ? 44 : 36,
                     borderRadius: radius.md,
                     background: withAlpha(primary, 0.12),
                     color: primary,
-                    marginBottom: 12,
+                    marginBottom: horizontal || bentoWide ? 0 : 12,
+                    flexShrink: 0,
                   }}
                 >
-                  <Icon size={17} />
+                  <Icon size={bentoFirst ? 20 : 17} />
                 </span>
-                <h3 style={{ fontFamily: headingFamily, fontWeight: 700, fontSize: scale.h4, margin: 0 }}>
-                  {title}
-                </h3>
-                <p style={{ marginTop: 6, color: mutedForeground, fontSize: scale.small }}>{text}</p>
+                <div style={horizontal || bentoWide ? { minWidth: 0 } : undefined}>
+                  <h3 style={{ fontFamily: headingFamily, fontWeight: 700, fontSize: bentoFirst ? scale.h3 : scale.h4, margin: 0 }}>
+                    {title}
+                  </h3>
+                  <p style={{ marginTop: 6, color: mutedForeground, fontSize: scale.small }}>{text}</p>
+                </div>
               </div>
               )
             })}
           </div>
         </Section>
 
-        {/* (g) Pricing card */}
-        <Section pad="24px" label="Pricing">
-          <div
-            style={{
-              ...cardBase,
-              padding: 24,
-              maxWidth: 380,
-              border: `2px solid ${primary}`,
-              boxShadow: shadows.lg,
-              position: 'relative',
-            }}
-          >
-            <span
+        {/* (g+h) Pricing & social proof - two-column band when redesigned */}
+        {redesigned ? (
+          <Section pad={sectionPad} label="Pricing & social proof" sectionStyle={sectionWrap}>
+            <div
               style={{
-                position: 'absolute',
-                top: -12,
-                left: 24,
-                padding: '4px 12px',
-                borderRadius: radius.full,
-                background: primary,
-                color: primaryForeground,
-                fontSize: scale.caption,
-                fontWeight: 700,
+                display: 'grid',
+                gap: 16,
+                gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr)',
+                alignItems: 'stretch',
               }}
             >
-              Most popular
-            </span>
-            <h3 style={{ fontFamily: headingFamily, fontWeight: 700, fontSize: scale.h3, margin: '6px 0 4px' }}>
-              Growth
-            </h3>
-            <p style={{ display: 'flex', alignItems: 'baseline', gap: 4 }}>
-              <span style={{ fontFamily: headingFamily, fontWeight: 800, fontSize: scale.h2 }}>$29</span>
-              <span style={{ color: mutedForeground, fontSize: scale.small }}>/ month</span>
-            </p>
-            <ul style={{ listStyle: 'none', margin: '16px 0', padding: 0, display: 'grid', gap: 10 }}>
-              {copy_.pricingFeatures.map((feature) => (
-                <li key={feature} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: scale.small }}>
-                  <Check size={15} style={{ color: success, flexShrink: 0 }} />
-                  {feature}
-                </li>
-              ))}
-            </ul>
-            {primaryButton('Choose Growth', { width: '100%' })}
-          </div>
-        </Section>
-
-        {/* (h) Testimonial */}
-        <Section pad="24px" label="Social proof">
-          <div
-            style={{
-              background: muted,
-              borderRadius: radius.lg,
-              padding: 24,
-              maxWidth: 520,
-            }}
-          >
-            <p style={{ fontSize: scale.body, color: foreground, margin: 0 }}>
-              “{copy_.testimonial.quote}”
-            </p>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 16 }}>
-              <span
-                aria-hidden="true"
-                style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  width: 40,
-                  height: 40,
-                  borderRadius: radius.full,
-                  background: primary,
-                  color: primaryForeground,
-                  fontWeight: 700,
-                  fontSize: scale.small,
-                }}
-              >
-                {copy_.testimonial.author.charAt(0).toUpperCase()}
-              </span>
-              <span>
-                <span style={{ display: 'block', fontWeight: 600, fontSize: scale.small }}>{copy_.testimonial.author}</span>
-                <span style={{ display: 'block', color: mutedForeground, fontSize: scale.caption }}>
-                  {copy_.testimonial.role}
-                </span>
-              </span>
+              {pricingCard}
+              {testimonialCard}
             </div>
-          </div>
-        </Section>
+          </Section>
+        ) : (
+          <>
+            <Section pad="24px" label="Pricing">
+              {pricingCard}
+            </Section>
 
-        {/* (i) Stats strip */}
-        <Section pad="24px" label="Stats">
+            <Section pad="24px" label="Social proof">
+              {testimonialCard}
+            </Section>
+          </>
+        )}
+
+        {/* (i) Stats strip - tile band when redesigned */}
+        <Section pad={sectionPad} label="Stats" sectionStyle={sectionWrap}>
           <div
-            style={{
-              display: 'flex',
-              flexWrap: 'wrap',
-              gap: 24,
-              justifyContent: 'space-around',
-              borderTop: `1px solid ${border}`,
-              borderBottom: `1px solid ${border}`,
-              padding: '24px 0',
-            }}
+            style={
+              redesigned
+                ? { display: 'grid', gap: 12, gridTemplateColumns: 'repeat(3, 1fr)' }
+                : {
+                    display: 'flex',
+                    flexWrap: 'wrap',
+                    gap: 24,
+                    justifyContent: 'space-around',
+                    borderTop: `1px solid ${border}`,
+                    borderBottom: `1px solid ${border}`,
+                    padding: '24px 0',
+                  }
+            }
           >
             {[
               { value: '98%', label: 'Satisfaction' },
               { value: '12k+', label: 'Teams onboarded' },
               { value: '4.9/5', label: 'Average review' },
             ].map((stat) => (
-              <div key={stat.label} style={{ textAlign: 'center' }}>
+              <div
+                key={stat.label}
+                style={redesigned ? { ...cardBase, padding: 20, textAlign: 'center' } : { textAlign: 'center' }}
+              >
                 <p
                   style={{
                     fontFamily: headingFamily,
@@ -872,9 +1120,13 @@ export function LivePreview({ tokens }: LivePreviewProps) {
           </div>
         </Section>
 
-        {/* (j) Alerts */}
-        <Section pad="24px" label="Alerts">
-          <div style={{ display: 'grid', gap: 12 }}>
+        {/* (j) Alerts - compact 3-column grid when redesigned */}
+        <Section pad={sectionPad} label="Alerts" sectionStyle={sectionWrap}>
+          <div
+            style={redesigned
+              ? { display: 'grid', gap: 12, gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))' }
+              : { display: 'grid', gap: 12 }}
+          >
             {[
               { tone: success, icon: CheckCircle2, ...copy_.alerts.success },
               { tone: warning, icon: AlertTriangle, ...copy_.alerts.warning },
@@ -903,7 +1155,7 @@ export function LivePreview({ tokens }: LivePreviewProps) {
         </Section>
 
         {/* (k) Type scale */}
-        <Section pad="24px" label="Type scale">
+        <Section pad={sectionPad} label="Type scale" sectionStyle={sectionWrap}>
           <div style={{ display: 'grid', gap: 10 }}>
             {(
               [
@@ -1091,9 +1343,19 @@ export function LivePreview({ tokens }: LivePreviewProps) {
 }
 
 /** Wrapper section with a token-styled label chip. */
-function Section({ pad, label, children }: { pad: string; label: string; children: ReactNode }) {
+function Section({
+  pad,
+  label,
+  children,
+  sectionStyle,
+}: {
+  pad: string
+  label: string
+  children: ReactNode
+  sectionStyle?: CSSProperties
+}) {
   return (
-    <section style={{ padding: pad }}>
+    <section style={{ padding: pad, ...sectionStyle }}>
       <span
         style={{
           display: 'inline-block',

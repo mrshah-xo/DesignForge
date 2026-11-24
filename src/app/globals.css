@@ -200,6 +200,110 @@
   --spacing: 0.22rem;
 }
 
+/* ============================================================
+   UI style presets - the whole-UI component restyle toggle.
+   One data attribute transforms EVERY component at once: cards,
+   buttons, inputs, popovers, dialogs, sheets and the wizard
+   chrome all share the CSS variable scales above, and these
+   blocks add the per-preset component treatment on top.
+   Placed after the accent/radius/density blocks so a preset
+   wins where it conflicts - the preset IS the intended look.
+   ============================================================ */
+
+/* ---------- GLASS - frosted translucent panes ---------- */
+[data-uistyle='glass'] {
+  --card: rgb(255 255 255 / 0.62);
+  --popover: rgb(255 255 255 / 0.78);
+  --muted: rgb(244 244 245 / 0.72);
+  --accent: rgb(244 244 245 / 0.72);
+}
+.dark[data-uistyle='glass'] {
+  --card: rgb(27 27 27 / 0.55);
+  --popover: rgb(27 27 27 / 0.72);
+  --muted: rgb(35 35 38 / 0.55);
+  --accent: rgb(38 38 42 / 0.55);
+}
+[data-uistyle='glass'] [data-slot='card'],
+[data-uistyle='glass'] [data-slot='panel'],
+[data-uistyle='glass'] [data-slot='popover-content'],
+[data-uistyle='glass'] [data-slot='dropdown-menu-content'],
+[data-uistyle='glass'] [data-slot='select-content'],
+[data-uistyle='glass'] [data-slot='dialog-content'],
+[data-uistyle='glass'] [data-slot='sheet-content'] {
+  backdrop-filter: blur(14px) saturate(1.35);
+  -webkit-backdrop-filter: blur(14px) saturate(1.35);
+}
+
+/* ---------- BRUTAL - hard borders, offset shadows, sharp corners ---------- */
+[data-uistyle='brutal'] {
+  --radius: 0.375rem;
+  --border: #18181b;
+  --input: #18181b;
+}
+.dark[data-uistyle='brutal'] {
+  --border: #d4d4d8;
+  --input: #d4d4d8;
+}
+[data-uistyle='brutal'] [data-slot='card'],
+[data-uistyle='brutal'] [data-slot='panel'],
+[data-uistyle='brutal'] [data-slot='popover-content'],
+[data-uistyle='brutal'] [data-slot='dropdown-menu-content'],
+[data-uistyle='brutal'] [data-slot='select-content'],
+[data-uistyle='brutal'] [data-slot='dialog-content'],
+[data-uistyle='brutal'] [data-slot='sheet-content'] {
+  border-width: 2px;
+  box-shadow: 4px 4px 0 0 var(--foreground);
+}
+[data-uistyle='brutal'] [data-slot='button'] {
+  border-width: 2px;
+  box-shadow: 2.5px 2.5px 0 0 var(--foreground);
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.15s ease;
+}
+[data-uistyle='brutal'] [data-slot='button']:hover:not(:disabled) {
+  transform: translate(-1px, -1px);
+  box-shadow: 3.5px 3.5px 0 0 var(--foreground);
+}
+[data-uistyle='brutal'] [data-slot='button']:active:not(:disabled) {
+  transform: translate(1px, 1px);
+  box-shadow: 0.5px 0.5px 0 0 var(--foreground);
+}
+[data-uistyle='brutal'] [data-slot='input'],
+[data-uistyle='brutal'] [data-slot='textarea'] {
+  border-width: 2px;
+}
+
+/* ---------- SOFT - borderless elevated surfaces, extra round ---------- */
+[data-uistyle='soft'] [data-slot='card'],
+[data-uistyle='soft'] [data-slot='panel'],
+[data-uistyle='soft'] [data-slot='popover-content'],
+[data-uistyle='soft'] [data-slot='dropdown-menu-content'],
+[data-uistyle='soft'] [data-slot='select-content'],
+[data-uistyle='soft'] [data-slot='dialog-content'],
+[data-uistyle='soft'] [data-slot='sheet-content'] {
+  border-color: transparent;
+  border-radius: calc(var(--radius) + 0.5rem);
+  box-shadow:
+    0 1px 2px rgb(0 0 0 / 0.05),
+    0 12px 32px -16px rgb(0 0 0 / 0.18);
+}
+.dark[data-uistyle='soft'] [data-slot='card'],
+.dark[data-uistyle='soft'] [data-slot='panel'],
+.dark[data-uistyle='soft'] [data-slot='popover-content'],
+.dark[data-uistyle='soft'] [data-slot='dropdown-menu-content'],
+.dark[data-uistyle='soft'] [data-slot='select-content'],
+.dark[data-uistyle='soft'] [data-slot='dialog-content'],
+.dark[data-uistyle='soft'] [data-slot='sheet-content'] {
+  box-shadow:
+    0 1px 2px rgb(0 0 0 / 0.3),
+    0 12px 32px -14px rgb(0 0 0 / 0.55);
+}
+[data-uistyle='soft'] [data-slot='button'] {
+  border-color: transparent;
+  box-shadow: 0 1px 2px rgb(0 0 0 / 0.08);
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;

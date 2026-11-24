@@ -23,11 +23,20 @@ import type { DesignStyleFlags } from '@/lib/types'
  *   / venom pill), adapted as CSS and recolored to the brand primary.
  */
 
-/** Preset values used by features that carry a picker (pill buttons, cursor packs). */
-export type StylePresetValue = 'plastic' | 'venom' | 'windows' | 'macos' | 'dot' | 'crosshair'
+/** Preset values used by features that carry a picker (pill buttons, cursor packs, layout arrangements). */
+export type StylePresetValue =
+  | 'plastic'
+  | 'venom'
+  | 'windows'
+  | 'macos'
+  | 'dot'
+  | 'crosshair'
+  | 'bento'
+  | 'split'
+  | 'editorial'
 
 export interface StyleFeature {
-  id: 'glass' | 'glow' | 'gradientHero' | 'softAmbient' | 'buttonPreset' | 'cursorPack'
+  id: 'glass' | 'glow' | 'gradientHero' | 'softAmbient' | 'layoutRedesign' | 'buttonPreset' | 'cursorPack'
   name: string
   tagline: string
   description: string
@@ -37,6 +46,19 @@ export interface StyleFeature {
 }
 
 export const STYLE_FEATURES: StyleFeature[] = [
+  {
+    id: 'layoutRedesign',
+    name: 'Layout redesign',
+    tagline: 'AI re-arranges every component into a new page layout - Bento, Split or Editorial',
+    description:
+      'The AI agent rebuilds the page arrangement from your existing design resources: components move to different places, alignments are fixed on a consistent grid and the page becomes more engaging - without changing your colors or type. "Bento" uses an asymmetric card mosaic, "Split" pairs a side-by-side hero with alternating sections, "Editorial" uses an oversized left-aligned magazine layout.',
+    hasPreset: true,
+    presets: [
+      { value: 'bento', label: 'Bento' },
+      { value: 'split', label: 'Split' },
+      { value: 'editorial', label: 'Editorial' },
+    ],
+  },
   {
     id: 'glass',
     name: 'Liquid Glass',
@@ -97,6 +119,7 @@ export function isFeatureOn(style: DesignStyleFlags | undefined, id: StyleFeatur
   if (!style) return false
   if (id === 'buttonPreset') return Boolean(style.buttonPreset)
   if (id === 'cursorPack') return Boolean(style.cursorPack)
+  if (id === 'layoutRedesign') return Boolean(style.layoutRedesign)
   return style[id] === true
 }
 
@@ -111,6 +134,7 @@ export function activeFeaturePreset(
   if (!style) return undefined
   if (id === 'buttonPreset') return style.buttonPreset || undefined
   if (id === 'cursorPack') return style.cursorPack || undefined
+  if (id === 'layoutRedesign') return style.layoutRedesign || undefined
   return undefined
 }
 
@@ -128,6 +152,10 @@ export function toggleStyleFeature(
     // Guard against a preset belonging to another feature (e.g. 'plastic').
     const valid = preset === 'windows' || preset === 'macos' || preset === 'dot' || preset === 'crosshair'
     next.cursorPack = on ? (valid ? preset : 'windows') : ''
+  } else if (id === 'layoutRedesign') {
+    // Guard against a preset belonging to another feature.
+    const valid = preset === 'bento' || preset === 'split' || preset === 'editorial'
+    next.layoutRedesign = on ? (valid ? preset : 'bento') : ''
   } else {
     next[id] = on
   }

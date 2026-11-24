@@ -68,10 +68,6 @@ export function Landing({ analyzing, onStart, onAudiencePrefill, audiencePrefill
           transition={{ duration: 0.25 }}
           className="mx-auto flex max-w-2xl flex-col items-center gap-4"
         >
-          <span className="inline-flex items-center gap-1.5 rounded-full border border-ink-100 bg-ink-50 px-3 py-1 text-xs font-medium text-ink-700 dark:border-ink-500/30 dark:bg-ink-500/10 dark:text-ink-300">
-            <Sparkles className="size-3.5" />
-            7 steps · AI-powered
-          </span>
           <h1 className="text-balance text-3xl font-bold tracking-tight text-gray-900 dark:text-gray-50 sm:text-4xl lg:text-5xl">
             Design Without Compromise
           </h1>
@@ -89,11 +85,11 @@ export function Landing({ analyzing, onStart, onAudiencePrefill, audiencePrefill
           className="mx-auto mt-8 max-w-xl"
         >
           {analyzing ? (
-            <div className="rounded-lg border border-border bg-card shadow-sm">
+            <div data-slot="panel" className="rounded-lg border border-border bg-card shadow-sm">
               <DesignGenerating messages={ANALYSIS_MESSAGES} subtext="Our vision model is reading your logo - this can take up to 40 seconds." />
             </div>
           ) : (
-            <div className="rounded-lg border border-border bg-card p-6 text-left shadow-sm">
+            <div data-slot="panel" className="rounded-lg border border-border bg-card p-6 text-left shadow-sm">
               <LogoDropzone file={file} onFile={setFile} />
               <div className="mt-4 space-y-4">
                 <div className="space-y-1.5">
@@ -147,12 +143,12 @@ export function Landing({ analyzing, onStart, onAudiencePrefill, audiencePrefill
                   className="w-full border-dashed"
                 >
                   <Wand2 className="size-4" />
-                  Want a prompt? Let an AI assistant fill this
+                  Use an agent brief
                 </Button>
                 {audiencePrefilled && (
                   <p className="flex items-center justify-center gap-1.5 text-xs font-medium text-ink-600 dark:text-ink-300">
                     <CircleCheck className="size-3.5" />
-                    Agent brief applied - after your logo is analyzed we jump straight to Research review (step 4).
+                    Agent brief applied - we jump straight to research review.
                   </p>
                 )}
               </div>
