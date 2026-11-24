@@ -1,13 +1,18 @@
 'use client'
 
+import { useMemo, useState } from 'react'
 import { motion } from 'framer-motion'
-import { AlertTriangle, ArrowRight, Lightbulb } from 'lucide-react'
+import { AlertTriangle, ArrowRight, Lightbulb, WandSparkles } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import type { DesignData } from '@/lib/types'
+import { LogoUpgradeDialog } from '@/components/steps/logo-upgrade-dialog'
+import { buildLogoUpgradePrompt } from '@/lib/logo-upgrade'
+import type { DesignData, ProjectDetail } from '@/lib/types'
 
 interface MatchStepProps {
   design: DesignData
+  /** Project context (name, description, analysis, audience) feeding the upgrade prompt. */
+  project: ProjectDetail
   onContinue: () => void
 }
 
@@ -26,12 +31,29 @@ const SEVERITY_STYLES: Record<string, string> = {
   low: 'border-border bg-muted text-muted-foreground',
 }
 
-export function MatchStep({ design, onContinue }: MatchStepProps) {
+export function MatchStep({ design, project, onContinue }: MatchStepProps) {
   const feedback = design.logoFeedback
   const score = Math.max(0, Math.min(100, Math.round(design.matchScore)))
   const color = scoreColor(score)
   const issues = feedback?.issues ?? []
   const suggestions = feedback?.suggestions ?? []
+  const [upgradeOpen, setUpgradeOpen] = useState(false)
+
+  // The one-shot logo upgrade prompt, rebuilt from the live fit report
+  // whenever any of its inputs change (report, palette, audience).
+  const upgradePrompt = useMemo(
+    () =>
+      buildLogoUpgradePrompt({
+        projectName: project.name,
+        description: project.description,
+        score,
+        feedback,
+        analysis: project.analysis,
+        audienceDesc: project.audience?.audienceDesc,
+        categoryLabel: project.audience?.categoryLabel,
+      }),
+    [project.name, project.description, project.analysis, project.audience, feedback, score],
+  )
 
   return (
     <div className="space-y-6">
@@ -72,9 +94,21 @@ export function MatchStep({ design, onContinue }: MatchStepProps) {
             <p className="mt-2 text-sm leading-relaxed text-gray-600 dark:text-gray-300">
               {feedback?.verdict ?? 'No verdict available.'}
             </p>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setUpgradeOpen(true)}
+              className="mt-3 h-8"
+            >
+              <WandSparkles className="size-3.5" />
+              Get a logo upgrade prompt
+            </Button>
           </div>
         </div>
       </section>
+
+      <LogoUpgradeDialog open={upgradeOpen} onOpenChange={setUpgradeOpen} prompt={upgradePrompt} />
 
       {/* Issues */}
       {issues.length > 0 && (

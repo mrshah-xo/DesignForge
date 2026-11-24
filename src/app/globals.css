@@ -430,7 +430,7 @@
  * on the wrapper - a blurred halo behind the pill plus a crisp
  * masked hairline hugging its edge. Reserved for the single
  * primary action of a view: the landing "Start Designing" button
- * and the primary actions of the "Want a prompt?" dialogs.
+ * and the primary actions inside the "Want a prompt?" dialogs.
  * The pill stays black in dark mode too - the aura carries the
  * color, and `data-disabled` on the wrapper calms the whole unit
  * (grayscale + dim) so a vivid ring never sits on a washed pill.
@@ -524,7 +524,6 @@
     animation: none;
   }
 }
-
 .df-btn-venom {
   position: relative;
   isolation: isolate;
@@ -558,6 +557,9 @@
 .df-btn-venom:focus-visible {
   outline: 2px solid var(--color-ink-300, #9c9c9c);
   outline-offset: 4px;
+}
+.dark .df-btn-venom:focus-visible {
+  outline-color: rgb(255 255 255 / 0.5);
 }
 
 /* Minimal typography for rendered markdown (no @tailwindcss/typography) */

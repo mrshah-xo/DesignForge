@@ -16,7 +16,9 @@ type VenomButtonProps = ComponentProps<typeof Button>
  * The wrapper owns the aura layers (`df-rgb-glow` ::before halo +
  * ::after hairline). `data-disabled` lets the CSS calm the whole unit -
  * halo, hairline and pill together - when the action is unavailable,
- * instead of dimming the pill alone under a still-vivid ring.
+ * instead of dimming the pill alone under a still-vivid ring. The moment
+ * the action goes live (e.g. the user pasted the agent reply), the aura
+ * lights up around the pill.
  */
 export function VenomButton({ className, disabled, children, ...props }: VenomButtonProps) {
   return (
