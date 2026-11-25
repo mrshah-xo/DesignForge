@@ -112,8 +112,7 @@ export function ResearchPromptDialog({
             Want a research prompt?
           </DialogTitle>
           <DialogDescription>
-            Copy this into your AI assistant - it fixes the weak sections and replies with one
-            block. Paste the reply back to update the report.
+            Have your agent fix the weak sections, then paste its reply back.
           </DialogDescription>
         </DialogHeader>
 

@@ -9,11 +9,9 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { LogoDropzone } from '@/components/steps/logo-dropzone'
 import { DesignGenerating } from '@/components/wizard/design-generating'
-import { StepIcon } from '@/components/wizard/step-icon'
 import { BriefDialog } from '@/components/wizard/brief-dialog'
 import { VenomButton } from '@/components/wizard/venom-button'
 import { ANALYSIS_MESSAGES } from '@/components/wizard/progress-messages'
-import { STEPS } from '@/lib/types'
 import type { AudienceData } from '@/lib/types'
 import { audiencePrefillFromBrief, type ParsedBrief } from '@/lib/brief'
 
@@ -175,34 +173,6 @@ export function Landing({ analyzing, onStart, onAudiencePrefill, audiencePrefill
         onOpenChange={setBriefOpen}
         onApply={handleBriefApplied}
       />
-
-      {/* How it works - 64px below the hero (section rhythm), 24px
-          heading-to-grid gap */}
-      <section className="mt-16 sm:mt-20" aria-labelledby="how-it-works">
-        <h2
-          id="how-it-works"
-          className="mb-6 text-center text-sm font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500"
-        >
-          How it works
-        </h2>
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-7">
-          {STEPS.map((step, i) => (
-            <motion.div
-              key={step.id}
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.2, delay: 0.03 * i }}
-              whileHover={{ y: -2 }}
-              className="flex h-full flex-col items-center gap-2 rounded-lg border border-border bg-card p-4 text-center shadow-sm"
-            >
-              <span className="flex size-9 items-center justify-center rounded-lg bg-ink-50 text-ink-600 dark:bg-ink-500/10 dark:text-ink-300">
-                <StepIcon icon={step.icon} className="size-4" />
-              </span>
-              <span className="text-pretty text-xs font-medium leading-snug text-gray-700 dark:text-gray-300">{step.label}</span>
-            </motion.div>
-          ))}
-        </div>
-      </section>
     </div>
   )
 }

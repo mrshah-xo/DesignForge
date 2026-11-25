@@ -195,9 +195,7 @@ export function DesignStep({
       .then(() => {
         setTokens(theme.tokens)
         setActiveThemeId('original')
-        toast.success(`Theme "${theme.name}" applied`, {
-          description: 'Regenerate with AI to refresh DESIGN.md.',
-        })
+        toast.success(`Theme "${theme.name}" applied`)
       })
       .catch(() => {
         /* error already surfaced by the shell toast */
@@ -215,9 +213,7 @@ export function DesignStep({
       .then(() => {
         setTokens(next)
         setActiveThemeId('original')
-        toast.success(`${label} theme applied`, {
-          description: 'Regenerate with AI to refresh DESIGN.md.',
-        })
+        toast.success(`${label} theme applied`)
       })
       .catch(() => {
         /* error already surfaced by the shell toast */
@@ -351,8 +347,8 @@ export function DesignStep({
                     {themes.length === 0 ? 'Generate theme directions?' : 'Regenerate theme directions?'}
                   </AlertDialogTitle>
                   <AlertDialogDescription>
-                    3 research-grounded directions. Nothing changes until you apply one.
-                    {themes.length > 0 && ' The previous suggestions will be replaced.'}
+                    Nothing changes until you apply one.
+                    {themes.length > 0 && ' Previous suggestions will be replaced.'}
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>

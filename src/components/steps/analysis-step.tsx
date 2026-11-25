@@ -58,9 +58,9 @@ function BackgroundCard({ background }: { background: BackgroundSuggestion }) {
   const css = isGradient
     ? { backgroundImage: `linear-gradient(165deg, ${background.from} 0%, ${background.to} 100%)` }
     : { backgroundColor: background.from }
-  const copyHex = (hex: string, label: string) => {
+  const copyHex = (hex: string) => {
     void copyToClipboard(hex)
-      .then(() => toast.success(`Copied ${hex}`, { description: label }))
+      .then(() => toast.success(`Copied ${hex}`))
       .catch(() => toast.error('Could not copy to clipboard'))
   }
   return (
@@ -91,7 +91,7 @@ function BackgroundCard({ background }: { background: BackgroundSuggestion }) {
                 <button
                   key={`${hex}-${i}`}
                   type="button"
-                  onClick={() => copyHex(hex, i === 0 ? 'Surface start' : 'Surface end')}
+                  onClick={() => copyHex(hex)}
                   className="rounded-md bg-black/10 px-2 py-1 font-mono text-[10px] text-black/70 backdrop-blur-sm transition-colors hover:bg-black/20 dark:bg-white/10 dark:text-white/80 dark:hover:bg-white/20"
                   aria-label={`Copy ${hex}`}
                 >
@@ -130,9 +130,6 @@ export function AnalysisStep({ project, analyzing, onRunAnalysis, onContinue }: 
           <ScanSearch className="size-5" />
         </div>
         <h2 className="mt-4 text-lg font-semibold text-gray-900 dark:text-gray-50">Run AI analysis</h2>
-        <p className="mx-auto mt-1 max-w-md text-sm text-muted-foreground">
-          Extracts palette, style and trust cues from your logo - up to 40 seconds.
-        </p>
         <Button
           onClick={() => void onRunAnalysis()}
           className="mt-6 bg-primary text-primary-foreground hover:bg-primary/90"
@@ -152,12 +149,9 @@ export function AnalysisStep({ project, analyzing, onRunAnalysis, onContinue }: 
     <div className="space-y-6">
       {/* Palette */}
       <section aria-labelledby="palette-heading">
-        <div className="mb-3 flex items-baseline justify-between">
-          <h2 id="palette-heading" className="text-lg font-semibold text-gray-900 dark:text-gray-50">
-            Color signature
-          </h2>
-          <span className="text-xs text-muted-foreground">Click a hex to copy</span>
-        </div>
+        <h2 id="palette-heading" className="mb-3 text-lg font-semibold text-gray-900 dark:text-gray-50">
+          Color signature
+        </h2>
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
           {analysis.palette.map((color, i) => (
             <motion.button
@@ -169,7 +163,7 @@ export function AnalysisStep({ project, analyzing, onRunAnalysis, onContinue }: 
               whileHover={{ y: -2 }}
               onClick={() => {
                 void copyToClipboard(color.hex)
-                  .then(() => toast.success(`Copied ${color.hex}`, { description: color.name }))
+                  .then(() => toast.success(`Copied ${color.hex}`))
                   .catch(() => toast.error('Could not copy to clipboard'))
               }}
               className="overflow-hidden rounded-lg border border-border bg-card text-left shadow-sm transition-shadow hover:shadow-md"

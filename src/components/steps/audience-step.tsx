@@ -97,9 +97,7 @@ export function AudienceStep({ project, saving, prefill, onSave }: AudienceStepP
     setMonetization(value)
     if (MONEY_MONETIZATION.includes(value) && trustNeed !== 'critical') {
       setTrustNeed('critical')
-      toast.info('Trust need set to Critical', {
-        description: 'Money changes hands here - users must trust you before they pay.',
-      })
+      toast.info('Trust need set to Critical')
     }
   }
 
@@ -276,8 +274,7 @@ export function AudienceStep({ project, saving, prefill, onSave }: AudienceStepP
           <DialogHeader>
             <DialogTitle>Overwrite research & design?</DialogTitle>
             <DialogDescription>
-              Saving resets the research and design for this project - they were built for the
-              old audience.
+              Research and design will reset - they were built for the old audience.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>

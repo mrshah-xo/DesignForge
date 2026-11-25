@@ -20,7 +20,7 @@ interface DesignGeneratingProps {
   live?: LiveProgress | null
 }
 
-const DEFAULT_SUBTEXT = 'This usually takes up to a minute - real research is running.'
+const DEFAULT_SUBTEXT = 'Usually under a minute.'
 
 /**
  * Full-step progress panel shown while long AI jobs run.

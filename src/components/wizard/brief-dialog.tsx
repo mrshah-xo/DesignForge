@@ -62,7 +62,7 @@ export function BriefDialog({ open, onOpenChange, onApply }: BriefDialogProps) {
   const apply = (brief: ParsedBrief) => {
     const labels = brief.found.map((f) => FIELD_LABELS[f] ?? f).join(', ')
     toast.success('Brief applied', {
-      description: `Filled: ${labels}. Drop your logo next.`,
+      description: `Filled: ${labels}.`,
     })
     onApply(brief)
     onOpenChange(false)
@@ -101,7 +101,7 @@ export function BriefDialog({ open, onOpenChange, onApply }: BriefDialogProps) {
       } else if (/credential|z-ai-config|ZAI_BASE_URL/i.test(msg)) {
         toast.error('AI extraction is unavailable', {
           description:
-            'Paste the full MRDESIGN_BRIEF block from your agent instead - it fills every field instantly, no AI needed on this side.',
+            'Paste the full MRDESIGN_BRIEF block instead - it fills every field instantly.',
         })
       } else {
         toast.error('Could not read the brief', { description: msg })
@@ -120,8 +120,7 @@ export function BriefDialog({ open, onOpenChange, onApply }: BriefDialogProps) {
             Want a prompt?
           </DialogTitle>
           <DialogDescription>
-            Copy this into your AI assistant, then paste the reply back here - every field fills
-            in automatically.
+            Paste your agent's reply here - every field fills in automatically.
           </DialogDescription>
         </DialogHeader>
 

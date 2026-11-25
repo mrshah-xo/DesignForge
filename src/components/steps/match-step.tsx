@@ -114,7 +114,7 @@ export function MatchStep({ design, project, onContinue }: MatchStepProps) {
       {issues.length > 0 && (
         <section aria-labelledby="issues-heading">
           <h2 id="issues-heading" className="mb-3 text-lg font-semibold text-gray-900 dark:text-gray-50">
-            Issues to know about
+            Issues
           </h2>
           <ul className="space-y-3">
             {issues.map((issue, i) => (

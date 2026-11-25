@@ -76,8 +76,7 @@ export function LogoUpgradeDialog({ open, onOpenChange, prompt }: LogoUpgradeDia
             Want a logo upgrade prompt?
           </DialogTitle>
           <DialogDescription>
-            Paste this into ChatGPT or any image tool - it carries your fit report, so the tool
-            upgrades your actual logo.
+            Paste it into ChatGPT or any image tool - it carries your fit report.
           </DialogDescription>
         </DialogHeader>
 

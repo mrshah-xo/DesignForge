@@ -195,11 +195,7 @@ export function ResearchStep({
     if (researching) {
       return (
         <div className="rounded-lg border border-border bg-card shadow-sm">
-          <DesignGenerating
-            messages={RESEARCH_MESSAGES}
-            live={researchLive}
-            subtext="Every step runs live."
-          />
+          <DesignGenerating messages={RESEARCH_MESSAGES} live={researchLive} />
         </div>
       )
     }
@@ -495,12 +491,6 @@ export function ResearchStep({
           )}
         </div>
       </div>
-
-      {approved && !designExists && (
-        <p className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-400">
-          Approved - generate the design to continue.
-        </p>
-      )}
 
       {/* Sources */}
       {draft.sources.length > 0 && (

@@ -89,9 +89,7 @@ export function SecretsPanel() {
     setUserApiKey(value)
     refreshBrowserKey()
     setBrowserKeyDraft('')
-    toast.success('Your API key is saved in this browser', {
-      description: 'Stored only in your browser (localStorage). It is used for your AI generations and never leaves your device except to call the AI provider.',
-    })
+    toast.success('API key saved in this browser')
   }
 
   const removeBrowserKey = () => {
@@ -154,9 +152,7 @@ export function SecretsPanel() {
       )
       setSecrets(data.secrets)
       setDrafts((d) => ({ ...d, [name]: '' }))
-      toast.success(`${name} saved`, {
-        description: 'Stored in .env.local (git-ignored). The dev server reloads it automatically.',
-      })
+      toast.success(`${name} saved`)
       scheduleRefresh()
     } catch (err) {
       toast.error(`Could not save ${name}`, {
@@ -220,9 +216,7 @@ export function SecretsPanel() {
       setSecrets(data.secrets)
       setCustomName('')
       setCustomValue('')
-      toast.success(`${name} saved`, {
-        description: 'Stored in .env.local (git-ignored).',
-      })
+      toast.success(`${name} saved`)
       scheduleRefresh()
     } catch (err) {
       toast.error(`Could not save ${name}`, {
@@ -270,10 +264,7 @@ export function SecretsPanel() {
             API keys &amp; secrets
           </SheetTitle>
           <SheetDescription className="text-xs leading-relaxed">
-            <strong>Your API key</strong> lives only in your browser and powers your generations -
-            on public deployments every visitor uses their own key. On a local dev server you can
-            also manage the server's <code className="font-mono">.env.local</code> keys below
-            (git-ignored, never pushed to GitHub).
+            Your API key lives only in this browser. Server keys below are for local development.
           </SheetDescription>
         </SheetHeader>
 
@@ -302,25 +293,15 @@ export function SecretsPanel() {
                 </Badge>
               )}
             </div>
-            <p className="mb-2 text-xs leading-relaxed text-muted-foreground">
-              Used for every AI step - logo analysis, research, design and themes. Stored only in
-              your browser's localStorage, sent per-request, never saved on the server and never
-              seen by the site owner. Each visitor uses their own key, so the site owner's credits
-              are never spent.
-            </p>
             <a
               href={ZAI_KEY_URL}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 rounded-md bg-white px-2 py-1.5 text-xs font-medium text-ink-700 ring-1 ring-ink-200 transition-colors hover:bg-ink-50 dark:bg-card dark:text-ink-300 dark:ring-ink-500/30 dark:hover:bg-ink-500/10"
+              className="mb-3 inline-flex items-center gap-1.5 rounded-md bg-white px-2 py-1.5 text-xs font-medium text-ink-700 ring-1 ring-ink-200 transition-colors hover:bg-ink-50 dark:bg-card dark:text-ink-300 dark:ring-ink-500/30 dark:hover:bg-ink-500/10"
             >
               <ExternalLink className="size-3.5" />
               Generate your free Z.AI API key
             </a>
-            <p className="mb-3 mt-1.5 text-[11px] leading-snug text-muted-foreground">
-              glm-4.5-flash (text) is free; logo vision analysis uses a low-cost vision model -
-              new accounts come with free credit.
-            </p>
             <div className="flex items-center gap-2">
               <div className="relative min-w-0 flex-1">
                 <Input
@@ -380,7 +361,7 @@ export function SecretsPanel() {
           ) : (
             <div className="space-y-5">
               <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
-                Server secrets - .env.local (local dev only)
+                Server secrets (.env.local)
               </p>
               {secrets.map((s) => (
                 <div key={s.name} className="rounded-lg border border-border bg-card p-4 shadow-sm">
@@ -401,7 +382,7 @@ export function SecretsPanel() {
                   </div>
                   <p className="mb-3 text-xs leading-relaxed text-muted-foreground">
                     {s.shadowed
-                      ? 'A value is also exported in the server environment, which takes precedence. Remove the export to use the .env.local value.'
+                      ? 'Environment value takes precedence over .env.local.'
                       : s.description}
                   </p>
                   <div className="flex items-center gap-2">
@@ -457,9 +438,6 @@ export function SecretsPanel() {
                   <Plus className="size-3.5 text-ink-500" />
                   Add a custom key
                 </h3>
-                <p className="mb-3 text-xs text-muted-foreground">
-                  Any UPPER_SNAKE_CASE name, e.g. <code className="font-mono">OPENAI_API_KEY</code>.
-                </p>
                 <div className="space-y-2">
                   <Input
                     value={customName}
@@ -501,7 +479,7 @@ export function SecretsPanel() {
           <div className="flex items-center justify-between gap-2">
             <p className="flex items-center gap-1.5 text-[11px] leading-snug text-muted-foreground">
               <Lock className="size-3 shrink-0" />
-              .env.local is covered by .gitignore - verify with `git status`.
+              Stored in .env.local - git-ignored.
             </p>
             <Button
               size="sm"

@@ -56,10 +56,7 @@ const PACKAGE_CONTENTS = [
   },
 ]
 
-const AGENT_TIPS = [
-  'Paste DESIGN.md into Cursor, v0, Lovable or Claude Code.',
-  'Import tokens.json into Tailwind or your design tool.',
-]
+const AGENT_TIP = 'Paste DESIGN.md into Cursor, v0 or Claude Code - tokens.json imports into Tailwind.'
 
 function trustLabel(value: string): string {
   return TRUST_LEVELS.find((t) => t.value === value)?.label ?? value
@@ -221,26 +218,8 @@ export function ExportStep({ project, onStartNew }: ExportStepProps) {
             Copy DESIGN.md
           </Button>
         </div>
-      </section>
 
-      {/* Agent tips */}
-      <section
-        aria-labelledby="agent-tips"
-        className="rounded-lg border border-border bg-card p-6 shadow-sm"
-      >
-        <h2 id="agent-tips" className="mb-4 text-sm font-semibold text-gray-900 dark:text-gray-50">
-          Use it with any AI agent
-        </h2>
-        <ol className="space-y-3">
-          {AGENT_TIPS.map((tip, i) => (
-            <li key={tip} className="flex items-start gap-3">
-              <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-ink-600 text-xs font-semibold text-white">
-                {i + 1}
-              </span>
-              <p className="text-sm text-gray-600 dark:text-gray-300">{tip}</p>
-            </li>
-          ))}
-        </ol>
+        <p className="mt-3 text-xs text-muted-foreground">{AGENT_TIP}</p>
       </section>
 
       <div className="flex justify-center pb-2">
