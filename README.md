@@ -286,7 +286,7 @@ MIT — see [`LICENSE`](LICENSE).
 <br />
 <img src="docs/screenshots/ttf.png" alt="MrDesign.md mark" width="120" />
 <br />
-<sub>Built with Next.js, Tailwind and Prisma. Design without compromise.</sub>
+<sub> Design without compromise.<br> If it is useful or save your time just give one ⭐</sub>
 </div>
 
-If it is useful or save your time just give one ⭐
+
