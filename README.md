@@ -1,6 +1,9 @@
 <div align="center">
 
-<img src="assets/MrDesign.md Signature Logo.png" alt="MrDesign.md" width="720" />
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="assets/logo-dark.png" />
+  <img src="assets/logo-light.png" alt="MrDesign.md" width="720" />
+</picture>
 
 ### Generate a complete design system from a logo.
 
@@ -280,7 +283,10 @@ MIT — see [`LICENSE`](LICENSE).
 
 <div align="center">
 <br />
-<img src="docs/screenshots/ttf.png" alt="MrDesign.md mark" width="120" />
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="assets/mark-dark.png" />
+  <img src="assets/mark-light.png" alt="MrDesign.md mark" width="120" />
+</picture>
 <br />
 <sub> Design without compromise.<br> If it is useful or save your time just give one ⭐</sub>
 </div>
