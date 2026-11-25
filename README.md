@@ -19,7 +19,7 @@ exported as a portable brand package.
 
 [Why](#why-mrdesignmd) · [Screenshots](#screenshots) · [Pipeline](#pipeline) · [Getting started](#getting-started) · [Deployment](#deployment) · [API](#api) · [Troubleshooting](#troubleshooting)
 
-<img src="docs/screenshots/design-dark.png" alt="MrDesign.md design system with live preview — dark variant generated for a fintech logo" width="920" />
+<img src="docs/screenshots/Screenshot 2026-11-25 153538.png" alt="MrDesign.md design system with live preview — dark variant generated for a fintech logo" width="920" />
 
 </div>
 
@@ -282,7 +282,7 @@ MIT — see [`LICENSE`](LICENSE).
 
 <div align="center">
 <br />
-<img src="assets/mrdesign-circle-512.png" alt="MrDesign.md mark" width="120" />
+<img src="docs/screenshots/ttf.png" alt="MrDesign.md mark" width="120" />
 <br />
 <sub>Built with Next.js, Tailwind and Prisma. Design without compromise.</sub>
 </div>
