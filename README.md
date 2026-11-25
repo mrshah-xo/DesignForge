@@ -54,9 +54,9 @@ Most design systems begin with a blank page and a guess at a color palette. MrDe
 | --- | --- |
 | ![Landing — upload a logo](docs/screenshots/Dashboard) | ![Logo analysis — color signature](docs/screenshots/LA) |
 | **Start from a logo** | **Color signature, style tags and mood** |
-| ![Research review with sources](docs/screenshots/research.png) | ![Design system with style features](docs/screenshots/DS) |
+| ![Research review with sources](docs/screenshots/RR) | ![Design system with style features](docs/screenshots/DS) |
 | **Audience research you approve** | **Theme directions and style features** |
-| ![Live preview in light](docs/screenshots/design-preview.png) | ![Export package](docs/screenshots/EXP) |
+| ![Live preview in light](docs/screenshots/DDS) | ![Export package](docs/screenshots/EXP) |
 | **Every token applied to real components** | **Download the full brand package** |
 
 ---
