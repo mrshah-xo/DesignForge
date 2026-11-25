@@ -288,3 +288,5 @@ MIT — see [`LICENSE`](LICENSE).
 <br />
 <sub>Built with Next.js, Tailwind and Prisma. Design without compromise.</sub>
 </div>
+
+If it is useful or save your time just give one ⭐
