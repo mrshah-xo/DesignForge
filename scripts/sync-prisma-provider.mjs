@@ -6,14 +6,14 @@
 // the DATABASE_URL that is actually in effect, so the same repo
 // runs in every environment without manual edits:
 //
-//   - Dev environment/preview: the provisioning script injects a SQLite `file:`
-//     URL into .env  -> provider "sqlite" (db file under ./db).
+//   - Local dev / preview: a SQLite `file:` URL in the environment or
+//     .env  -> provider "sqlite" (db file under ./db).
 //   - Vercel / cloud: DATABASE_URL is a Prisma Postgres URL
 //     (postgres:// / postgresql://) -> provider "postgresql".
 //
 // Resolution order mirrors resolveDatabaseUrl() in src/lib/db.ts:
 //   1. inherited process.env.DATABASE_URL (unless it is a file: URL)
-//   2. DATABASE_URL from .env.local (the provisioning script never touches it)
+//   2. DATABASE_URL from .env.local (host provisioning scripts never touch it)
 //   3. DATABASE_URL from .env
 //
 // Modes:

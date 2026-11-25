@@ -2,7 +2,8 @@
 // Typed API client for MrDesign.md frontend.
 // Every endpoint answers the standard envelope:
 //   { ok: true, data } | { ok: false, error }
-// All requests use relative paths only (the reverse proxy gateway friendly).
+// All requests use relative paths only, so the app works behind any
+// reverse proxy without configuration.
 // ============================================================
 import type {
   AnalysisData,

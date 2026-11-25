@@ -5,12 +5,11 @@ import { PrismaClient } from '@prisma/client'
 /**
  * Resolve the database URL at runtime.
  *
- * The dev environment provisioning script rewrites .env with a legacy SQLite URL and exports
- * it into the process environment on every container restart. An inherited
- * environment variable always wins over dotenv-style files (dotenv never
- * overrides existing variables), so when we detect that legacy `file:` URL
- * we swap in the real cloud URL from .env.local - a file the provisioning script
- * does not touch.
+ * Some hosting images export a legacy SQLite `file:` URL as DATABASE_URL
+ * on every restart. An inherited environment variable always wins over
+ * dotenv-style files (dotenv never overrides existing variables), so when
+ * we detect that legacy `file:` URL we swap in the real cloud URL from
+ * .env.local - a file those provisioning scripts do not touch.
  *
  * In normal deployments (e.g. Vercel, where DATABASE_URL is set correctly and
  * no .env.local exists) the inherited environment variable is used as-is.

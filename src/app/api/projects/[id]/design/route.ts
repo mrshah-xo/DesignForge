@@ -274,7 +274,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     // restart) read the real status/progress from this row.
     await persistNewJob(job);
     // `after()` keeps the serverless invocation alive past the POST response
-    // (no-op overhead on long-lived servers like the preview dev environment).
+    // (no-op overhead on long-lived servers).
     after(() => runDesignPipeline(id, job.id, userKey));
     return NextResponse.json({ ok: true, data: { job: publicJob(job) } });
   } catch (err) {

@@ -208,7 +208,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
     const job = createJob('analyze', id);
     // `after()` keeps the serverless invocation alive past the POST response
-    // (no-op overhead on long-lived servers like the preview dev environment).
+    // (no-op overhead on long-lived servers).
     after(() => runAnalysisPipeline(id, job.id, userKey));
     return NextResponse.json({ ok: true, data: { job: publicJob(job) } });
   } catch (err) {

@@ -42,8 +42,7 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 local-*
-.local-settings
-ai-gateway.json
+.ai-credentials.json
 *.log
 dev.log
 dev.out.log
@@ -59,6 +58,7 @@ server.log
 .env
 .env.*
 !.env.example
+/Caddyfile
 /upload/
 /download/
 /tool-results/

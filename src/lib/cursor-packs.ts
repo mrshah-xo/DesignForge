@@ -12,7 +12,7 @@ import type { CursorPackValue } from '@/lib/types'
  * - `text` - the I-beam shown inside text fields
  *
  * Cursors are embedded as SVG data URIs so they ship with the design
- * tokens (no network requests, work in the dev environment preview). Vector
+ * tokens (no network requests, work offline). Vector
  * shapes are derived from the Lucide icon geometry (ISC license):
  * `mouse-pointer-2` for the arrow, `pointer` for the hand and
  * `text-cursor` for the I-beam. Line-art shapes get a white "casing"

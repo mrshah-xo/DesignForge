@@ -245,7 +245,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     await assertAiUsable(userKey);
 
     // `after()` keeps the serverless invocation alive past the POST response
-    // (no-op overhead on long-lived servers like the preview dev environment).
+    // (no-op overhead on long-lived servers).
     after(() => runResearchPipeline(id, job.id, userKey));
     return NextResponse.json({ ok: true, data: { job: publicJob(job) } });
   } catch (err) {
