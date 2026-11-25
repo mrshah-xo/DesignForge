@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="assets/MrDesign.md Signature Logo.png" alt="MrDesign.md" width="720" />
+<img src="docs/screenshots/Dashboard" alt="MrDesign.md" width="720" />
 
 ### Generate a complete design system from a logo.
 
