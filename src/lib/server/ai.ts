@@ -1,14 +1,17 @@
 // ============================================================
 // AI pipeline helpers (server only).
-// Wraps gateway-client with JSON-extraction + retry logic and
-// provides normalizeTokens(), the bulletproof DesignTokens
-// normalizer that guarantees the frontend never crashes.
+// Talks to the Z.AI Open Platform (see ai-client.ts) with
+// JSON-extraction + retry logic and provides normalizeTokens(), the
+// bulletproof DesignTokens normalizer that guarantees the frontend
+// never crashes.
 // ============================================================
 
-import ZAI, {
+import {
+  createAIClient,
+  type AIClient,
   type SearchFunctionResultItem,
   type VisionMultimodalContentItem,
-} from 'gateway-client';
+} from './ai-client';
 import type {
   ColorRole,
   ColorToken,
@@ -27,14 +30,15 @@ import {
   mixHex,
 } from '@/lib/server/logo-image';
 
-// ---------- SDK singleton ----------
+// ---------- Client singleton ----------
 
-let zaiPromise: Promise<ZAI> | null = null;
+let zaiPromise: Promise<AIClient> | null = null;
 let zaiCreatedAt = 0;
 
 /**
- * Re-read credentials (e.g. refreshed token in /etc/ai-gateway.json) after this
- * much time, so a long-running dev server never gets stuck on stale config.
+ * Re-create the client after this much time so rotated credentials
+ * (new token in the local credentials file or env) are picked up by a
+ * long-running server instead of sticking with a stale instance.
  */
 const ZAI_TTL_MS = 10 * 60 * 1000;
 
@@ -88,7 +92,7 @@ export function isAuthError(err: unknown): boolean {
   return msg.includes('401') || msg.includes('X-Token');
 }
 
-/** Drop the cached SDK instance so the next call re-reads the config file. */
+/** Drop the cached client so the next call re-reads credentials. */
 export function resetZAI(): void {
   zaiPromise = null;
   zaiCreatedAt = 0;
@@ -107,34 +111,12 @@ function ownerKeyAllowed(): boolean {
 }
 
 /**
- * Build the SDK client. On normal dev environments the credentials come from the
- * provisioned /etc/ai-gateway.json (ZAI.create() file lookup). On deployments
- * like Vercel there is no writable config location, so the same JSON shape
- * is supplied through environment variables instead:
- *
- *   ZAI_BASE_URL   (required with ZAI_API_KEY)
- *   ZAI_API_KEY    (required with ZAI_BASE_URL)
- *   ZAI_CHAT_ID    (optional)
- *   ZAI_USER_ID    (optional)
- *   ZAI_TOKEN      (optional)
+ * Build the owner client. Credentials come from the environment
+ * (ZAI_BASE_URL / ZAI_API_KEY, plus the optional companions) or the
+ * local credentials file - see ai-client.ts for the resolution order.
  */
-function createZAI(): Promise<ZAI> {
-  const baseUrl = process.env.ZAI_BASE_URL;
-  const apiKey = process.env.ZAI_API_KEY;
-  if (baseUrl && apiKey) {
-    return Promise.resolve(
-      // @ts-expect-error - SDK types the constructor private; the runtime
-      // accepts the options object and this branch is how Vercel gets credentials.
-      new ZAI({
-        baseUrl,
-        apiKey,
-        chatId: process.env.ZAI_CHAT_ID || undefined,
-        userId: process.env.ZAI_USER_ID || undefined,
-        token: process.env.ZAI_TOKEN || undefined,
-      })
-    );
-  }
-  return ZAI.create().catch((err) => {
+function createZAI(): Promise<AIClient> {
+  return createAIClient().catch((err) => {
     const detail = err instanceof Error ? err.message : String(err);
     throw new Error(
       'AI service is not configured on this deployment (missing ZAI_BASE_URL / ZAI_API_KEY). ' +
@@ -148,7 +130,7 @@ function createZAI(): Promise<ZAI> {
 // ---------- Per-visitor clients (bring-your-own-key) ----------
 
 interface UserClientEntry {
-  promise: Promise<ZAI>;
+  promise: Promise<AIClient>;
   createdAt: number;
 }
 
@@ -174,16 +156,13 @@ function evictUserClient(userKey: string): void {
 }
 
 /** Build a client for a visitor's own key against the public Z.AI endpoint. */
-function createUserClient(userKey: string): Promise<ZAI> {
+function createUserClient(userKey: string): Promise<AIClient> {
   const baseUrl = process.env.ZAI_BASE_URL || 'https://api.z.ai/api/paas/v4';
-  return Promise.resolve(
-    // @ts-expect-error - SDK types the constructor private (see createZAI).
-    new ZAI({ baseUrl, apiKey: userKey })
-  );
+  return createAIClient({ baseUrl, apiKey: userKey });
 }
 
 /**
- * Create (once) and return the ZAI SDK instance for this request.
+ * Create (once) and return the AI client for this request.
  * - A visitor key (BYOK) gets its own cached client - the owner's
  *   credentials are never touched for those calls.
  * - Without a key, the owner's credentials are used only where allowed
@@ -192,7 +171,7 @@ function createUserClient(userKey: string): Promise<ZAI> {
  * - Failed creations are never cached: the next call retries automatically.
  * - Instances older than ZAI_TTL_MS are recreated to pick up refreshed tokens.
  */
-export async function getZAI(userKey?: string | null): Promise<ZAI> {
+export async function getZAI(userKey?: string | null): Promise<AIClient> {
   const key = typeof userKey === 'string' && userKey.trim() ? userKey.trim() : null;
   if (key) {
     const cached = userClients.get(key);
@@ -503,10 +482,11 @@ async function withTimeout<T>(promise: Promise<T>, ms: number, label: string): P
 }
 
 /**
- * The dev environment periodically rotates the token in /etc/ai-gateway.json; calls made
- * during the swap fail with 401 / "missing X-Token header" for a few seconds.
- * Wait generously on auth errors (and re-read the config via resetZAI) so a
- * rotation is ridden out inside the retry loop instead of failing the job.
+ * Credentials can be rotated at any time; calls made during the swap
+ * fail with 401 / "missing token header" for a few seconds. Wait
+ * generously on auth errors (and re-read the credentials via resetZAI)
+ * so a rotation is ridden out inside the retry loop instead of failing
+ * the job.
  */
 const AUTH_BACKOFF_MS = 6000;
 
@@ -592,7 +572,7 @@ function modelForAttempt(attempt: number): string | undefined {
  * cannot stall the pipeline.
  */
 async function chatTextOnce(
-  zai: ZAI,
+  zai: AIClient,
   messages: Array<{ role: 'assistant' | 'user'; content: string }>,
   modelOverride: string | undefined,
   maxTokens: number,
@@ -664,7 +644,7 @@ export async function llmJson<T>(
     } catch (err) {
       lastError = err;
       console.error(`llmJson attempt ${attempt + 1}/${attempts} failed:`, err instanceof Error ? err.message : err);
-      // Stale credentials? Drop the cached SDK so the next attempt re-reads config.
+      // Stale credentials? Drop the cached client so the next attempt re-reads them.
       if (isAuthError(err)) {
         if (userKey) evictUserClient(userKey);
         else resetZAI();
@@ -759,7 +739,7 @@ export async function llmText(
   throw finalError('LLM text generation', attempts, lastError, '', userKey);
 }
 
-/** Real internet web search via the SDK function-calling bridge (with retry). */
+/** Real internet web search via the platform's function bridge (with retry). */
 export async function webSearch(query: string, num = 5, userKey?: string | null): Promise<SearchFunctionResultItem[]> {
   let lastError: unknown = null;
   const attempts = 3;

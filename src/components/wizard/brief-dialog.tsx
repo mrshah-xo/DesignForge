@@ -98,7 +98,7 @@ export function BriefDialog({ open, onOpenChange, onApply }: BriefDialogProps) {
       if (local.found.length > 0) {
         // Extraction failed, but we still recognized a field or two locally.
         apply(local)
-      } else if (/credential|z-ai-config|ZAI_BASE_URL/i.test(msg)) {
+      } else if (/credential|not configured|ZAI_BASE_URL/i.test(msg)) {
         toast.error('AI extraction is unavailable', {
           description:
             'Paste the full MRDESIGN_BRIEF block instead - it fills every field instantly.',
