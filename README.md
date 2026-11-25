@@ -4,10 +4,6 @@
 
 ### Generate a complete design system from a logo.
 
-Upload a logo, get audience research, a logo fit report, and a production-ready
-design system — palette, typography, component tokens and a live preview —
-exported as a portable brand package.
-
 <br />
 
 ![Next.js](https://img.shields.io/badge/Next.js-16-000000?style=flat&logo=nextdotjs&logoColor=white)
