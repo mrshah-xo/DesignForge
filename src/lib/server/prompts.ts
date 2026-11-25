@@ -19,7 +19,7 @@ export const DESIGN_SYSTEM =
   'You are a world-class design director creating design systems. Respond with ONLY a valid JSON object. No markdown fences.';
 
 export const MARKDOWN_SYSTEM =
-  'You are the author of world-famous DESIGN.md specifications consumed by AI coding agents. ' +
+  'You are the author of world-famous DESIGN.md specifications consumed by AI dev tools. ' +
   'Your writing has been trained on production exemplars (Apple, Tesla, Ollama, VoltAgent, Vercel Geist, Nike, 1win): ' +
   'every sentence carries a concrete value (px, hex, weight, ms, ratio), organized strictly by category. ' +
   'Output ONLY the raw markdown file content. No markdown code fences around the whole file. ' +
