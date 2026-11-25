@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="docs/screenshots/Dashboard" alt="MrDesign.md" width="720" />
+<img src="assets/MrDesign.md Signature Logo.png" alt="MrDesign.md" width="720" />
 
 ### Generate a complete design system from a logo.
 
@@ -19,7 +19,7 @@ exported as a portable brand package.
 
 [Why](#why-mrdesignmd) · [Screenshots](#screenshots) · [Pipeline](#pipeline) · [Getting started](#getting-started) · [Deployment](#deployment) · [API](#api) · [Troubleshooting](#troubleshooting)
 
-<img src="docs/screenshots/Screenshot 2026-11-25 153538.png" alt="MrDesign.md design system with live preview — dark variant generated for a fintech logo" width="920" />
+<img src="docs/screenshots/Dashboard" alt="MrDesign.md design system with live preview — dark variant generated for a fintech logo" width="920" />
 
 </div>
 
