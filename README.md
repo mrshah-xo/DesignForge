@@ -10,13 +10,15 @@ exported as a portable brand package.
 
 <br />
 
-![Next.js](https://img.shields.io/badge/Next.js-16-000000?style=flat-square&logo=nextdotjs&logoColor=white)
-![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?style=flat-square&logo=typescript&logoColor=white)
-![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-4-06B6D4?style=flat-square&logo=tailwindcss&logoColor=white)
-![Prisma](https://img.shields.io/badge/Prisma-ORM-2D3748?style=flat-square&logo=prisma&logoColor=white)
-![Bun](https://img.shields.io/badge/Bun-tooling-FBF0DF?style=flat-square&logo=bun&logoColor=000)
-![License](https://img.shields.io/github/license/mrshah-xo/mrdesign.md?style=flat-square&logo=github&color=383838)
-
+![Next.js](https://img.shields.io/badge/Next.js-16-000000?style=flat&logo=nextdotjs&logoColor=white)
+![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?style=flat&logo=typescript&logoColor=white)
+![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-4-06B6D4?style=flat&logo=tailwindcss&logoColor=white)
+![Prisma](https://img.shields.io/badge/Prisma-ORM-2D3748?style=flat&logo=prisma&logoColor=white)
+![Bun](https://img.shields.io/badge/Bun-tooling-FBF0DF?style=flat&logo=bun&logoColor=000)
+![Vercel](https://img.shields.io/badge/Deploy-Vercel-000000?style=flat&logo=vercel&logoColor=white)
+![PRs welcome](https://img.shields.io/badge/PRs-welcome-3fb950?style=flat)
+![License](https://img.shields.io/github/license/mrshah-xo/mrdesign.md?style=flat&logo=github&color=383838)
+ 
 [Why](#why-mrdesignmd) · [Screenshots](#screenshots) · [Pipeline](#pipeline) · [Getting started](#getting-started) · [Deployment](#deployment) · [API](#api) · [Troubleshooting](#troubleshooting)
 
 <img src="docs/screenshots/Dashboard" alt="MrDesign.md design system with live preview — dark variant generated for a fintech logo" width="920" />
