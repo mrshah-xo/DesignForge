@@ -9,7 +9,6 @@ import {
 interface SecretsGetPayload {
   writable: boolean
   secrets: Awaited<ReturnType<typeof readSecretStatuses>>
-  note: string | null
 }
 
 interface SecretsPostPayload {
@@ -23,8 +22,7 @@ interface SecretsPostPayload {
  *         masked last-4 preview. Raw values never leave the server.
  * POST -> { values: { KEY: "value" | null } } writes to the git-ignored
  *         .env.local file. Disabled on production deployments (read-only,
- *         publicly reachable) - keys belong in the Vercel dashboard there.
- */
+ *         publicly reachable) - keys belong in the Vercel dashboard there. */
 
 export async function GET() {
   const writable = secretsWritable()
@@ -32,13 +30,7 @@ export async function GET() {
   const secrets = writable ? await readSecretStatuses() : []
   return NextResponse.json({
     ok: true,
-    data: {
-      writable,
-      secrets,
-      note: writable
-        ? null
-        : 'This deployment is read-only. Set environment variables in your Vercel dashboard (Settings > Environment Variables) and redeploy.',
-    },
+    data: { writable, secrets },
   } satisfies ApiEnvelope<SecretsGetPayload>)
 }
 

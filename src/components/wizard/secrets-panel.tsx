@@ -42,7 +42,6 @@ interface SecretStatus {
 interface SecretsResponse {
   writable: boolean
   secrets: SecretStatus[]
-  note?: string | null
 }
 
 // ---------- Component ----------
@@ -51,7 +50,6 @@ export function SecretsPanel() {
   const [open, setOpen] = useState(false)
   const [loading, setLoading] = useState(false)
   const [writable, setWritable] = useState(true)
-  const [note, setNote] = useState<string | null>(null)
   const [secrets, setSecrets] = useState<SecretStatus[]>([])
   const [drafts, setDrafts] = useState<Record<string, string>>({})
   const [revealed, setRevealed] = useState<Record<string, boolean>>({})
@@ -105,7 +103,6 @@ export function SecretsPanel() {
     try {
       const data = await request<SecretsResponse>('/api/settings/secrets')
       setWritable(data.writable)
-      setNote(data.note ?? null)
       setSecrets(data.secrets)
     } catch (err) {
       if (!silent) {
@@ -264,7 +261,9 @@ export function SecretsPanel() {
             API keys &amp; secrets
           </SheetTitle>
           <SheetDescription className="text-xs leading-relaxed">
-            Your API key lives only in this browser. Server keys below are for local development.
+            {writable
+              ? 'Your API key lives only in this browser. Server keys below are for local development.'
+              : 'Your API key lives only in this browser and is sent with each request you make.'}
           </SheetDescription>
         </SheetHeader>
 
@@ -354,11 +353,7 @@ export function SecretsPanel() {
               <Loader2 className="size-4 animate-spin" />
               Loading statuses…
             </div>
-          ) : !writable ? (
-            <div className="rounded-md border border-amber-200 bg-amber-50 p-3 text-xs leading-relaxed text-amber-800 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-300">
-              {note ?? 'This deployment is read-only.'}
-            </div>
-          ) : (
+          ) : writable ? (
             <div className="space-y-5">
               <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
                 Server secrets (.env.local)
@@ -472,7 +467,7 @@ export function SecretsPanel() {
                 </div>
               </div>
             </div>
-          )}
+          ) : null}
         </div>
 
         <div className="border-t border-border px-4 py-3">

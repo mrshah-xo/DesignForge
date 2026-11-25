@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { motion } from 'framer-motion'
-import { AlertTriangle, ArrowRight, Loader2, RefreshCw } from 'lucide-react'
+import { ArrowRight, Loader2, RefreshCw } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -63,9 +63,9 @@ export function UploadStep({ project, busy, onReplace }: UploadStepProps) {
         </h2>
 
         <div className="space-y-4 rounded-lg border border-border bg-card p-6 shadow-sm">
-          <div className="flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-400">
-            <AlertTriangle className="mt-0.5 size-3.5 shrink-0" />
-            <p>Re-uploading resets research, fit report and design.</p>
+          <div className="flex items-start gap-2 rounded-lg border border-border bg-muted/50 p-3 text-xs text-muted-foreground">
+            <RefreshCw className="mt-0.5 size-3.5 shrink-0" />
+            <p>Uploading a new logo will regenerate the analysis, fit report and design.</p>
           </div>
 
           <LogoDropzone file={file} onFile={setFile} compact disabled={busy} />
