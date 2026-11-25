@@ -7,6 +7,8 @@
 
 ### Generate a complete design system from a logo.
 
+<a href="https://ltd-xo.vercel.app"><img src="assets/live-link.svg" align="absmiddle" alt="Open the live app at ltd-xo.vercel.app" /></a>
+
 <br />
 
 ![Next.js](https://img.shields.io/badge/Next.js-16-000000?style=flat&logo=nextdotjs&logoColor=white)
