@@ -479,7 +479,9 @@ export function SecretsPanel() {
           <div className="flex items-center justify-between gap-2">
             <p className="flex items-center gap-1.5 text-[11px] leading-snug text-muted-foreground">
               <Lock className="size-3 shrink-0" />
-              Stored in .env.local - git-ignored.
+              {writable
+                ? 'Stored in .env.local - git-ignored.'
+                : 'Your key stays in this browser (localStorage) - nothing is stored server-side.'}
             </p>
             <Button
               size="sm"
